@@ -4,26 +4,30 @@
     <meta charset="UTF-8">
     <title>Pisanie: {{ essay.title }}</title>
 </head>
-<body style="font-family: sans-serif; padding: 20px; max-width: 900px; margin: auto;">
+<body style="font-family: sans-serif; padding: 20px; max-width: 950px; margin: auto; background: #fafafa;">
     
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h2 style="margin: 0;">{{ essay.title }}</h2>
-        <button onclick="saveAndReturn()" style="background: #17a2b8; color: white; border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.2s;">
-            💾 Zapisz i wróć
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2 style="margin: 0; color: #333;">{{ essay.title }}</h2>
+        <button onclick="finishAndReturn()" style="background: #28a745; color: white; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            ✅ Zakończ i oddaj pracę
         </button>
     </div>
 
-    <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-style: italic; border-left: 4px solid #6c757d;">
+    <div style="background: #e9ecef; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-style: italic; border-left: 4px solid #007bff; line-height: 1.5; font-size: 15px;">
         {{ essay.topic_full }}
     </div>
     
-    <div style="margin-bottom: 15px; background: #f8f9fa; padding: 12px; border-radius: 5px; border: 1px solid #dee2e6; display: flex; justify-content: space-between;">
-        <span><strong>⏱️ Spędzony czas:</strong> <span id="timer" style="font-family: monospace; font-size: 1.1em;">00:00</span></span>
-        <span><strong>📝 Słowa:</strong> <span id="word-count" style="font-weight: bold; color: #007bff;">0</span></span>
+    <div style="margin-bottom: 15px; background: white; padding: 12px; border-radius: 6px; border: 1px solid #ced4da; display: flex; justify-content: space-between;">
+        <span><strong>⏱️ Łączny czas:</strong> <span id="timer" style="font-family: monospace; font-size: 1.1em; font-weight: bold;">00:00</span></span>
+        <span><strong>📝 Słowa:</strong> <span id="word-count" style="font-weight: bold; color: #007bff; font-size: 1.1em;">0</span></span>
     </div>
 
-    <textarea id="editor" style="width: 100%; height: 500px; padding: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 16px; line-height: 1.5; border: 1px solid #ccc; border-radius: 8px; resize: vertical;" placeholder="Zacznij pisać tutaj... Twoja praca zapisuje się automatycznie.">{{ essay.content }}</textarea>
-    <p id="save-status" style="color: #28a745; font-size: 0.9em; text-align: right; margin-top: 5px;">System zapisuje tekst automatycznie co 15 sekund.</p>
+    <textarea id="editor" style="width: 100%; height: 500px; padding: 15px; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; border: 1px solid #ccc; border-radius: 8px; resize: vertical; box-sizing: border-box;" placeholder="Zacznij pisać tutaj... System zapisuje kopię automatycznie w tle.">{{ essay.content }}</textarea>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+        <button onclick="justSave()" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; font-size: 13px; border-radius: 4px; cursor: pointer;">Tylko zapisz kopię</button>
+        <p id="save-status" style="color: #6c757d; font-size: 0.9em; margin: 0;">Automatyczny zapis aktywny...</p>
+    </div>
 
     <script>
         const editor = document.getElementById('editor');
@@ -33,7 +37,6 @@
         const essayId = {{ essay.id }};
         const returnUrl = "/student/{{ essay.student.url_slug }}";
         
-        // Czas spędzony z bazy
         let seconds = {{ essay.time_spent }};
 
         function updateWordCount() {
@@ -51,33 +54,43 @@
         }
         renderTimer();
 
-        setInterval(() => {
+        // Odliczanie czasu na żywo
+        const timerInterval = setInterval(() => {
             seconds++;
             renderTimer();
         }, 1000);
 
-        function saveToServer(callback = null) {
+        function saveToServer(isCompleted = false, callback = null) {
             const content = editor.value;
             fetch(`/api/save/${essayId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: content, time_spent: seconds })
+                body: JSON.stringify({ content: content, time_spent: seconds, is_completed: isCompleted })
             })
             .then(response => response.json())
             .then(data => {
                 let now = new Date();
-                saveStatus.innerText = "✅ Ostatni zapis: " + now.toLocaleTimeString();
+                saveStatus.innerText = "Zapisano kopię roboczą: " + now.toLocaleTimeString();
                 if (callback) callback();
             });
         }
 
-        setInterval(() => { saveToServer(); }, 15000);
+        // Auto-zapis w tle co 15 sekund
+        setInterval(() => { saveToServer(false); }, 15000);
 
-        function saveAndReturn() {
-            saveStatus.innerText = "⏳ Zapisywanie...";
-            saveToServer(() => {
-                window.location.href = returnUrl;
-            });
+        function justSave() {
+            saveStatus.innerText = "Zapisywanie...";
+            saveToServer(false);
+        }
+
+        function finishAndReturn() {
+            if (confirm("Czy na pewno chcesz zakończyć pisanie i oddać rozprawkę? Nie będzie można jej już edytować.")) {
+                clearInterval(timerInterval);
+                saveStatus.innerText = "⏳ Wysyłanie i kończenie pracy...";
+                saveToServer(true, () => {
+                    window.location.href = returnUrl;
+                });
+            }
         }
     </script>
 </body>

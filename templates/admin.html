@@ -3,17 +3,52 @@
 <head><meta charset="UTF-8"><title>Panel Admina</title></head>
 <body style="font-family: sans-serif; padding: 20px;">
     <h1>Panel Administracyjny</h1>
+    
+    <div style="background: #ffebee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <h3>Zarządzanie Egzaminem</h3>
+        <form action="/admin/unlock_exam" method="POST">
+            <button type="submit" style="background: red; color: white; padding: 10px 20px; font-weight: bold; border: none; cursor: pointer; border-radius: 5px;">
+                🔓 ODBLOKUJ EGZAMIN WSZYSTKIM STUDENTOM
+            </button>
+        </form>
+    </div>
+
     <form method="POST" style="margin-bottom: 20px;">
-        <input type="text" name="name" placeholder="Imię i nazwisko studenta" required style="padding: 5px;">
-        <button type="submit" style="padding: 5px 10px;">Dodaj studenta</button>
+        <input type="text" name="name" placeholder="Imię i nazwisko studenta" required style="padding: 8px; width: 250px;">
+        <button type="submit" style="padding: 8px 15px;">Utwórz link dla studenta</button>
     </form>
     <hr>
     <h2>Lista studentów</h2>
     <ul>
         {% for student in students %}
-        <li style="margin-bottom: 10px;">
-            <strong>{{ student.name }}</strong> <br>
-            Link do pulpitu: <a href="/student/{{ student.token }}" target="_blank">Otwórz pulpit</a>
+        <li style="margin-bottom: 40px;">
+            <h3 style="margin-bottom: 5px; color: #333;">{{ student.name }}</h3>
+            <p><strong>Link:</strong> <a href="/student/{{ student.url_slug }}" target="_blank">/student/{{ student.url_slug }}</a></p>
+            
+            <table style="width: 100%; text-align: left; border-collapse: collapse;" border="1">
+                <tr style="background: #f0f0f0;">
+                    <th style="padding: 5px;">Temat</th>
+                    <th style="padding: 5px;">Czas pracy</th>
+                    <th style="padding: 5px;">Rozpoczęto</th>
+                    <th style="padding: 5px;">Ostatnia edycja</th>
+                    <th style="padding: 5px;">Podgląd</th>
+                </tr>
+                {% for essay in student.essays %}
+                <tr>
+                    <td style="padding: 5px;">{{ essay.title }}</td>
+                    <td style="padding: 5px;">{{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</td>
+                    <td style="padding: 5px;">{{ essay.started_at.strftime('%Y-%m-%d %H:%M') if essay.started_at else '-' }}</td>
+                    <td style="padding: 5px;">{{ essay.last_edited_at.strftime('%Y-%m-%d %H:%M') if essay.last_edited_at else '-' }}</td>
+                    <td style="padding: 5px;">
+                        {% if essay.content %}
+                            <a href="/admin/preview/{{ essay.id }}" target="_blank" style="color: blue;">Zobacz treść</a>
+                        {% else %}
+                            Brak tekstu
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
         </li>
         {% endfor %}
     </ul>

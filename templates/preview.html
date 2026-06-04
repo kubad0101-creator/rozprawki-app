@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head><meta charset="UTF-8"><title>Podgląd: {{ essay.title }}</title></head>
+<body style="font-family: sans-serif; padding: 20px; max-width: 900px; margin: auto; background-color: #f4f6f9;">
+    
+    <a href="/admin" style="display: inline-block; margin-bottom: 20px; text-decoration: none; color: #007bff; font-weight: bold;">← Wróć do panelu admina</a>
+    
+    <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h2 style="margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+            {{ essay.title }} <br>
+            <span style="font-size: 0.6em; color: #666;">Autor: {{ essay.student.name }}</span>
+        </h2>
+        
+        <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-style: italic; border-left: 4px solid #adb5bd;">
+            <strong>Temat:</strong><br>
+            {{ essay.topic_full }}
+        </div>
+        
+        <div style="display: flex; gap: 20px; margin-bottom: 30px; background: #f8f9fa; padding: 15px; border-radius: 5px;">
+            <div><strong>⏱️ Czas pracy:</strong> {{ essay.time_spent // 60 }} min {{ essay.time_spent % 60 }} sek</div>
+            <div><strong>🚀 Zaczęto:</strong> {{ essay.started_at.strftime('%Y-%m-%d %H:%M:%S') if essay.started_at else 'Brak danych' }}</div>
+            <div><strong>💾 Ostatni zapis:</strong> {{ essay.last_edited_at.strftime('%Y-%m-%d %H:%M:%S') if essay.last_edited_at else 'Brak danych' }}</div>
+        </div>
+        
+        <h3 style="color: #495057;">Treść pracy:</h3>
+        <div style="white-space: pre-wrap; line-height: 1.8; font-size: 16px; font-family: 'Times New Roman', Times, serif; color: #212529; border: 1px solid #ced4da; padding: 20px; border-radius: 5px; min-height: 300px;">{{ essay.content }}</div>
+    </div>
+</body>
+</html>

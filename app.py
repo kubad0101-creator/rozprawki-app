@@ -16,37 +16,45 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# MODELE BAZY (Wersja v2, aby odświeżyły się na serwerze bez błędów)
+# MODELE BAZY DANYCH (Wersja v3)
 class Student(db.Model):
-    __tablename__ = 'student_v2'
+    __tablename__ = 'student_v3'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     url_slug = db.Column(db.String(150), unique=True, nullable=False)
     exam_unlocked = db.Column(db.Boolean, default=False)
+    is_archived = db.Column(db.Boolean, default=False) # Archiwum
     essays = db.relationship('Essay', backref='student', lazy=True)
 
 class Essay(db.Model):
-    __tablename__ = 'essay_v2'
+    __tablename__ = 'essay_v3'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     topic_full = db.Column(db.Text, nullable=True)
     content = db.Column(db.Text, default="")
     is_exam = db.Column(db.Boolean, default=False)
-    time_spent = db.Column(db.Integer, default=0) # Czas w sekundach
+    time_spent = db.Column(db.Integer, default=0)
     started_at = db.Column(db.DateTime, nullable=True)
     last_edited_at = db.Column(db.DateTime, nullable=True)
-    student_id = db.Column(db.Integer, db.ForeignKey('student_v2.id'), nullable=False)
+    is_completed = db.Column(db.Boolean, default=False) # Status Napisane
+    feedback = db.Column(db.Text, nullable=True)       # Recenzja nauczyciela
+    student_id = db.Column(db.Integer, db.ForeignKey('student_v3.id'), nullable=False)
+
+class Notification(db.Model):
+    __tablename__ = 'notification_v3'
+    id = db.Column(db.Integer, primary_key=True)
+    message = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    is_read = db.Column(db.Boolean, default=False)
 
 with app.app_context():
     db.create_all()
 
-# Funkcja czyszcząca nazwisko do linku (np. Jan Kowalski -> jan-kowalski)
 def slugify(value):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub(r'[^\w\s-]', '', value.lower())
     return re.sub(r'[-\s]+', '-', value).strip('-_')
 
-# BAZA TEMATÓW
 PRACTICE_TOPICS = [
     ("Teachers Computers", "As computers are being used more and more in education, there will be no role for teachers in the classroom. Give reasons for your answer and include any relevant examples from your own knowledge and experience."),
     ("Fluency", "Some people believe that the only way to become fluent in a foreign language is to live and work in a country where it is spoken. Do you agree or disagree with this statement? Give reasons for your answer and include any relevant examples from your own knowledge or experience."),
@@ -61,38 +69,69 @@ EXAM_TOPICS = [
     "Some people think that introducing children to team sports is the best way to teach children teamwork. Do you agree or disagree? Give reasons using your own knowledge and examples from your own experience."
 ]
 
-# ŚCIEŻKI
+# --- ŚCIEŻKI ADMINA ---
+
+# Główny panel - tylko lista osób, powiadomienia i archiwum
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':
         student_name = request.form.get('name')
-        slug = f"{uuid.uuid4().hex[:4]}-{slugify(student_name)}" # Link z nazwiskiem
+        slug = f"{uuid.uuid4().hex[:4]}-{slugify(student_name)}"
         new_student = Student(name=student_name, url_slug=slug)
         db.session.add(new_student)
         
-        # Dodajemy ćwiczenia
         for title, full_topic in PRACTICE_TOPICS:
             db.session.add(Essay(title=title, topic_full=full_topic, is_exam=False, student=new_student))
-        
-        # Pusty kafelek Egzaminu
-        db.session.add(Essay(title="Egzamin (Czeka na wybór tematu)", is_exam=True, student=new_student))
-        
+        db.session.add(Essay(title="Egzamin (Oczekuje na wybór)", is_exam=True, student=new_student))
         db.session.commit()
         return redirect(url_for('admin'))
         
-    students = Student.query.all()
-    return render_template('admin.html', students=students)
+    active_students = Student.query.filter_by(is_archived=False).all()
+    archived_students = Student.query.filter_by(is_archived=True).all()
+    notifications = Notification.query.order_by(Notification.created_at.desc()).limit(10).all()
+    
+    return render_template('admin.html', active_students=active_students, archived_students=archived_students, notifications=notifications)
 
-@app.route('/admin/unlock_exam', methods=['POST'])
-def unlock_exam():
-    Student.query.update({Student.exam_unlocked: True})
+# NOWOŚĆ: Szczegóły i obsługa konkretnego studenta
+@app.route('/admin/student/<int:student_id>')
+def admin_student_detail(student_id):
+    student = Student.query.get_or_404(student_id)
+    return render_template('student_detail.html', student=student)
+
+@app.route('/admin/student/<int:student_id>/unlock_exam', methods=['POST'])
+def unlock_exam_individual(student_id):
+    student = Student.query.get_or_404(student_id)
+    student.exam_unlocked = True
+    db.session.commit()
+    return redirect(url_for('admin_student_detail', student_id=student.id))
+
+@app.route('/admin/student/<int:student_id>/archive', methods=['POST'])
+def toggle_archive(student_id):
+    student = Student.query.get_or_404(student_id)
+    student.is_archived = not student.is_archived
     db.session.commit()
     return redirect(url_for('admin'))
+
+@app.route('/admin/essay/<int:essay_id>/feedback', methods=['POST'])
+def save_feedback(essay_id):
+    essay = Essay.query.get_or_404(essay_id)
+    essay.feedback = request.form.get('feedback')
+    db.session.commit()
+    return redirect(url_for('admin_student_detail', student_id=essay.student_id))
 
 @app.route('/admin/preview/<int:essay_id>')
 def preview_essay(essay_id):
     essay = Essay.query.get_or_404(essay_id)
     return render_template('preview.html', essay=essay)
+
+@app.route('/admin/notifications/clear', methods=['POST'])
+def clear_notifications():
+    Notification.query.delete()
+    db.session.commit()
+    return redirect(url_for('admin'))
+
+
+# --- ŚCIEŻKI STUDENTA ---
 
 @app.route('/student/<url_slug>')
 def student_dashboard(url_slug):
@@ -129,12 +168,23 @@ def auto_save(essay_id):
     essay.content = data.get('content', essay.content)
     essay.time_spent = data.get('time_spent', essay.time_spent)
     
+    # Obsługa ukończenia pracy i powiadomienia
+    became_completed = False
+    if data.get('is_completed') and not essay.is_completed:
+        essay.is_completed = True
+        became_completed = True
+        
     now = datetime.now()
     if not essay.started_at:
         essay.started_at = now
     essay.last_edited_at = now
-    
     db.session.commit()
+
+    if became_completed:
+        msg = f"Student {essay.student.name} ukończył rozprawkę: '{essay.title}'"
+        db.session.add(Notification(message=msg))
+        db.session.commit()
+        
     return jsonify({"status": "success"})
 
 if __name__ == '__main__':

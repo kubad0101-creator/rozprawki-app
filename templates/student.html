@@ -1,20 +1,59 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head><meta charset="UTF-8"><title>Pulpit: {{ student.name }}</title></head>
-<body style="font-family: sans-serif; padding: 20px;">
+<body style="font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; background-color: #fcfcfc;">
     <h1>Witaj, {{ student.name }}</h1>
-    <h2>Twoje zadania:</h2>
-    <ul>
+    
+    <h2>Rozprawki ćwiczeniowe:</h2>
+    <ul style="padding: 0;">
         {% for essay in student.essays %}
-        <li style="margin-bottom: 15px;">
-            <strong>{{ essay.title }}</strong>
-            {% if essay.is_exam %}
-                <span style="color: red;">[Zablokowane]</span>
-            {% else %}
-                <br><a href="/write/{{ essay.id }}"><button style="padding: 5px; margin-top: 5px;">Przejdź do pisania</button></a>
+            {% if not essay.is_exam %}
+            <li style="margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; list-style-type: none; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <strong style="font-size: 1.2em;">{{ essay.title }}</strong><br>
+                <div style="color: #444; margin: 10px 0; font-style: italic; background: #f4f4f4; padding: 10px; border-left: 3px solid #ccc;">
+                    {{ essay.topic_full }}
+                </div>
+                <strong>Twój czas:</strong> {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s<br>
+                <a href="/write/{{ essay.id }}" style="display: inline-block; margin-top: 15px; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📝 Pisz / Kontynuuj</a>
+            </li>
             {% endif %}
-        </li>
         {% endfor %}
     </ul>
+
+    <hr style="margin: 40px 0;">
+
+    <h2 style="color: #d32f2f;">🔥 EGZAMIN GŁÓWNY</h2>
+    {% if not student.exam_unlocked %}
+        <div style="background: #ffebee; padding: 20px; border-radius: 8px; color: #b71c1c; border: 1px solid #ffcdd2;">
+            <strong>Egzamin jest zablokowany.</strong> Oczekuj na instrukcje nauczyciela.
+        </div>
+    {% else %}
+        {% set exam_essay = student.essays | selectattr("is_exam", "equalto", True) | first %}
+        
+        {% if exam_essay.topic_full %}
+            <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; border: 1px solid #c8e6c9;">
+                <strong style="color: #2e7d32;">Wybrałeś temat egzaminu:</strong><br>
+                <div style="margin: 15px 0; font-style: italic;">{{ exam_essay.topic_full }}</div>
+                <a href="/write/{{ exam_essay.id }}" style="display: inline-block; background: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">➡️ Kontynuuj Egzamin</a>
+            </div>
+        {% else %}
+            <div style="background: #fff8e1; padding: 20px; border-radius: 8px; border: 1px solid #ffecb3;">
+                <h3 style="margin-top: 0; color: #f57f17;">🔓 Egzamin Odblokowany!</h3>
+                <p>Wybierz <strong>jeden</strong> z poniższych tematów, aby rozpocząć:</p>
+                
+                <form action="/student/{{ student.url_slug }}/choose_exam" method="POST" style="margin-top: 20px;">
+                    <div style="margin-bottom: 20px; background: white; padding: 15px; border-radius: 5px; border: 1px solid #ccc;">
+                        <input type="radio" id="topic0" name="topic_idx" value="0" required style="transform: scale(1.5); margin-right: 10px;">
+                        <label for="topic0"><strong>Temat 1:</strong> {{ exam_topics[0] }}</label>
+                    </div>
+                    <div style="margin-bottom: 20px; background: white; padding: 15px; border-radius: 5px; border: 1px solid #ccc;">
+                        <input type="radio" id="topic1" name="topic_idx" value="1" required style="transform: scale(1.5); margin-right: 10px;">
+                        <label for="topic1"><strong>Temat 2:</strong> {{ exam_topics[1] }}</label>
+                    </div>
+                    <button type="submit" style="background: #ff9800; color: white; padding: 15px 25px; border: none; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; width: 100%;">✅ Wybieram i zaczynam pisać</button>
+                </form>
+            </div>
+        {% endif %}
+    {% endif %}
 </body>
 </html>

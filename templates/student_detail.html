@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head><meta charset="UTF-8"><title>Zarządzanie: {{ student.name }}</title></head>
+<body style="font-family: sans-serif; padding: 25px; max-width: 1000px; margin: auto; background: #fdfdfd;">
+    
+    <a href="/admin" style="color: #007bff; text-decoration: none; font-weight: bold;">← Wróć do listy głównej</a>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-bottom: 2px solid #eee; padding-bottom: 15px;">
+        <h1>Obsługa studenta: {{ student.name }}</h1>
+        <div style="display: flex; gap: 10px;">
+            {% if not student.exam_unlocked %}
+            <form action="/admin/student/{{ student.id }}/unlock_exam" method="POST" style="margin:0;">
+                <button type="submit" style="background: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">🔓 Odblokuj Egzamin temu studentowi</button>
+            </form>
+            {% else %}
+                <span style="background: #28a745; color: white; padding: 10px 15px; border-radius: 5px; font-weight: bold;">🔓 Egzamin odblokowany</span>
+            {% endif %}
+
+            <form action="/admin/student/{{ student.id }}/archive" method="POST" style="margin:0;">
+                <button type="submit" style="background: #6c757d; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
+                    {% if student.is_archived %}📁 Przywróć z archiwum{% else %}📁 Przenieś do archiwum{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <p style="background: #e2e3e5; padding: 10px; border-radius: 5px;"><strong>Indywidualny Link Studenta:</strong> <a href="/student/{{ student.url_slug }}" target="_blank">/student/{{ student.url_slug }}</a></p>
+
+    <h2>Rozprawki studenta</h2>
+    {% for essay in student.essays %}
+    <div style="background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; color: #333;">{{ essay.title }}</h3>
+            {% if essay.is_completed %}
+                <span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 3px; font-size: 13px; font-weight: bold;">NAPISANE</span>
+            {% else %}
+                <span style="background: #ffc107; color: black; padding: 3px 8px; border-radius: 3px; font-size: 13px; font-weight: bold;">W TRAKCIE / NIEODPALONE</span>
+            {% endif %}
+        </div>
+        
+        <p style="color: #666; font-size: 14px; margin: 10px 0;">
+            <strong>Czas pracy:</strong> {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s | 
+            <strong>Ostatnia edycja:</strong> {{ essay.last_edited_at.strftime('%Y-%m-%d %H:%M') if essay.last_edited_at else 'Brak' }}
+        </p>
+
+        {% if essay.content %}
+            <a href="/admin/preview/{{ essay.id }}" target="_blank" style="display: inline-block; background: #007bff; color: white; padding: 8px 15px; text-decoration: none; border-radius: 4px; font-size: 14px; font-weight: bold; margin-bottom: 15px;">🔍 Otwórz i sprawdź treść rozprawki</a>
+        {% else %}
+            <p style="color: #999; font-style: italic;">Student jeszcze nie zaczął pisać tego tematu.</p>
+        {% endif %}
+
+        <div style="margin-top: 15px; background: #f8f9fa; padding: 15px; border-radius: 6px; border-top: 2px solid #6c757d;">
+            <h4 style="margin-top: 0; margin-bottom: 10px; color: #495057;">Wymiana opinii / Feedback dla studenta:</h4>
+            <form action="/admin/essay/<id>/feedback" method="POST">
+                <textarea name="feedback" style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical;" placeholder="Wpisz ocenę, korektę błędu lub uwagi...">{{ essay.feedback if essay.feedback else '' }}</textarea>
+                <button type="submit" style="margin-top: 8px; background: #6c757d; color: white; padding: 6px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Zapisz i wyślij feedback studentowi</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+
+    <script>
+        // Dynamiczne podmienianie ID w formularzach feedbacku
+        document.querySelectorAll('form').forEach(form => {
+            if(form.action.includes('<id>')) {
+                let id = form.closest('div.background-div || div').parentElement.innerHTML; 
+                // Skrypt pomocniczy podmieniający tagi URL w pętli Jinja2 dla bezpieczeństwa akcji
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,44 +1,83 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head><meta charset="UTF-8"><title>Student: {{ student.name }}</title></head>
-<body style="font-family: sans-serif; padding: 25px; max-width: 900px; margin: auto;">
-    <a href="/admin">← Wróć do listy</a>
-    <h1>Karta studenta: {{ student.name }}</h1>
+<head><meta charset="UTF-8"><title>Zarządzanie: {{ student.name }}</title></head>
+<body style="font-family: sans-serif; padding: 25px; max-width: 1000px; margin: auto; background: #fdfdfd;">
     
-    <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 30px;">
-        <strong>Link dla studenta:</strong> <br>
-        <input type="text" value="https://{{ request.host }}/student/{{ student.url_slug }}" readonly style="width: 100%; padding: 8px; margin-top: 5px;">
-    </div>
+    <a href="/admin" style="color: #007bff; text-decoration: none; font-weight: bold;">← Wróć do listy głównej</a>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-bottom: 2px solid #eee; padding-bottom: 15px;">
+        <h1>Obsługa studenta: {{ student.name }}</h1>
+        <div style="display: flex; gap: 10px;">
+            {% if not student.exam_unlocked %}
+            <form action="/admin/student/{{ student.id }}/unlock" method="POST" style="margin:0;">
+                <button type="submit" style="background: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">🔓 Odblokuj Egzamin temu studentowi</button>
+            </form>
+            {% else %}
+                <span style="background: #28a745; color: white; padding: 10px 15px; border-radius: 5px; font-weight: bold;">🔓 Egzamin odblokowany</span>
+            {% endif %}
 
-    <div style="display: flex; gap: 10px; margin-bottom: 30px;">
-        {% if not student.exam_unlocked %}
-        <form action="/admin/student/{{ student.id }}/unlock" method="POST"><button type="submit" style="padding: 10px; background: red; color: white; border: none; border-radius: 5px; cursor: pointer;">🔓 ODBLOKUJ EGZAMIN</button></form>
-        {% else %}
-        <span style="padding: 10px; background: green; color: white; border-radius: 5px;">Egzamin odblokowany</span>
-        {% endif %}
-
-        <form action="/admin/student/{{ student.id }}/archive" method="POST"><button type="submit" style="padding: 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">📁 Archiwizuj studenta</button></form>
-    </div>
-
-    <h2>Rozprawki:</h2>
-    {% for essay in student.essays %}
-    <div style="background: white; border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; border-radius: 8px;">
-        <div style="display: flex; justify-content: space-between;">
-            <h3>{{ essay.title }}</h3>
-            {% if essay.is_completed %}<span style="color: green; font-weight: bold;">NAPISANE</span>{% endif %}
+            <form action="/admin/student/{{ student.id }}/archive" method="POST" style="margin:0;">
+                <button type="submit" style="background: #6c757d; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
+                    {% if student.is_archived %}📁 Przywróć z archiwum{% else %}📁 Przenieś do archiwum{% endif %}
+                </button>
+            </form>
         </div>
-        <p>Czas: {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</p>
-        
-        {% if essay.content %}
-        <a href="/admin/preview/{{ essay.id }}" target="_blank" style="background: #007bff; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px;">Otwórz treść</a>
-        {% endif %}
+    </div>
 
-        <form action="/admin/essay/{{ essay.id }}/feedback" method="POST" style="margin-top: 20px;">
-            <label><strong>Feedback dla studenta:</strong></label>
-            <textarea name="feedback" style="width: 100%; height: 60px; margin: 10px 0; border-radius: 5px; border: 1px solid #ccc; padding: 10px;">{{ essay.feedback or '' }}</textarea>
-            <button type="submit" style="background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Zapisz i wyślij feedback</button>
-        </form>
+    <p style="background: #e2e3e5; padding: 10px; border-radius: 5px; margin-top: 20px;">
+        <strong>Link dla studenta:</strong> <br>
+        <input type="text" value="https://{{ request.host }}/student/{{ student.url_slug }}" readonly style="width: 100%; padding: 8px; margin-top: 5px; background: #f9f9f9; border: 1px solid #ccc;">
+    </p>
+
+    <h2 style="margin-top: 40px;">Rozprawki studenta:</h2>
+    {% for essay in student.essays %}
+    <div style="background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; color: #333;">{{ essay.title }}</h3>
+            {% if essay.is_completed %}
+                <span style="background: #28a745; color: white; padding: 5px 12px; border-radius: 4px; font-size: 13px; font-weight: bold;">✓ NAPISANE</span>
+            {% else %}
+                <span style="background: #ffc107; color: black; padding: 5px 12px; border-radius: 4px; font-size: 13px; font-weight: bold;">W TRAKCIE / NIEZACZĘTE</span>
+            {% endif %}
+        </div>
+        
+        <p style="color: #666; font-size: 14px; margin: 10px 0;">
+            <strong>Czas pracy:</strong> {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s | 
+            <strong>Ostatni zapis:</strong> {{ essay.last_edited_at.strftime('%Y-%m-%d %H:%M') if essay.last_edited_at else 'Brak danych' }}
+        </p>
+
+        <div style="margin-top: 15px;">
+            <strong style="color: #007bff;">Podgląd tekstu:</strong>
+            <div style="background: #fafafa; border: 1px solid #eee; border-left: 4px solid #007bff; padding: 15px; margin-top: 5px; font-family: 'Times New Roman', serif; font-size: 16px; line-height: 1.6; white-space: pre-wrap; max-height: 300px; overflow-y: auto;">
+                {% if essay.content %}
+                    {{ essay.content }}
+                {% else %}
+                    <span style="color: #999; font-style: italic;">Uczeń jeszcze nie wpisał żadnej treści.</span>
+                {% endif %}
+            </div>
+            {% if essay.content %}
+            <a href="/admin/preview/{{ essay.id }}" target="_blank" style="font-size: 0.85em; color: #007bff; display: inline-block; margin-top: 5px;">Otwórz w pełnym oknie (do druku/kopiowania) →</a>
+            {% endif %}
+        </div>
+
+        <div style="margin-top: 25px; background: #fdfdfd; padding: 15px; border-radius: 6px; border: 1px solid #ddd; border-top: 3px solid #6c757d;">
+            <h4 style="margin-top: 0; margin-bottom: 10px; color: #495057;">Twoje uwagi / Feedback dla ucznia:</h4>
+            <form action="/admin/essay/{{ essay.id }}/feedback" method="POST">
+                <textarea name="feedback" style="width: 100%; height: 100px; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-family: sans-serif; font-size: 14px; box-sizing: border-box; resize: vertical;" placeholder="Wpisz poprawki, ocenę lub rady...">{{ essay.feedback or '' }}</textarea>
+                <button type="submit" style="margin-top: 10px; background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s;">
+                    Zapisz i wyślij feedback
+                </button>
+            </form>
+        </div>
     </div>
     {% endfor %}
+
 </body>
 </html>
+
+### Co się zmieniło?
+1.  **Sekcja "Podgląd tekstu":** Teraz pod każdym ćwiczeniem masz szare okno, w którym od razu widzisz tekst studenta (jeśli już coś napisał).
+2.  **Scrollowanie:** Jeśli rozprawka jest bardzo długa, okienko ma funkcję przewijania (maksymalnie 300px wysokości), żeby cała strona admina nie była kilometrowa.
+3.  **Błyskawiczny Feedback:** Możesz czytać tekst i od razu pod nim pisać uwagi.
+
+Zaktualizuj ten plik na GitHubie, odczekaj minutę na przeładowanie serwera Render i sprawdź, o ile wygodniej teraz będzie Ci się pracować!

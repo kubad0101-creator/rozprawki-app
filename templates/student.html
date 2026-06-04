@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head><meta charset="UTF-8"><title>Pulpit: {{ student.name }}</title></head>
+<body style="font-family: sans-serif; padding: 20px;">
+    <h1>Witaj, {{ student.name }}</h1>
+    <h2>Twoje zadania:</h2>
+    <ul>
+        {% for essay in student.essays %}
+        <li style="margin-bottom: 15px;">
+            <strong>{{ essay.title }}</strong>
+            {% if essay.is_exam %}
+                <span style="color: red;">[Zablokowane]</span>
+            {% else %}
+                <br><a href="/write/{{ essay.id }}"><button style="padding: 5px; margin-top: 5px;">Przejdź do pisania</button></a>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

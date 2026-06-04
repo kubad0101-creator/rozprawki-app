@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head><meta charset="UTF-8"><title>Panel Admina</title></head>
+<body style="font-family: sans-serif; padding: 20px;">
+    <h1>Panel Administracyjny</h1>
+    <form method="POST" style="margin-bottom: 20px;">
+        <input type="text" name="name" placeholder="Imię i nazwisko studenta" required style="padding: 5px;">
+        <button type="submit" style="padding: 5px 10px;">Dodaj studenta</button>
+    </form>
+    <hr>
+    <h2>Lista studentów</h2>
+    <ul>
+        {% for student in students %}
+        <li style="margin-bottom: 10px;">
+            <strong>{{ student.name }}</strong> <br>
+            Link do pulpitu: <a href="/student/{{ student.token }}" target="_blank">Otwórz pulpit</a>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

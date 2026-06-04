@@ -4,16 +4,26 @@
     <meta charset="UTF-8">
     <title>Pisanie: {{ essay.title }}</title>
 </head>
-<body style="font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto;">
-    <h2>{{ essay.title }}</h2>
+<body style="font-family: sans-serif; padding: 20px; max-width: 900px; margin: auto;">
     
-    <div style="margin-bottom: 10px; background: #f0f0f0; padding: 10px; border-radius: 5px;">
-        <strong>Czas:</strong> <span id="timer">00:00</span> | 
-        <strong>Liczba słów:</strong> <span id="word-count">0</span>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h2 style="margin: 0;">{{ essay.title }}</h2>
+        <button onclick="saveAndReturn()" style="background: #17a2b8; color: white; border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.2s;">
+            💾 Zapisz i wróć
+        </button>
     </div>
 
-    <textarea id="editor" style="width: 100%; height: 400px; padding: 10px; font-family: monospace; font-size: 14px;" placeholder="Zacznij pisać tutaj...">{{ essay.content }}</textarea>
-    <p id="save-status" style="color: green; font-size: 0.9em;"></p>
+    <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-style: italic; border-left: 4px solid #6c757d;">
+        {{ essay.topic_full }}
+    </div>
+    
+    <div style="margin-bottom: 15px; background: #f8f9fa; padding: 12px; border-radius: 5px; border: 1px solid #dee2e6; display: flex; justify-content: space-between;">
+        <span><strong>⏱️ Spędzony czas:</strong> <span id="timer" style="font-family: monospace; font-size: 1.1em;">00:00</span></span>
+        <span><strong>📝 Słowa:</strong> <span id="word-count" style="font-weight: bold; color: #007bff;">0</span></span>
+    </div>
+
+    <textarea id="editor" style="width: 100%; height: 500px; padding: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 16px; line-height: 1.5; border: 1px solid #ccc; border-radius: 8px; resize: vertical;" placeholder="Zacznij pisać tutaj... Twoja praca zapisuje się automatycznie.">{{ essay.content }}</textarea>
+    <p id="save-status" style="color: #28a745; font-size: 0.9em; text-align: right; margin-top: 5px;">System zapisuje tekst automatycznie co 15 sekund.</p>
 
     <script>
         const editor = document.getElementById('editor');
@@ -21,40 +31,54 @@
         const saveStatus = document.getElementById('save-status');
         const timerDisplay = document.getElementById('timer');
         const essayId = {{ essay.id }};
+        const returnUrl = "/student/{{ essay.student.url_slug }}";
         
-        let seconds = 0;
+        // Czas spędzony z bazy
+        let seconds = {{ essay.time_spent }};
 
         function updateWordCount() {
             const text = editor.value.trim();
-            const words = text ? text.split(/\s+/).length : 0;
-            wordCount.innerText = words;
+            wordCount.innerText = text ? text.split(/\s+/).length : 0;
         }
 
-        // Inicjalizacja licznika na start
         updateWordCount();
-
         editor.addEventListener('input', updateWordCount);
 
-        setInterval(() => {
-            seconds++;
+        function renderTimer() {
             let m = Math.floor(seconds / 60).toString().padStart(2, '0');
             let s = (seconds % 60).toString().padStart(2, '0');
             timerDisplay.innerText = `${m}:${s}`;
-        }, 1000);
+        }
+        renderTimer();
 
         setInterval(() => {
+            seconds++;
+            renderTimer();
+        }, 1000);
+
+        function saveToServer(callback = null) {
             const content = editor.value;
             fetch(`/api/save/${essayId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: content })
+                body: JSON.stringify({ content: content, time_spent: seconds })
             })
             .then(response => response.json())
             .then(data => {
                 let now = new Date();
-                saveStatus.innerText = "Zapisano: " + now.toLocaleTimeString();
+                saveStatus.innerText = "✅ Ostatni zapis: " + now.toLocaleTimeString();
+                if (callback) callback();
             });
-        }, 15000);
+        }
+
+        setInterval(() => { saveToServer(); }, 15000);
+
+        function saveAndReturn() {
+            saveStatus.innerText = "⏳ Zapisywanie...";
+            saveToServer(() => {
+                window.location.href = returnUrl;
+            });
+        }
     </script>
 </body>
 </html>

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head><meta charset="UTF-8"><title>Logowanie Admina</title></head>
+<body style="font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5;">
+    <form method="POST" style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); width: 320px;">
+        <h2 style="text-align: center;">Logowanie</h2>
+        {% if error %}<p style="color: red; font-size: 0.9em;">{{ error }}</p>{% endif %}
+        <input type="text" name="username" placeholder="Login" required style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+        <input type="password" name="password" placeholder="Hasło" required style="width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+        <button type="submit" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Zaloguj się</button>
+    </form>
+</body>
+</html>

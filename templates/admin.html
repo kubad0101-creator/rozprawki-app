@@ -1,56 +1,74 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head><meta charset="UTF-8"><title>Panel Admina</title></head>
-<body style="font-family: sans-serif; padding: 20px;">
+<head><meta charset="UTF-8"><title>Panel Główny Admina</title></head>
+<body style="font-family: sans-serif; padding: 25px; max-width: 1000px; margin: auto; background: #f8f9fa;">
     <h1>Panel Administracyjny</h1>
-    
-    <div style="background: #ffebee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-        <h3>Zarządzanie Egzaminem</h3>
-        <form action="/admin/unlock_exam" method="POST">
-            <button type="submit" style="background: red; color: white; padding: 10px 20px; font-weight: bold; border: none; cursor: pointer; border-radius: 5px;">
-                🔓 ODBLOKUJ EGZAMIN WSZYSTKIM STUDENTOM
-            </button>
+
+    <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; color: #0056b3;">🔔 Ostatnie powiadomienia (Nowe rozprawki)</h3>
+            {% if notifications %}
+            <form action="/admin/notifications/clear" method="POST" style="margin: 0;">
+                <button type="submit" style="background: none; border: none; color: red; cursor: pointer; text-decoration: underline;">Wyczyść powiadomienia</button>
+            </form>
+            {% endif %}
+        </div>
+        <ul style="margin-top: 10px; padding-left: 20px;">
+            {% for notif in notifications %}
+                <li style="margin-bottom: 5px; color: #333;">
+                    <strong>[{{ notif.created_at.strftime('%H:%M:%S') }}]</strong> {{ notif.message }}
+                </li>
+            {% else %}
+                <li style="color: #666; list-style-type: none; padding-left: 0;">Brak nowych powiadomień.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 30px;">
+        <h3>Dodaj Nowego Studenta</h3>
+        <form method="POST">
+            <input type="text" name="name" placeholder="Imię i nazwisko studenta" required style="padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+            <button type="submit" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Utwórz konto studenta</button>
         </form>
     </div>
 
-    <form method="POST" style="margin-bottom: 20px;">
-        <input type="text" name="name" placeholder="Imię i nazwisko studenta" required style="padding: 8px; width: 250px;">
-        <button type="submit" style="padding: 8px 15px;">Utwórz link dla studenta</button>
-    </form>
-    <hr>
-    <h2>Lista studentów</h2>
-    <ul>
-        {% for student in students %}
-        <li style="margin-bottom: 40px;">
-            <h3 style="margin-bottom: 5px; color: #333;">{{ student.name }}</h3>
-            <p><strong>Link:</strong> <a href="/student/{{ student.url_slug }}" target="_blank">/student/{{ student.url_slug }}</a></p>
-            
-            <table style="width: 100%; text-align: left; border-collapse: collapse;" border="1">
-                <tr style="background: #f0f0f0;">
-                    <th style="padding: 5px;">Temat</th>
-                    <th style="padding: 5px;">Czas pracy</th>
-                    <th style="padding: 5px;">Rozpoczęto</th>
-                    <th style="padding: 5px;">Ostatnia edycja</th>
-                    <th style="padding: 5px;">Podgląd</th>
-                </tr>
-                {% for essay in student.essays %}
-                <tr>
-                    <td style="padding: 5px;">{{ essay.title }}</td>
-                    <td style="padding: 5px;">{{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</td>
-                    <td style="padding: 5px;">{{ essay.started_at.strftime('%Y-%m-%d %H:%M') if essay.started_at else '-' }}</td>
-                    <td style="padding: 5px;">{{ essay.last_edited_at.strftime('%Y-%m-%d %H:%M') if essay.last_edited_at else '-' }}</td>
-                    <td style="padding: 5px;">
-                        {% if essay.content %}
-                            <a href="/admin/preview/{{ essay.id }}" target="_blank" style="color: blue;">Zobacz treść</a>
-                        {% else %}
-                            Brak tekstu
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
-        </li>
-        {% endfor %}
-    </ul>
+    <h2>Aktywni studenci</h2>
+    <div style="background: white; border-radius: 8px; border: 1px solid #dee2e6; padding: 10px; margin-bottom: 5px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
+            {% for student in active_students %}
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 15px; font-weight: bold;">
+                    <a href="/admin/student/{{ student.id }}" style="color: #007bff; text-decoration: none; font-size: 1.1em;">👤 {{ student.name }}</a>
+                </td>
+                <td style="text-align: right; padding: 15px; color: #666;">
+                    Kliknij imię, aby zarządzać i sprawdzać prace
+                </td>
+            </tr>
+            {% else %}
+                <tr><td style="padding: 15px; color: #666;">Brak aktywnych studentów.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <h2 style="margin-top: 60px; color: #6c757d;">📂 Archiwum (Zakończona współpraca)</h2>
+    <div style="background: #e9ecef; border-radius: 8px; border: 1px solid #ced4da; padding: 10px;">
+        <table style="width: 100%; border-collapse: collapse;">
+            {% for student in archived_students %}
+            <tr style="border-bottom: 1px solid #dee2e6;">
+                <td style="padding: 12px; font-weight: bold; color: #495057;">
+                    <a href="/admin/student/{{ student.id }}" style="color: #495057; text-decoration: none;">📁 {{ student.name }}</a>
+                </td>
+                <td style="text-align: right; padding: 12px;">
+                    <form action="/admin/student/{{ student.id }}/archive" method="POST" style="margin: 0;">
+                        <button type="submit" style="background: none; border: none; color: #007bff; cursor: pointer;">Przywróć do aktywnych</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+                <tr><td style="padding: 15px; color: #6c757d;">Archiwum jest puste.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
 </body>
 </html>

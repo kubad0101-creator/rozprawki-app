@@ -1,74 +1,48 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head><meta charset="UTF-8"><title>Panel Główny Admina</title></head>
-<body style="font-family: sans-serif; padding: 25px; max-width: 1000px; margin: auto; background: #f8f9fa;">
-    <h1>Panel Administracyjny</h1>
+<head><meta charset="UTF-8"><title>Panel Admina</title></head>
+<body style="font-family: sans-serif; padding: 25px; background: #f8f9fa; max-width: 900px; margin: auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Panel Administracyjny</h1>
+        <a href="/logout" style="color: red;">Wyloguj</a>
+    </div>
 
-    <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0; color: #0056b3;">🔔 Ostatnie powiadomienia (Nowe rozprawki)</h3>
-            {% if notifications %}
-            <form action="/admin/notifications/clear" method="POST" style="margin: 0;">
-                <button type="submit" style="background: none; border: none; color: red; cursor: pointer; text-decoration: underline;">Wyczyść powiadomienia</button>
-            </form>
-            {% endif %}
+    <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 25px;">
+        <div style="display: flex; justify-content: space-between;">
+            <h3 style="margin:0;">🔔 Powiadomienia</h3>
+            <form action="/admin/notif/clear" method="POST"><button type="submit" style="background:none; border:none; color:grey; cursor:pointer;">Wyczyść</button></form>
         </div>
-        <ul style="margin-top: 10px; padding-left: 20px;">
-            {% for notif in notifications %}
-                <li style="margin-bottom: 5px; color: #333;">
-                    <strong>[{{ notif.created_at.strftime('%H:%M:%S') }}]</strong> {{ notif.message }}
-                </li>
-            {% else %}
-                <li style="color: #666; list-style-type: none; padding-left: 0;">Brak nowych powiadomień.</li>
-            {% endfor %}
+        <ul style="padding-left: 20px; font-size: 0.9em;">
+            {% for n in notifications %}<li style="margin-bottom: 5px;">{{ n.message }}</li>{% else %}<li>Brak nowych powiadomień.</li>{% endfor %}
         </ul>
     </div>
 
-    <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 30px;">
-        <h3>Dodaj Nowego Studenta</h3>
+    <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 25px;">
+        <h3>Dodaj Studenta</h3>
         <form method="POST">
-            <input type="text" name="name" placeholder="Imię i nazwisko studenta" required style="padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
-            <button type="submit" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Utwórz konto studenta</button>
+            <input type="text" name="name" placeholder="Imię i nazwisko" required style="padding: 10px; width: 60%; border-radius: 5px; border: 1px solid #ccc;">
+            <button type="submit" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Utwórz</button>
         </form>
     </div>
 
     <h2>Aktywni studenci</h2>
-    <div style="background: white; border-radius: 8px; border: 1px solid #dee2e6; padding: 10px; margin-bottom: 5px;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
-            {% for student in active_students %}
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 15px; font-weight: bold;">
-                    <a href="/admin/student/{{ student.id }}" style="color: #007bff; text-decoration: none; font-size: 1.1em;">👤 {{ student.name }}</a>
-                </td>
-                <td style="text-align: right; padding: 15px; color: #666;">
-                    Kliknij imię, aby zarządzać i sprawdzać prace
-                </td>
-            </tr>
-            {% else %}
-                <tr><td style="padding: 15px; color: #666;">Brak aktywnych studentów.</td></tr>
-            {% endfor %}
-        </table>
+    <div style="background: white; border-radius: 8px; border: 1px solid #dee2e6;">
+        {% for s in active_students %}
+        <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
+            <a href="/admin/student/{{ s.id }}" style="text-decoration: none; font-weight: bold; color: #007bff; font-size: 1.1em;">👤 {{ s.name }}</a>
+            <span style="color: #888; font-size: 0.9em;">Kliknij, aby zarządzać</span>
+        </div>
+        {% endfor %}
     </div>
 
-    <h2 style="margin-top: 60px; color: #6c757d;">📂 Archiwum (Zakończona współpraca)</h2>
-    <div style="background: #e9ecef; border-radius: 8px; border: 1px solid #ced4da; padding: 10px;">
-        <table style="width: 100%; border-collapse: collapse;">
-            {% for student in archived_students %}
-            <tr style="border-bottom: 1px solid #dee2e6;">
-                <td style="padding: 12px; font-weight: bold; color: #495057;">
-                    <a href="/admin/student/{{ student.id }}" style="color: #495057; text-decoration: none;">📁 {{ student.name }}</a>
-                </td>
-                <td style="text-align: right; padding: 12px;">
-                    <form action="/admin/student/{{ student.id }}/archive" method="POST" style="margin: 0;">
-                        <button type="submit" style="background: none; border: none; color: #007bff; cursor: pointer;">Przywróć do aktywnych</button>
-                    </form>
-                </td>
-            </tr>
-            {% else %}
-                <tr><td style="padding: 15px; color: #6c757d;">Archiwum jest puste.</td></tr>
-            {% endfor %}
-        </table>
+    <h2 style="margin-top: 50px; color: #6c757d;">📂 Archiwum</h2>
+    <div style="background: #e9ecef; border-radius: 8px; padding: 10px;">
+        {% for s in archived_students %}
+        <div style="padding: 10px; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between;">
+            <a href="/admin/student/{{ s.id }}" style="color: #495057;">📁 {{ s.name }}</a>
+            <form action="/admin/student/{{ s.id }}/archive" method="POST"><button type="submit" style="background:none; border:none; color:blue; cursor:pointer;">Przywróć</button></form>
+        </div>
+        {% endfor %}
     </div>
-
 </body>
 </html>

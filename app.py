@@ -44,9 +44,9 @@ class Essay(db.Model):
     title = db.Column(db.String(200), nullable=False)
     topic_full = db.Column(db.Text, nullable=True)
     content = db.Column(db.Text, default="")
-    marked_content = db.Column(db.Text, nullable=True) # Zapisuje zakreślenia zrobione przez nauczyciela
-    chosen_topic = db.Column(db.String(255), nullable=True) # Wybrany temat na egzaminie
-    checklist_data = db.Column(db.String(200), default="none,none,none,none,none,none,none") # Oceny z checklisty
+    marked_content = db.Column(db.Text, nullable=True) 
+    chosen_topic = db.Column(db.String(255), nullable=True) 
+    checklist_data = db.Column(db.String(200), default="none,none,none,none,none,none,none") 
     is_exam = db.Column(db.Boolean, default=False)
     time_spent = db.Column(db.Integer, default=0)
     started_at = db.Column(db.DateTime, nullable=True)
@@ -122,7 +122,6 @@ def admin():
 @admin_required
 def admin_student_detail(student_id):
     student = Student.query.get_or_404(student_id)
-    # Sortowanie rozprawek - najnowsze na samej górze (wymaga obsługi None w dacie)
     essays_sorted = sorted(student.essays, key=lambda x: x.last_edited_at or datetime.min, reverse=True)
     return render_template('student_detail.html', student=student, essays_sorted=essays_sorted)
 
@@ -148,7 +147,6 @@ def save_feedback(essay_id):
     essay = Essay.query.get_or_404(essay_id)
     essay.feedback = request.form.get('feedback')
     essay.marked_content = request.form.get('marked_content')
-    essay.checklist_data = request.form.get('checklist_data')
     db.session.commit()
     return redirect(url_for('admin_student_detail', student_id=essay.student_id))
 
@@ -164,6 +162,14 @@ def delete_notif(notif_id):
 def student_dashboard(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     return render_template('student.html', student=student, exam_topics=EXAM_TOPICS)
+
+@app.route('/exam/<url_slug>')
+def exam_direct_link(url_slug):
+    student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    exam_essay = Essay.query.filter_by(student_id=student.id, is_exam=True).first_or_404()
+    if not student.exam_unlocked:
+        return "Egzamin zablokowany. Czekaj na odblokowanie przez nauczyciela.", 403
+    return render_template('write.html', essay=exam_essay, exam_topics=EXAM_TOPICS)
 
 @app.route('/write/<int:essay_id>')
 def write_essay(essay_id):

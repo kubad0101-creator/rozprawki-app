@@ -1,83 +1,101 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head><meta charset="UTF-8"><title>Zarządzanie: {{ student.name }}</title></head>
-<body style="font-family: sans-serif; padding: 25px; max-width: 1000px; margin: auto; background: #fdfdfd;">
+<head><meta charset="UTF-8"><title>Student: {{ student.name }}</title></head>
+<body style="font-family: sans-serif; padding: 25px; max-width: 1000px; margin: auto; background: #f4f6f9;">
+    <a href="/admin" style="color: #007bff; text-decoration: none; font-weight: bold;">← Wróć do listy</a>
     
-    <a href="/admin" style="color: #007bff; text-decoration: none; font-weight: bold;">← Wróć do listy głównej</a>
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-bottom: 2px solid #eee; padding-bottom: 15px;">
-        <h1>Obsługa studenta: {{ student.name }}</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+        <h1>Uczeń: {{ student.name }}</h1>
         <div style="display: flex; gap: 10px;">
             {% if not student.exam_unlocked %}
-            <form action="/admin/student/{{ student.id }}/unlock" method="POST" style="margin:0;">
-                <button type="submit" style="background: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">🔓 Odblokuj Egzamin temu studentowi</button>
-            </form>
+            <form action="/admin/student/{{ student.id }}/unlock" method="POST"><button type="submit" style="padding: 10px; background: red; color: white; border: none; border-radius: 5px; font-weight:bold; cursor: pointer;">🔓 ODBLOKUJ EGZAMIN</button></form>
             {% else %}
-                <span style="background: #28a745; color: white; padding: 10px 15px; border-radius: 5px; font-weight: bold;">🔓 Egzamin odblokowany</span>
+            <span style="padding: 10px; background: green; color: white; border-radius: 5px; font-weight:bold;">Egzamin odblokowany</span>
             {% endif %}
-
-            <form action="/admin/student/{{ student.id }}/archive" method="POST" style="margin:0;">
-                <button type="submit" style="background: #6c757d; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
-                    {% if student.is_archived %}📁 Przywróć z archiwum{% else %}📁 Przenieś do archiwum{% endif %}
-                </button>
-            </form>
+            <form action="/admin/student/{{ student.id }}/archive" method="POST"><button type="submit" style="padding: 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight:bold;">📁 Archiwizuj studenta</button></form>
         </div>
     </div>
 
-    <p style="background: #e2e3e5; padding: 10px; border-radius: 5px; margin-top: 20px;">
-        <strong>Link dla studenta:</strong> <br>
-        <input type="text" value="https://{{ request.host }}/student/{{ student.url_slug }}" readonly style="width: 100%; padding: 8px; margin-top: 5px; background: #f9f9f9; border: 1px solid #ccc;">
-    </p>
+    <input type="text" value="https://{{ request.host }}/student/{{ student.url_slug }}" readonly style="width: 100%; padding: 10px; margin-bottom: 30px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; background: #e9ecef;">
 
-    <h2 style="margin-top: 40px;">Rozprawki studenta:</h2>
-    {% for essay in student.essays %}
-    <div style="background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0; color: #333;">{{ essay.title }}</h3>
-            {% if essay.is_completed %}
-                <span style="background: #28a745; color: white; padding: 5px 12px; border-radius: 4px; font-size: 13px; font-weight: bold;">✓ NAPISANE</span>
-            {% else %}
-                <span style="background: #ffc107; color: black; padding: 5px 12px; border-radius: 4px; font-size: 13px; font-weight: bold;">W TRAKCIE / NIEZACZĘTE</span>
-            {% endif %}
+    {% set criteria = ["Ponad 250 słów", "Schemat + podział na 5 akapitów", "Zwroty rozpoczynające", "Jasna teza we wstępie", "Wartościowe argumenty broniące tezy", "Przykład z własnego doświadczenia", "Ponowne podkreślenie tezy w zakończeniu"] %}
+
+    {% for essay in essays_sorted %}
+    <div style="background: white; border: 1px solid #dee2e6; padding: 25px; margin-bottom: 35px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        
+        <div style="display: flex; justify-content: space-between;">
+            <h3 style="margin: 0;">{{ essay.title }}</h3>
+            {% if essay.is_completed %}<span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">NAPISANE</span>{% endif %}
         </div>
         
-        <p style="color: #666; font-size: 14px; margin: 10px 0;">
-            <strong>Czas pracy:</strong> {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s | 
-            <strong>Ostatni zapis:</strong> {{ essay.last_edited_at.strftime('%Y-%m-%d %H:%M') if essay.last_edited_at else 'Brak danych' }}
-        </p>
+        {% if essay.is_exam and essay.chosen_topic %}
+        <p style="background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; font-weight: bold;">Uczeń wpisał temat: {{ essay.chosen_topic }}</p>
+        {% endif %}
+        
+        <p style="color: #666;">Czas pracy: {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</p>
 
+        <!-- PANEL ZAKREŚLACZA -->
         <div style="margin-top: 15px;">
-            <strong style="color: #007bff;">Podgląd tekstu:</strong>
-            <div style="background: #fafafa; border: 1px solid #eee; border-left: 4px solid #007bff; padding: 15px; margin-top: 5px; font-family: 'Times New Roman', serif; font-size: 16px; line-height: 1.6; white-space: pre-wrap; max-height: 300px; overflow-y: auto;">
-                {% if essay.content %}
-                    {{ essay.content }}
-                {% else %}
-                    <span style="color: #999; font-style: italic;">Uczeń jeszcze nie wpisał żadnej treści.</span>
-                {% endif %}
+            <strong>Treść studenta (Możesz zaznaczać tekst myszką i kolorować):</strong>
+            <div style="margin-top: 8px; margin-bottom: 5px; display: flex; gap: 5px;">
+                <button type="button" onclick="highlight('yellow')" style="background: yellow; border: 1px solid #ccc; padding: 5px 15px; cursor: pointer; font-weight:bold;">Żółty</button>
+                <button type="button" onclick="highlight('#28a745')" style="background: #28a745; color: white; border: none; padding: 5px 15px; cursor: pointer; font-weight:bold;">Zielony</button>
+                <button type="button" onclick="highlight('#dc3545')" style="background: #dc3545; color: white; border: none; padding: 5px 15px; cursor: pointer; font-weight:bold;">Czerwony</button>
+                <button type="button" onclick="highlight('transparent')" style="background: #eee; border: 1px solid #ccc; padding: 5px 15px; cursor: pointer;">Usuń kolor</button>
             </div>
-            {% if essay.content %}
-            <a href="/admin/preview/{{ essay.id }}" target="_blank" style="font-size: 0.85em; color: #007bff; display: inline-block; margin-top: 5px;">Otwórz w pełnym oknie (do druku/kopiowania) →</a>
-            {% endif %}
+            <div id="content_{{ essay.id }}" contenteditable="true" style="background: #fafafa; border: 1px solid #ccc; padding: 15px; font-family: 'Times New Roman', serif; font-size: 16px; min-height: 150px; white-space: pre-wrap; line-height: 1.6;">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
         </div>
 
-        <div style="margin-top: 25px; background: #fdfdfd; padding: 15px; border-radius: 6px; border: 1px solid #ddd; border-top: 3px solid #6c757d;">
-            <h4 style="margin-top: 0; margin-bottom: 10px; color: #495057;">Twoje uwagi / Feedback dla ucznia:</h4>
-            <form action="/admin/essay/{{ essay.id }}/feedback" method="POST">
-                <textarea name="feedback" style="width: 100%; height: 100px; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-family: sans-serif; font-size: 14px; box-sizing: border-box; resize: vertical;" placeholder="Wpisz poprawki, ocenę lub rady...">{{ essay.feedback or '' }}</textarea>
-                <button type="submit" style="margin-top: 10px; background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s;">
-                    Zapisz i wyślij feedback
-                </button>
-            </form>
-        </div>
+        <!-- CHECKLISTA I FORMULARZ -->
+        <form action="/admin/essay/{{ essay.id }}/feedback" method="POST" onsubmit="prepareSubmit({{ essay.id }})" style="margin-top: 25px; background: #fdfdfd; border-top: 2px solid #007bff; padding-top: 15px;">
+            
+            <h4 style="margin-top: 0; color: #007bff;">📋 Elementy do sprawdzenia:</h4>
+            {% set checks = essay.checklist_data.split(',') if essay.checklist_data else [] %}
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
+                {% for crit in criteria %}
+                {% set loop_idx = loop.index0 %}
+                {% set current_val = checks[loop_idx] if checks | length > loop_idx else 'none' %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px 0; width: 60%;">{{ crit }}</td>
+                    <td style="text-align: right; padding: 8px 0;">
+                        <label style="margin-right: 10px; color: green;"><input type="radio" name="c_{{ essay.id }}_{{ loop_idx }}" value="green" {% if current_val == 'green' %}checked{% endif %}> Dobrze</label>
+                        <label style="margin-right: 10px; color: #b8860b;"><input type="radio" name="c_{{ essay.id }}_{{ loop_idx }}" value="yellow" {% if current_val == 'yellow' %}checked{% endif %}> Średnio</label>
+                        <label style="margin-right: 10px; color: red;"><input type="radio" name="c_{{ essay.id }}_{{ loop_idx }}" value="red" {% if current_val == 'red' %}checked{% endif %}> Brak</label>
+                        <label style="color: grey;"><input type="radio" name="c_{{ essay.id }}_{{ loop_idx }}" value="none" {% if current_val == 'none' %}checked{% endif %}> Pomiń</label>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            
+            <input type="hidden" name="marked_content" id="hidden_content_{{ essay.id }}">
+            <input type="hidden" name="checklist_data" id="hidden_checklist_{{ essay.id }}">
+
+            <label><strong>Komentarz opisowy:</strong></label>
+            <textarea name="feedback" style="width: 100%; height: 80px; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;">{{ essay.feedback or '' }}</textarea>
+            
+            <button type="submit" style="margin-top: 15px; background: #007bff; color: white; padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Zapisz i udostępnij ocenę</button>
+        </form>
     </div>
     {% endfor %}
 
+    <script>
+        function highlight(color) {
+            document.execCommand('backColor', false, color);
+        }
+
+        function prepareSubmit(essayId) {
+            // Skopiuj HTML z podświetleniami do ukrytego pola
+            const editableDiv = document.getElementById('content_' + essayId);
+            document.getElementById('hidden_content_' + essayId).value = editableDiv.innerHTML;
+
+            // Zbierz wartości checklisty
+            let checklistArr = [];
+            for(let i=0; i<7; i++) {
+                let val = document.querySelector(`input[name="c_${essayId}_${i}"]:checked`);
+                checklistArr.push(val ? val.value : 'none');
+            }
+            document.getElementById('hidden_checklist_' + essayId).value = checklistArr.join(',');
+        }
+    </script>
 </body>
 </html>
-
-### Co się zmieniło?
-1.  **Sekcja "Podgląd tekstu":** Teraz pod każdym ćwiczeniem masz szare okno, w którym od razu widzisz tekst studenta (jeśli już coś napisał).
-2.  **Scrollowanie:** Jeśli rozprawka jest bardzo długa, okienko ma funkcję przewijania (maksymalnie 300px wysokości), żeby cała strona admina nie była kilometrowa.
-3.  **Błyskawiczny Feedback:** Możesz czytać tekst i od razu pod nim pisać uwagi.
-
-Zaktualizuj ten plik na GitHubie, odczekaj minutę na przeładowanie serwera Render i sprawdź, o ile wygodniej teraz będzie Ci się pracować!

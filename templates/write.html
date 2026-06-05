@@ -1,52 +1,96 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head><meta charset="UTF-8"><title>Pisanie</title></head>
-<body style="font-family: sans-serif; padding: 20px; max-width: 900px; margin: auto;">
+<body style="font-family: sans-serif; padding: 20px; max-width: 1000px; margin: auto; background: #fafafa;">
+
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin:0;">{{ essay.title }}</h2>
-        <button onclick="finishWork()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">Zakończ i wróć na pulpit</button>
+        <h2 style="margin:0; color: #333;">{{ essay.title }}</h2>
+        <div>
+            {% if not essay.is_exam %}
+            <button onclick="resetWork()" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-right: 10px;">🔄 Resetuj (Zacznij od nowa)</button>
+            {% endif %}
+            <button onclick="finishWork()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">💾 Zakończ i oddaj pracę</button>
+        </div>
     </div>
 
-    <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-style: italic;">{{ essay.topic_full }}</div>
+    <!-- SEKCJA TEMATU (INNA DLA EGZAMINU I ĆWICZENIA) -->
+    {% if essay.is_exam %}
+        <div style="background: #fff3cd; padding: 15px; border-radius: 5px; border: 1px solid #ffeeba; margin-bottom: 15px;">
+            <h4 style="margin-top: 0; color: #856404;">Dostępne tematy:</h4>
+            <p style="font-style: italic;"><strong>1.</strong> {{ exam_topics[0] }}</p>
+            <p style="font-style: italic;"><strong>2.</strong> {{ exam_topics[1] }}</p>
+            <hr style="border: 0; border-top: 1px solid #ffeeba;">
+            <label style="font-weight: bold; color: #856404;">Wpisz poniżej krótko, który temat wybierasz (np. 1 lub 2):</label><br>
+            <input type="text" id="chosen_topic" value="{{ essay.chosen_topic or '' }}" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 15px;" placeholder="Wybrany temat...">
+        </div>
+    {% else %}
+        <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-style: italic; border-left: 4px solid #007bff; font-size: 15px;">
+            {{ essay.topic_full }}
+        </div>
+    {% endif %}
     
-    <div style="margin-bottom: 10px; display: flex; gap: 20px;">
-        <span>Czas: <span id="timer">00:00</span></span>
-        <span>Słowa: <span id="word-count">0</span></span>
+    <div style="margin-bottom: 15px; background: white; padding: 15px; border-radius: 5px; border: 1px solid #ccc; display: flex; justify-content: flex-start; gap: 40px; align-items: center;">
+        {% if essay.is_exam %}
+        <span style="font-size: 1.2em;"><strong>⏳ Pozostały czas:</strong> <span id="timer" style="color: #d32f2f; font-weight: bold; font-family: monospace;">40:00</span></span>
+        {% endif %}
+        <span style="font-size: 1.2em;"><strong>📝 Liczba słów:</strong> <span id="word-count" style="color: #007bff; font-weight: bold;">0</span></span>
+        <span id="save-status" style="margin-left: auto; color: #28a745; font-size: 0.9em;">System zapisuje dane w tle.</span>
     </div>
 
-    <textarea id="editor" style="width: 100%; height: 500px; padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc;">{{ essay.content }}</textarea>
-    <p id="status" style="color: green; font-size: 0.8em;"></p>
+    <textarea id="editor" style="width: 100%; height: 500px; padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Times New Roman', serif; box-sizing: border-box;" placeholder="Zacznij pisać tutaj...">{{ essay.content }}</textarea>
 
     <script>
         let seconds = {{ essay.time_spent }};
         const editor = document.getElementById('editor');
-        const timerText = document.getElementById('timer');
         const wordCount = document.getElementById('word-count');
+        const timerDisplay = document.getElementById('timer');
+        const chosenTopicInput = document.getElementById('chosen_topic');
+        const isExam = {{ 'true' if essay.is_exam else 'false' }};
 
         function updateStats() {
             const words = editor.value.trim() ? editor.value.trim().split(/\s+/).length : 0;
             wordCount.innerText = words;
-            let m = Math.floor(seconds / 60).toString().padStart(2, '0');
-            let s = (seconds % 60).toString().padStart(2, '0');
-            timerText.innerText = m + ":" + s;
+
+            if (isExam && timerDisplay) {
+                let timeLeft = 2400 - seconds; // 40 minut
+                if(timeLeft < 0) timeLeft = 0;
+                let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                let s = (timeLeft % 60).toString().padStart(2, '0');
+                timerDisplay.innerText = m + ":" + s;
+            }
         }
 
         setInterval(() => { seconds++; updateStats(); }, 1000);
         
         function save(isDone = false) {
+            let data = { content: editor.value, time_spent: seconds, is_completed: isDone };
+            if (isExam && chosenTopicInput) {
+                data.chosen_topic = chosenTopicInput.value;
+            }
             fetch('/api/save/{{ essay.id }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: editor.value, time_spent: seconds, is_completed: isDone })
+                body: JSON.stringify(data)
             }).then(() => {
-                document.getElementById('status').innerText = "Zapisano o " + new Date().toLocaleTimeString();
+                document.getElementById('save-status').innerText = "✅ Zapisano automatycznie.";
                 if(isDone) window.location.href = "/student/{{ essay.student.url_slug }}";
             });
         }
 
         setInterval(() => save(false), 15000);
-        function finishWork() { if(confirm("Zakończyć pracę?")) save(true); }
+        
+        function finishWork() { 
+            if(confirm("Czy na pewno chcesz oddać pracę? Nie będzie można jej edytować.")) save(true); 
+        }
+
+        function resetWork() {
+            if(confirm("UWAGA! To bezpowrotnie usunie całą treść i wyzeruje czas. Kontynuować?")) {
+                fetch('/api/reset/{{ essay.id }}', { method: 'POST' }).then(() => location.reload());
+            }
+        }
+
         updateStats();
+        editor.addEventListener('input', updateStats);
     </script>
 </body>
 </html>

@@ -24,6 +24,16 @@
         <input type="text" value="https://{{ request.host }}/exam/{{ student.url_slug }}" readonly style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #f5c6cb; font-weight: bold; background: #fff3cd; color: #d32f2f;">
     </div>
 
+    <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 25px; position: sticky; top: 10px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        <strong>🎨 Globalne narzędzie podświetlania tekstu:</strong> (Zaznacz tekst myszką w wypracowaniu LUB w komentarzu opisowym i kliknij kolor)
+        <div style="margin-top: 8px; display: flex; gap: 5px;">
+            <button type="button" onclick="highlight('yellow')" style="background: yellow; border: 1px solid #ccc; padding: 8px 20px; cursor: pointer; font-weight:bold; border-radius:4px;">Żółty</button>
+            <button type="button" onclick="highlight('#28a745')" style="background: #28a745; color: white; border: none; padding: 8px 20px; cursor: pointer; font-weight:bold; border-radius:4px;">Zielony</button>
+            <button type="button" onclick="highlight('#dc3545')" style="background: #dc3545; color: white; border: none; padding: 8px 20px; cursor: pointer; font-weight:bold; border-radius:4px;">Czerwony</button>
+            <button type="button" onclick="highlight('transparent')" style="background: #eee; border: 1px solid #ccc; padding: 8px 20px; cursor: pointer; border-radius:4px;">Usuń kolor</button>
+        </div>
+    </div>
+
     <h2 style="color: #343a40; border-bottom: 2px solid #007bff; padding-bottom: 10px;">⏳ W trakcie pracy / Do sprawdzenia</h2>
     {% set ns_pending = namespace(has_items=false) %}
     
@@ -31,31 +41,28 @@
     {% set ns_pending.has_items = true %}
     <div style="background: white; border: 1px solid #dee2e6; padding: 25px; margin-bottom: 35px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         
-        <div style="display: flex; justify-content: space-between;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 style="margin: 0;">{{ essay.title }}</h3>
-            {% if essay.is_completed %}<span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">NAPISANE</span>{% endif %}
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" onclick="loadLiveContent({{ essay.id }})" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; border-radius: 4px;">⏱️ Podgląd LIVE</button>
+                {% if essay.is_completed %}<span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">ODDANE PRZEZ UCZNIA</span>{% else %}<span style="background: #ffc107; color: #212529; padding: 5px 10px; border-radius: 4px; font-weight: bold;">STUDENT JESZCZE PISZE</span>{% endif %}
+            </div>
         </div>
         
         {% if essay.is_exam and essay.chosen_topic %}
         <p style="background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; font-weight: bold;">Uczeń wpisał temat: {{ essay.chosen_topic }}</p>
         {% endif %}
         
-        <p style="color: #666;">Czas pracy: {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</p>
+        <p style="color: #666;">Czas pracy: <span id="time_display_{{ essay.id }}">{{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</span></p>
 
         <div style="margin-top: 15px;">
-            <strong>Treść studenta (Możesz zaznaczać tekst myszką i kolorować):</strong>
-            <div style="margin-top: 8px; margin-bottom: 5px; display: flex; gap: 5px;">
-                <button type="button" onclick="highlight('yellow')" style="background: yellow; border: 1px solid #ccc; padding: 5px 15px; cursor: pointer; font-weight:bold;">Żółty</button>
-                <button type="button" onclick="highlight('#28a745')" style="background: #28a745; color: white; border: none; padding: 5px 15px; cursor: pointer; font-weight:bold;">Zielony</button>
-                <button type="button" onclick="highlight('#dc3545')" style="background: #dc3545; color: white; border: none; padding: 5px 15px; cursor: pointer; font-weight:bold;">Czerwony</button>
-                <button type="button" onclick="highlight('transparent')" style="background: #eee; border: 1px solid #ccc; padding: 5px 15px; cursor: pointer;">Usuń kolor</button>
-            </div>
-            <div id="content_{{ essay.id }}" contenteditable="true" style="background: #fafafa; border: 1px solid #ccc; padding: 15px; font-family: 'Times New Roman', serif; font-size: 16px; min-height: 150px; white-space: pre-wrap; line-height: 1.6;">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
+            <strong>Treść studenta:</strong>
+            <div id="content_{{ essay.id }}" contenteditable="true" style="background: #fafafa; border: 1px solid #ccc; padding: 15px; font-family: 'Times New Roman', serif; font-size: 16px; min-height: 150px; white-space: pre-wrap; line-height: 1.6; margin-top: 5px;">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
         </div>
 
         <form action="/admin/essay/{{ essay.id }}/feedback" method="POST" onsubmit="prepareSubmit({{ essay.id }})" style="margin-top: 25px; background: #fdfdfd; border-top: 2px solid #007bff; padding-top: 15px;">
             
-            <h4 style="margin-top: 0; color: #007bff;">📋 Elementy do sprawdzenia (Skopiuj do komentarza):</h4>
+            <h4 style="margin-top: 0; color: #007bff;">📋 Elementy do sprawdzenia (Skopiuj do komentarza poniżej):</h4>
             <textarea id="checklist_text_{{ essay.id }}" readonly style="width: 100%; height: 130px; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; background: #f8f9fa; font-family: monospace; font-size: 14px;">Ponad 250 słów: 
 Schemat + podział na 5 akapitów: 
 Zwroty rozpoczynające: 
@@ -67,17 +74,18 @@ Ponowne podkreślenie tezy w zakończeniu: </textarea>
             <button type="button" onclick="copyChecklist('{{ essay.id }}')" style="padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 15px;">📋 Skopiuj schemat</button>
 
             <input type="hidden" name="marked_content" id="hidden_content_{{ essay.id }}">
+            <input type="hidden" name="feedback" id="hidden_feedback_{{ essay.id }}">
 
-            <br><label><strong>Komentarz opisowy:</strong></label>
-            <textarea name="feedback" style="width: 100%; height: 150px; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; font-family: sans-serif;" placeholder="Wklej skopiowany schemat tutaj i dopisz swoje uwagi..."></textarea>
+            <br><label><strong>Komentarz opisowy (Możesz również zaznaczać tekst tutaj i kolorować go przyciskami na górze):</strong></label>
+            <div id="feedback_editable_{{ essay.id }}" contenteditable="true" style="width: 100%; min-height: 150px; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; background: white; white-space: pre-wrap; line-height: 1.6;" placeholder="Wklej tutaj schemat i dokonaj oceny..."></div>
             
-            <button type="submit" style="margin-top: 15px; background: #007bff; color: white; padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Zapisz i udostępnij ocenę</button>
+            <button type="submit" style="margin-top: 15px; background: #007bff; color: white; padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Zapisz i udostępnij ocenę (Przenieś do sprawdzonych)</button>
         </form>
     </div>
     {% endfor %}
 
     {% if not ns_pending.has_items %}
-    <p style="color: #6c757d; font-style: italic; margin-bottom: 40px;">Wszystkie prace zostały ocenione.</p>
+    <p style="color: #6c757d; font-style: italic; margin-bottom: 40px;">Brak prac oczekujących na sprawdzenie.</p>
     {% endif %}
 
 
@@ -94,14 +102,15 @@ Ponowne podkreślenie tezy w zakończeniu: </textarea>
         
         <div style="margin-top: 15px; background: #d4edda; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
             <strong>💬 Wysłany Komentarz:</strong>
-            <p style="margin-top: 10px; white-space: pre-wrap; color: #155724;">{{ essay.feedback }}</p>
+            <div style="margin-top: 10px; white-space: pre-wrap; background: white; padding: 10px; border: 1px solid #c3e6cb; color: black;">{{ essay.feedback | safe }}</div>
         </div>
 
-        <form action="/admin/essay/{{ essay.id }}/feedback" method="POST" onsubmit="prepareSubmit({{ essay.id }})" style="margin-top: 15px;">
+        <form action="/admin/essay/{{ essay.id }}/feedback" method="POST" onsubmit="prepareSubmitEdit({{ essay.id }})" style="margin-top: 15px;">
             <input type="hidden" name="marked_content" id="hidden_content_{{ essay.id }}_edit" value="{{ essay.marked_content if essay.marked_content else essay.content }}">
+            <input type="hidden" name="feedback" id="hidden_feedback_{{ essay.id }}_edit">
             <details>
-                <summary style="cursor: pointer; color: #007bff; font-weight: bold;">Edytuj Komentarz</summary>
-                <textarea name="feedback" style="width: 100%; height: 120px; padding: 10px; margin-top: 10px; border: 1px solid #ccc; border-radius: 4px;">{{ essay.feedback }}</textarea>
+                <summary style="cursor: pointer; color: #007bff; font-weight: bold;">Edytuj Komentarz i Kolory</summary>
+                <div id="feedback_editable_{{ essay.id }}_edit" contenteditable="true" style="width: 100%; min-height: 120px; padding: 10px; margin-top: 10px; border: 1px solid #ccc; border-radius: 4px; background: white; white-space: pre-wrap; line-height: 1.6;">{{ essay.feedback | safe }}</div>
                 <button type="submit" style="margin-top: 10px; background: #ffc107; color: #212529; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Aktualizuj Komentarz</button>
             </details>
         </form>
@@ -122,13 +131,42 @@ Ponowne podkreślenie tezy w zakończeniu: </textarea>
             const textarea = document.getElementById('checklist_text_' + essayId);
             textarea.select();
             document.execCommand('copy');
-            alert('Schemat skopiowany! Możesz go teraz wkleić w polu "Komentarz opisowy".');
+            alert('Schemat skopiowany! Możesz go teraz wkleić w polu komentarza opisowego.');
+        }
+
+        function loadLiveContent(essayId) {
+            fetch('/api/admin/essay/' + essayId + '/content')
+                .then(response => response.json())
+                .then(data => {
+                    const div = document.getElementById('content_' + essayId);
+                    if(div) {
+                        div.innerText = data.content; 
+                    }
+                    const timeSpan = document.getElementById('time_display_' + essayId);
+                    if(timeSpan) {
+                        let m = Math.floor(data.time_spent / 60);
+                        let s = data.time_spent % 60;
+                        timeSpan.innerText = m + "m " + s + "s";
+                    }
+                    alert('Pobrano aktualną treść prosto z ekranu studenta!');
+                });
         }
 
         function prepareSubmit(essayId) {
             const editableDiv = document.getElementById('content_' + essayId);
             if (editableDiv) {
                 document.getElementById('hidden_content_' + essayId).value = editableDiv.innerHTML;
+            }
+            const editableFeedback = document.getElementById('feedback_editable_' + essayId);
+            if (editableFeedback) {
+                document.getElementById('hidden_feedback_' + essayId).value = editableFeedback.innerHTML;
+            }
+        }
+
+        function prepareSubmitEdit(essayId) {
+            const editableFeedback = document.getElementById('feedback_editable_' + essayId + '_edit');
+            if (editableFeedback) {
+                document.getElementById('hidden_feedback_' + essayId + '_edit').value = editableFeedback.innerHTML;
             }
         }
     </script>

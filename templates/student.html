@@ -4,19 +4,18 @@
 <body style="font-family: sans-serif; padding: 20px; max-width: 850px; margin: auto; background: #fdfdfd;">
     <h1>Witaj, {{ student.name }}</h1>
     
-    <!-- INSTRUKCJA -->
     <div style="background: #e3f2fd; border-left: 5px solid #0d47a1; padding: 20px; margin-bottom: 30px; border-radius: 5px;">
         <h3 style="margin-top: 0; color: #0d47a1;">📚 Jak pisać rozprawki (Instrukcja do egzaminu)</h3>
-        <p>Pamiętaj o najważniejszych zasadach pisania rozprawki[cite: 1]:</p>
+        <p>Pamiętaj o najważniejszych zasadach pisania rozprawki:</p>
         <ul style="line-height: 1.6;">
-            <li><strong>Długość:</strong> Ponad 250 słów[cite: 1].</li>
-            <li><strong>Schemat:</strong> Podział tekstu na 5 akapitów (wstęp, 3 argumenty, zakończenie)[cite: 1].</li>
-            <li><strong>Słownictwo:</strong> Używaj zwrotów rozpoczynających akapity (np. <em>First of all</em>, <em>Secondly</em>, <em>In addition to</em>, <em>In conclusion</em>)[cite: 1].</li>
-            <li><strong>Wstęp:</strong> 2-3 zdania ogólne wprowadzające oraz jasna teza na końcu wstępu (np. <em>I strongly agree/disagree that...</em>)[cite: 1].</li>
-            <li><strong>Rozwinięcie:</strong> Wartościowe argumenty broniące tezy, w tym <em>jeden argument oparty na przykładzie z własnego doświadczenia</em> (<em>from my experience...</em> - może być zmyślony)[cite: 1].</li>
-            <li><strong>Zakończenie:</strong> Podsumowanie i ponowne podkreślenie tezy ze wstępu[cite: 1].</li>
+            <li><strong>Długość:</strong> Ponad 250 słów.</li>
+            <li><strong>Schemat:</strong> Podział tekstu na 5 akapitów (wstęp, 3 argumenty, zakończenie).</li>
+            <li><strong>Słownictwo:</strong> Używaj zwrotów rozpoczynających akapity (np. <em>First of all</em>, <em>Secondly</em>, <em>In addition to</em>, <em>In conclusion</em>).</li>
+            <li><strong>Wstęp:</strong> 2-3 zdania ogólne wprowadzające oraz jasna teza na końcu wstępu (np. <em>I strongly agree/disagree that...</em>).</li>
+            <li><strong>Rozwinięcie:</strong> Wartościowe argumenty broniące tezy, w tym <em>jeden argument oparty na przykładzie z własnego doświadczenia</em> (<em>from my experience...</em> - może być zmyślony).</li>
+            <li><strong>Zakończenie:</strong> Podsumowanie i ponowne podkreślenie tezy ze wstępu.</li>
         </ul>
-        <p style="margin-bottom: 0;">BARDZO dokładnie trzymaj się tematu i przeczytaj pracę po napisaniu, aby poprawić drobne błędy[cite: 1].</p>
+        <p style="margin-bottom: 0;">BARDZO dokładnie trzymaj się tematu i przeczytaj pracę po napisaniu, aby poprawić drobne błędy.</p>
     </div>
 
     <h2>Twoje zadania:</h2>
@@ -30,11 +29,12 @@
                     <h3 style="margin:0; color: #333;">{{ essay.title }}</h3>
                     {% if essay.is_completed %}<span style="color: green; font-weight: bold;">✓ Zakończono</span>{% endif %}
                 </div>
-                <p style="font-style: italic; color: #555; background:#f4f4f4; padding:10px; border-radius:4px;">{{ essay.topic_full }}</p>
                 
                 {% if ns.locked %}
+                    <p style="font-style: italic; color: #999; background:#f4f4f4; padding:10px; border-radius:4px;">[Polecenie ukryte. Dostępne po ukończeniu poprzednich zadań]</p>
                     <p style="color: #d32f2f; font-weight: bold; font-size: 0.9em;">🔒 Zablokowane. Ukończ poprzednią rozprawkę, aby pisać dalej.</p>
                 {% else %}
+                    <p style="font-style: italic; color: #555; background:#f4f4f4; padding:10px; border-radius:4px;">{{ essay.topic_full }}</p>
                     <a href="/write/{{ essay.id }}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📝 Przejdź do pisania</a>
                 {% endif %}
 

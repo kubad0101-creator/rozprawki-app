@@ -32,8 +32,16 @@
     <h2>Aktywni studenci</h2>
     <div style="background: white; border-radius: 8px; border: 1px solid #dee2e6;">
         {% for s in active_students %}
-        <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
-            <a href="/admin/student/{{ s.id }}" style="text-decoration: none; font-weight: bold; color: #007bff; font-size: 1.1em;">👤 {{ s.name }}</a>
+        <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <a href="/admin/student/{{ s.id }}" style="text-decoration: none; font-weight: bold; color: #007bff; font-size: 1.1em;">👤 {{ s.name }}</a>
+                <div style="margin-top: 5px; display: flex; gap: 10px;">
+                    {% set completed_count = s.essays | selectattr("is_completed", "equalto", True) | list | length %}
+                    {% set unchecked_count = s.essays | selectattr("is_completed", "equalto", True) | rejectattr("feedback") | list | length %}
+                    <span style="background: #e2e3e5; color: #383d41; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">Napisane ogółem: {{ completed_count }}</span>
+                    <span style="background: {% if unchecked_count > 0 %}#dc3545{% else %}#28a745{% endif %}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">Niesprawdzone: {{ unchecked_count }}</span>
+                </div>
+            </div>
             <span style="color: #888; font-size: 0.9em;">Kliknij, aby sprawdzić prace</span>
         </div>
         {% endfor %}

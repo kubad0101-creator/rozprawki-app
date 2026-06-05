@@ -16,11 +16,19 @@
         </div>
     </div>
 
-    <input type="text" value="https://{{ request.host }}/student/{{ student.url_slug }}" readonly style="width: 100%; padding: 10px; margin-bottom: 30px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; background: #e9ecef;">
+    <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #ced4da;">
+        <label style="font-weight: bold; color: #495057;">Ogólny link do pulpitu studenta:</label>
+        <input type="text" value="https://{{ request.host }}/student/{{ student.url_slug }}" readonly style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; background: #fff;">
 
-    {% set criteria = ["Ponad 250 słów", "Schemat + podział na 5 akapitów", "Zwroty rozpoczynające", "Jasna teza we wstępie", "Wartościowe argumenty broniące tezy", "Przykład z własnego doświadczenia", "Ponowne podkreślenie tezy w zakończeniu"] %}
+        <label style="font-weight: bold; color: #d32f2f;">🔥 BEZPOŚREDNI LINK DO EGZAMINU (Wyślij studentowi w dniu testu):</label>
+        <input type="text" value="https://{{ request.host }}/exam/{{ student.url_slug }}" readonly style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #f5c6cb; font-weight: bold; background: #fff3cd; color: #d32f2f;">
+    </div>
 
-    {% for essay in essays_sorted %}
+    <h2 style="color: #343a40; border-bottom: 2px solid #007bff; padding-bottom: 10px;">⏳ W trakcie pracy / Do sprawdzenia</h2>
+    {% set ns_pending = namespace(has_items=false) %}
+    
+    {% for essay in essays_sorted if not essay.feedback %}
+    {% set ns_pending.has_items = true %}
     <div style="background: white; border: 1px solid #dee2e6; padding: 25px; margin-bottom: 35px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         
         <div style="display: flex; justify-content: space-between;">
@@ -34,7 +42,6 @@
         
         <p style="color: #666;">Czas pracy: {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</p>
 
-        <!-- PANEL ZAKREŚLACZA -->
         <div style="margin-top: 15px;">
             <strong>Treść studenta (Możesz zaznaczać tekst myszką i kolorować):</strong>
             <div style="margin-top: 8px; margin-bottom: 5px; display: flex; gap: 5px;">
@@ -46,55 +53,83 @@
             <div id="content_{{ essay.id }}" contenteditable="true" style="background: #fafafa; border: 1px solid #ccc; padding: 15px; font-family: 'Times New Roman', serif; font-size: 16px; min-height: 150px; white-space: pre-wrap; line-height: 1.6;">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
         </div>
 
-        <!-- CHECKLISTA I FORMULARZ -->
         <form action="/admin/essay/{{ essay.id }}/feedback" method="POST" onsubmit="prepareSubmit({{ essay.id }})" style="margin-top: 25px; background: #fdfdfd; border-top: 2px solid #007bff; padding-top: 15px;">
             
-            <h4 style="margin-top: 0; color: #007bff;">📋 Elementy do sprawdzenia:</h4>
-            {% set checks = essay.checklist_data.split(',') if essay.checklist_data else [] %}
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
-                {% for crit in criteria %}
-                {% set loop_idx = loop.index0 %}
-                {% set current_val = checks[loop_idx] if checks | length > loop_idx else 'none' %}
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 8px 0; width: 60%;">{{ crit }}</td>
-                    <td style="text-align: right; padding: 8px 0;">
-                        <label style="margin-right: 10px; color: green;"><input type="radio" name="c_{{ essay.id }}_{{ loop_idx }}" value="green" {% if current_val == 'green' %}checked{% endif %}> Dobrze</label>
-                        <label style="margin-right: 10px; color: #b8860b;"><input type="radio" name="c_{{ essay.id }}_{{ loop_idx }}" value="yellow" {% if current_val == 'yellow' %}checked{% endif %}> Średnio</label>
-                        <label style="margin-right: 10px; color: red;"><input type="radio" name="c_{{ essay.id }}_{{ loop_idx }}" value="red" {% if current_val == 'red' %}checked{% endif %}> Brak</label>
-                        <label style="color: grey;"><input type="radio" name="c_{{ essay.id }}_{{ loop_idx }}" value="none" {% if current_val == 'none' %}checked{% endif %}> Pomiń</label>
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
+            <h4 style="margin-top: 0; color: #007bff;">📋 Elementy do sprawdzenia (Skopiuj do komentarza):</h4>
+            <textarea id="checklist_text_{{ essay.id }}" readonly style="width: 100%; height: 130px; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; background: #f8f9fa; font-family: monospace; font-size: 14px;">Ponad 250 słów: 
+Schemat + podział na 5 akapitów: 
+Zwroty rozpoczynające: 
+Jasna teza we wstępie: 
+Wartościowe argumenty broniące tezy: 
+Przykład z własnego doświadczenia: 
+Ponowne podkreślenie tezy w zakończeniu: </textarea>
             
-            <input type="hidden" name="marked_content" id="hidden_content_{{ essay.id }}">
-            <input type="hidden" name="checklist_data" id="hidden_checklist_{{ essay.id }}">
+            <button type="button" onclick="copyChecklist('{{ essay.id }}')" style="padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 15px;">📋 Skopiuj schemat</button>
 
-            <label><strong>Komentarz opisowy:</strong></label>
-            <textarea name="feedback" style="width: 100%; height: 80px; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;">{{ essay.feedback or '' }}</textarea>
+            <input type="hidden" name="marked_content" id="hidden_content_{{ essay.id }}">
+
+            <br><label><strong>Komentarz opisowy:</strong></label>
+            <textarea name="feedback" style="width: 100%; height: 150px; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; font-family: sans-serif;" placeholder="Wklej skopiowany schemat tutaj i dopisz swoje uwagi..."></textarea>
             
             <button type="submit" style="margin-top: 15px; background: #007bff; color: white; padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Zapisz i udostępnij ocenę</button>
         </form>
     </div>
     {% endfor %}
 
+    {% if not ns_pending.has_items %}
+    <p style="color: #6c757d; font-style: italic; margin-bottom: 40px;">Wszystkie prace zostały ocenione.</p>
+    {% endif %}
+
+
+    <h2 style="margin-top: 50px; color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 10px;">📁 Sprawdzone prace (Wysłany feedback)</h2>
+    {% set ns_graded = namespace(has_items=false) %}
+
+    {% for essay in essays_sorted if essay.feedback %}
+    {% set ns_graded.has_items = true %}
+    <div style="background: #f8f9fa; border: 1px solid #c3e6cb; padding: 25px; margin-bottom: 20px; border-radius: 8px;">
+        <h3 style="margin: 0; color: #155724;">{{ essay.title }} <span style="font-size: 0.7em; color: #28a745;">(Sprawdzono)</span></h3>
+        <p style="color: #666; font-size: 0.9em;">Czas pracy: {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</p>
+
+        <div style="margin-top: 15px; background: white; border: 1px solid #ccc; padding: 15px; font-family: 'Times New Roman', serif; font-size: 16px; min-height: 50px; white-space: pre-wrap; line-height: 1.6;">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
+        
+        <div style="margin-top: 15px; background: #d4edda; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
+            <strong>💬 Wysłany Komentarz:</strong>
+            <p style="margin-top: 10px; white-space: pre-wrap; color: #155724;">{{ essay.feedback }}</p>
+        </div>
+
+        <form action="/admin/essay/{{ essay.id }}/feedback" method="POST" onsubmit="prepareSubmit({{ essay.id }})" style="margin-top: 15px;">
+            <input type="hidden" name="marked_content" id="hidden_content_{{ essay.id }}_edit" value="{{ essay.marked_content if essay.marked_content else essay.content }}">
+            <details>
+                <summary style="cursor: pointer; color: #007bff; font-weight: bold;">Edytuj Komentarz</summary>
+                <textarea name="feedback" style="width: 100%; height: 120px; padding: 10px; margin-top: 10px; border: 1px solid #ccc; border-radius: 4px;">{{ essay.feedback }}</textarea>
+                <button type="submit" style="margin-top: 10px; background: #ffc107; color: #212529; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Aktualizuj Komentarz</button>
+            </details>
+        </form>
+    </div>
+    {% endfor %}
+
+    {% if not ns_graded.has_items %}
+    <p style="color: #6c757d; font-style: italic;">Brak sprawdzonych prac.</p>
+    {% endif %}
+
+
     <script>
         function highlight(color) {
             document.execCommand('backColor', false, color);
         }
 
-        function prepareSubmit(essayId) {
-            // Skopiuj HTML z podświetleniami do ukrytego pola
-            const editableDiv = document.getElementById('content_' + essayId);
-            document.getElementById('hidden_content_' + essayId).value = editableDiv.innerHTML;
+        function copyChecklist(essayId) {
+            const textarea = document.getElementById('checklist_text_' + essayId);
+            textarea.select();
+            document.execCommand('copy');
+            alert('Schemat skopiowany! Możesz go teraz wkleić w polu "Komentarz opisowy".');
+        }
 
-            // Zbierz wartości checklisty
-            let checklistArr = [];
-            for(let i=0; i<7; i++) {
-                let val = document.querySelector(`input[name="c_${essayId}_${i}"]:checked`);
-                checklistArr.push(val ? val.value : 'none');
+        function prepareSubmit(essayId) {
+            const editableDiv = document.getElementById('content_' + essayId);
+            if (editableDiv) {
+                document.getElementById('hidden_content_' + essayId).value = editableDiv.innerHTML;
             }
-            document.getElementById('hidden_checklist_' + essayId).value = checklistArr.join(',');
         }
     </script>
 </body>

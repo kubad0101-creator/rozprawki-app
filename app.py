@@ -150,6 +150,12 @@ def save_feedback(essay_id):
     db.session.commit()
     return redirect(url_for('admin_student_detail', student_id=essay.student_id))
 
+@app.route('/api/admin/essay/<int:essay_id>/content')
+@admin_required
+def admin_get_live_content(essay_id):
+    essay = Essay.query.get_or_404(essay_id)
+    return jsonify({"content": essay.content, "time_spent": essay.time_spent})
+
 @app.route('/admin/notif/delete/<int:notif_id>', methods=['POST'])
 @admin_required
 def delete_notif(notif_id):

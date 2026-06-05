@@ -1,39 +1,82 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head><meta charset="UTF-8"><title>Pulpit Student</title></head>
-<body style="font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto;">
+<head><meta charset="UTF-8"><title>Pulpit Studenta</title></head>
+<body style="font-family: sans-serif; padding: 20px; max-width: 850px; margin: auto; background: #fdfdfd;">
     <h1>Witaj, {{ student.name }}</h1>
     
-    {% for essay in student.essays %}
-    <div style="background: white; border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; border-radius: 8px; position: relative;">
-        
-        <div style="display: flex; justify-content: space-between;">
-            <h3 style="margin:0;">{{ essay.title }}</h3>
-            {% if essay.is_completed %}<span style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-weight: bold;">✓ Napisane</span>{% endif %}
-        </div>
-        
-        <p style="font-size: 0.9em; color: #666; font-style: italic; margin-top: 10px;">{{ essay.topic_full }}</p>
-        
-        {% if essay.is_exam and not student.exam_unlocked and not essay.topic_full %}
-            <div style="background: #ffebee; padding: 10px; color: #c62828;">Kłódka: Egzamin zablokowany. Czekaj na nauczyciela.</div>
-        {% elif essay.is_exam and student.exam_unlocked and not essay.topic_full %}
-            <form action="/student/{{ student.url_slug }}/choose_exam" method="POST" style="background: #fff8e1; padding: 15px; border-radius: 8px;">
-                <p><strong>Wybierz temat egzaminu:</strong></p>
-                <input type="radio" name="topic_idx" value="0" required> {{ exam_topics[0][:100] }}... <br><br>
-                <input type="radio" name="topic_idx" value="1" required> {{ exam_topics[1][:100] }}... <br><br>
-                <button type="submit" style="padding: 10px; background: #ff9800; border: none; border-radius: 5px; color: white; cursor: pointer;">Wybieram temat i zaczynam</button>
-            </form>
-        {% else %}
-            <a href="/write/{{ essay.id }}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 10px;">Pisz / Otwórz</a>
-        {% endif %}
+    <!-- INSTRUKCJA -->
+    <div style="background: #e3f2fd; border-left: 5px solid #0d47a1; padding: 20px; margin-bottom: 30px; border-radius: 5px;">
+        <h3 style="margin-top: 0; color: #0d47a1;">📚 Jak pisać rozprawki (Instrukcja do egzaminu)</h3>
+        <p>Pamiętaj o najważniejszych zasadach pisania rozprawki[cite: 1]:</p>
+        <ul style="line-height: 1.6;">
+            <li><strong>Długość:</strong> Ponad 250 słów[cite: 1].</li>
+            <li><strong>Schemat:</strong> Podział tekstu na 5 akapitów (wstęp, 3 argumenty, zakończenie)[cite: 1].</li>
+            <li><strong>Słownictwo:</strong> Używaj zwrotów rozpoczynających akapity (np. <em>First of all</em>, <em>Secondly</em>, <em>In addition to</em>, <em>In conclusion</em>)[cite: 1].</li>
+            <li><strong>Wstęp:</strong> 2-3 zdania ogólne wprowadzające oraz jasna teza na końcu wstępu (np. <em>I strongly agree/disagree that...</em>)[cite: 1].</li>
+            <li><strong>Rozwinięcie:</strong> Wartościowe argumenty broniące tezy, w tym <em>jeden argument oparty na przykładzie z własnego doświadczenia</em> (<em>from my experience...</em> - może być zmyślony)[cite: 1].</li>
+            <li><strong>Zakończenie:</strong> Podsumowanie i ponowne podkreślenie tezy ze wstępu[cite: 1].</li>
+        </ul>
+        <p style="margin-bottom: 0;">BARDZO dokładnie trzymaj się tematu i przeczytaj pracę po napisaniu, aby poprawić drobne błędy[cite: 1].</p>
+    </div>
 
-        {% if essay.feedback %}
-        <div style="margin-top: 15px; background: #fffde7; border-left: 4px solid #fbc02d; padding: 10px; color: #333;">
-            <strong>Feedback od nauczyciela:</strong>
-            <p style="margin: 5px 0;">{{ essay.feedback }}</p>
+    <h2>Twoje zadania:</h2>
+    
+    {% set ns = namespace(locked=false) %}
+    
+    {% for essay in student.essays %}
+        {% if not essay.is_exam %}
+            <div style="background: {% if ns.locked %}#f8f9fa{% else %}white{% endif %}; border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; border-radius: 8px; opacity: {% if ns.locked %}0.6{% else %}1{% endif %};">
+                <div style="display: flex; justify-content: space-between;">
+                    <h3 style="margin:0; color: #333;">{{ essay.title }}</h3>
+                    {% if essay.is_completed %}<span style="color: green; font-weight: bold;">✓ Zakończono</span>{% endif %}
+                </div>
+                <p style="font-style: italic; color: #555; background:#f4f4f4; padding:10px; border-radius:4px;">{{ essay.topic_full }}</p>
+                
+                {% if ns.locked %}
+                    <p style="color: #d32f2f; font-weight: bold; font-size: 0.9em;">🔒 Zablokowane. Ukończ poprzednią rozprawkę, aby pisać dalej.</p>
+                {% else %}
+                    <a href="/write/{{ essay.id }}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📝 Przejdź do pisania</a>
+                {% endif %}
+
+                {% if essay.feedback %}
+                <div style="margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
+                    <strong>💬 Feedback Nauczyciela:</strong><br>
+                    <div style="white-space: pre-wrap; font-family: 'Times New Roman', serif; font-size: 16px; margin-top: 10px; background: white; padding: 10px; border: 1px solid #ffeeba;">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
+                    <p style="margin-top: 10px; white-space: pre-wrap; color: #856404;"><strong>Komentarz:</strong><br>{{ essay.feedback }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if not essay.is_completed %}
+                {% set ns.locked = true %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+    <hr style="margin: 40px 0;">
+
+    <h2 style="color: #d32f2f;">🔥 EGZAMIN GŁÓWNY</h2>
+    {% set exam_essay = student.essays | selectattr("is_exam", "equalto", True) | first %}
+    
+    <div style="background: white; border: 2px solid {% if student.exam_unlocked %}#4caf50{% else %}#f44336{% endif %}; padding: 20px; border-radius: 8px;">
+        {% if not student.exam_unlocked %}
+            <p style="color: #d32f2f; font-weight: bold;">🔒 Egzamin zablokowany. Czekaj na sygnał nauczyciela.</p>
+        {% else %}
+            <p style="color: #388e3c; font-weight: bold;">🔓 Egzamin odblokowany!</p>
+            {% if exam_essay.is_completed %}
+                <span style="color: green; font-weight: bold;">✓ Arkusz egzaminacyjny został oddany.</span>
+            {% else %}
+                <a href="/write/{{ exam_essay.id }}" style="display: inline-block; background: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">➡️ Otwórz arkusz egzaminacyjny</a>
+            {% endif %}
+        {% endif %}
+        
+        {% if exam_essay.feedback %}
+        <div style="margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
+            <strong>💬 Oceniony egzamin:</strong>
+            <div style="white-space: pre-wrap; font-family: 'Times New Roman', serif; margin-top: 10px; background: white; padding: 10px;">{{ exam_essay.marked_content | safe if exam_essay.marked_content else exam_essay.content }}</div>
+            <p style="margin-top: 10px; white-space: pre-wrap; color: #856404;"><strong>Komentarz:</strong><br>{{ exam_essay.feedback }}</p>
         </div>
         {% endif %}
     </div>
-    {% endfor %}
 </body>
 </html>

@@ -27,7 +27,7 @@
             <div style="background: {% if ns.locked %}#f8f9fa{% else %}white{% endif %}; border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; border-radius: 8px; opacity: {% if ns.locked %}0.6{% else %}1{% endif %};">
                 <div style="display: flex; justify-content: space-between;">
                     <h3 style="margin:0; color: #333;">{{ essay.title }}</h3>
-                    {% if essay.is_completed %}<span style="color: green; font-weight: bold;">✓ Zakończono</span>{% endif %}
+                    {% if essay.is_completed %}<span style="color: green; font-weight: bold;">✓ Oddano do sprawdzenia</span>{% endif %}
                 </div>
                 
                 {% if ns.locked %}
@@ -35,14 +35,18 @@
                     <p style="color: #d32f2f; font-weight: bold; font-size: 0.9em;">🔒 Zablokowane. Ukończ poprzednią rozprawkę, aby pisać dalej.</p>
                 {% else %}
                     <p style="font-style: italic; color: #555; background:#f4f4f4; padding:10px; border-radius:4px;">{{ essay.topic_full }}</p>
-                    <a href="/write/{{ essay.id }}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📝 Przejdź do pisania</a>
+                    {% if essay.is_completed %}
+                        <a href="/write/{{ essay.id }}" style="display: inline-block; background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">👁️ Przejrzyj swoją pracę</a>
+                    {% else %}
+                        <a href="/write/{{ essay.id }}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📝 Przejdź do pisania</a>
+                    {% endif %}
                 {% endif %}
 
                 {% if essay.feedback %}
                 <div style="margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
                     <strong>💬 Feedback Nauczyciela:</strong><br>
                     <div style="white-space: pre-wrap; font-family: 'Times New Roman', serif; font-size: 16px; margin-top: 10px; background: white; padding: 10px; border: 1px solid #ffeeba;">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
-                    <p style="margin-top: 10px; white-space: pre-wrap; color: #856404;"><strong>Komentarz:</strong><br>{{ essay.feedback }}</p>
+                    <p style="margin-top: 10px; color: #856404;"><strong>Komentarz nauczyciela:</strong><br><div style="white-space: pre-wrap; background: white; padding: 10px; border: 1px solid #ffeeba; color: black;">{{ essay.feedback | safe }}</div></p>
                 </div>
                 {% endif %}
             </div>
@@ -64,7 +68,8 @@
         {% else %}
             <p style="color: #388e3c; font-weight: bold;">🔓 Egzamin odblokowany!</p>
             {% if exam_essay.is_completed %}
-                <span style="color: green; font-weight: bold;">✓ Arkusz egzaminacyjny został oddany.</span>
+                <span style="color: green; font-weight: bold;">✓ Arkusz egzaminacyjny został oddany.</span><br><br>
+                <a href="/write/{{ exam_essay.id }}" style="display: inline-block; background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">👁️ Przejrzyj arkusz egzaminacyjny</a>
             {% else %}
                 <a href="/write/{{ exam_essay.id }}" style="display: inline-block; background: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">➡️ Otwórz arkusz egzaminacyjny</a>
             {% endif %}
@@ -74,7 +79,7 @@
         <div style="margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
             <strong>💬 Oceniony egzamin:</strong>
             <div style="white-space: pre-wrap; font-family: 'Times New Roman', serif; margin-top: 10px; background: white; padding: 10px;">{{ exam_essay.marked_content | safe if exam_essay.marked_content else exam_essay.content }}</div>
-            <p style="margin-top: 10px; white-space: pre-wrap; color: #856404;"><strong>Komentarz:</strong><br>{{ exam_essay.feedback }}</p>
+            <p style="margin-top: 10px; color: #856404;"><strong>Komentarz końcowy:</strong><br><div style="white-space: pre-wrap; background: white; padding: 10px; color: black;">{{ exam_essay.feedback | safe }}</div></p>
         </div>
         {% endif %}
     </div>

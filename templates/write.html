@@ -4,16 +4,28 @@
 <body style="font-family: sans-serif; padding: 20px; max-width: 1000px; margin: auto; background: #fafafa;">
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin:0; color: #333;">{{ essay.title }}</h2>
+        <h2 style="margin:0; color: #333;">
+            {{ essay.title }}
+            {% if essay.is_completed %} <span style="color: #6c757d; font-size: 0.7em;">(Tryb podglądu - Praca oddana)</span>{% endif %}
+        </h2>
         <div>
-            {% if not essay.is_exam %}
-            <button onclick="resetWork()" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-right: 10px;">🔄 Resetuj (Zacznij od nowa)</button>
+            {% if not essay.is_completed %}
+                {% if not essay.is_exam %}
+                <button onclick="resetWork()" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-right: 10px;">🔄 Resetuj (Zacznij od nowa)</button>
+                {% endif %}
+                <button onclick="finishWork()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">💾 Zakończ i oddaj pracę</button>
+            {% else %}
+                <a href="/student/{{ essay.student.url_slug }}" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; text-decoration: none; display: inline-block;">Wróć do pulpitu</a>
             {% endif %}
-            <button onclick="finishWork()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">💾 Zakończ i oddaj pracę</button>
         </div>
     </div>
 
-    <!-- SEKCJA TEMATU (INNA DLA EGZAMINU I ĆWICZENIA) -->
+    {% if essay.is_completed %}
+    <div style="background: #e2e3e5; color: #383d41; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: bold; border-left: 5px solid #6c757d;">
+        ⚠️ Ta praca została już pomyślnie oddana. Edycja i licznik czasu zostały zablokowane. Możesz ją teraz wyłącznie przeglądać.
+    </div>
+    {% endif %}
+
     {% if essay.is_exam %}
         <div style="background: #fff3cd; padding: 15px; border-radius: 5px; border: 1px solid #ffeeba; margin-bottom: 15px;">
             <h4 style="margin-top: 0; color: #856404;">Dostępne tematy:</h4>
@@ -21,7 +33,7 @@
             <p style="font-style: italic;"><strong>2.</strong> {{ exam_topics[1] }}</p>
             <hr style="border: 0; border-top: 1px solid #ffeeba;">
             <label style="font-weight: bold; color: #856404;">Wpisz poniżej krótko, który temat wybierasz (np. 1 lub 2):</label><br>
-            <input type="text" id="chosen_topic" value="{{ essay.chosen_topic or '' }}" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 15px;" placeholder="Wybrany temat...">
+            <input type="text" id="chosen_topic" value="{{ essay.chosen_topic or '' }}" {% if essay.is_completed %}readonly{% endif %} style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 15px;" placeholder="Wybrany temat...">
         </div>
     {% else %}
         <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-style: italic; border-left: 4px solid #007bff; font-size: 15px;">
@@ -34,10 +46,12 @@
         <span style="font-size: 1.2em;"><strong>⏳ Pozostały czas:</strong> <span id="timer" style="color: #d32f2f; font-weight: bold; font-family: monospace;">40:00</span></span>
         {% endif %}
         <span style="font-size: 1.2em;"><strong>📝 Liczba słów:</strong> <span id="word-count" style="color: #007bff; font-weight: bold;">0</span></span>
-        <span id="save-status" style="margin-left: auto; color: #28a745; font-size: 0.9em;">System zapisuje dane w tle.</span>
+        <span id="save-status" style="margin-left: auto; color: #28a745; font-size: 0.9em;">
+            {% if essay.is_completed %}Praca w pełni zapisana i zabezpieczona.{% else %}System zapisuje dane automatycznie co 5 sekund.{% endif %}
+        </span>
     </div>
 
-    <textarea id="editor" style="width: 100%; height: 500px; padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Times New Roman', serif; box-sizing: border-box;" placeholder="Zacznij pisać tutaj...">{{ essay.content }}</textarea>
+    <textarea id="editor" {% if essay.is_completed %}readonly{% endif %} style="width: 100%; height: 500px; padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Times New Roman', serif; box-sizing: border-box; background: {% if essay.is_completed %}#f1f3f5{% else %}white{% endif %};" placeholder="Zacznij pisać tutaj...">{{ essay.content }}</textarea>
 
     <script>
         let seconds = {{ essay.time_spent }};
@@ -46,6 +60,7 @@
         const timerDisplay = document.getElementById('timer');
         const chosenTopicInput = document.getElementById('chosen_topic');
         const isExam = {{ 'true' if essay.is_exam else 'false' }};
+        const isCompleted = {{ 'true' if essay.is_completed else 'false' }};
 
         function updateStats() {
             const words = editor.value.trim() ? editor.value.trim().split(/\s+/).length : 0;
@@ -60,9 +75,14 @@
             }
         }
 
-        setInterval(() => { seconds++; updateStats(); }, 1000);
-        
+        // Aktywuj liczniki i autosave tylko gdy praca nie jest ukończona
+        if (!isCompleted) {
+            setInterval(() => { seconds++; updateStats(); }, 1000);
+            setInterval(() => save(false), 5000); // Automatyczny bezpieczny zapis na dysku co 5 sekund
+        }
+
         function save(isDone = false) {
+            if (isCompleted) return;
             let data = { content: editor.value, time_spent: seconds, is_completed: isDone };
             if (isExam && chosenTopicInput) {
                 data.chosen_topic = chosenTopicInput.value;
@@ -72,15 +92,13 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             }).then(() => {
-                document.getElementById('save-status').innerText = "✅ Zapisano automatycznie.";
+                document.getElementById('save-status').innerText = "✅ Zapisano automatycznie w tle.";
                 if(isDone) window.location.href = "/student/{{ essay.student.url_slug }}";
             });
         }
 
-        setInterval(() => save(false), 15000);
-        
         function finishWork() { 
-            if(confirm("Czy na pewno chcesz oddać pracę? Nie będzie można jej edytować.")) save(true); 
+            if(confirm("Czy na pewno chcesz oddać pracę? Nie będzie można jej już edytować.")) save(true); 
         }
 
         function resetWork() {

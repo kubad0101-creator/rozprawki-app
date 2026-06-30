@@ -57,7 +57,9 @@
         {% endif %}
     {% endfor %}
 
-    {% set exam_essay = student.essays | selectattr("is_exam", "equalto", True) | first %}
+    <!-- Sekcja Egzaminu widoczna tylko jeśli oddany. 
+         Filtruje tylko po tytule 'Egzamin', więc tajny Egzamin Dodatkowy nie pokaże się tu nigdy! -->
+    {% set exam_essay = student.essays | selectattr("title", "equalto", "Egzamin") | first %}
     
     {% if exam_essay and (exam_essay.is_completed or exam_essay.feedback) %}
     <hr style="margin: 40px 0;">

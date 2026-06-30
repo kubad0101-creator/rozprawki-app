@@ -35,9 +35,33 @@
 
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     {% for student in active_students %}
-                        <a href="/admin/student/{{ student.id }}" style="display: block; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; text-decoration: none; color: #333; font-weight: bold;">
-                            👤 {{ student.name }}
-                        </a>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px;">
+                            <div style="flex: 1;">
+                                <a href="/admin/student/{{ student.id }}" style="text-decoration: none; color: #333; font-weight: bold; font-size: 16px; display: block; margin-bottom: 5px;">
+                                    👤 {{ student.name }}
+                                </a>
+                                
+                                {% set counts = namespace(completed=0, pending=0) %}
+                                {% for essay in student.essays %}
+                                    {% if essay.is_completed %}
+                                        {% set counts.completed = counts.completed + 1 %}
+                                        {% if not essay.feedback %}
+                                            {% set counts.pending = counts.pending + 1 %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                <div style="font-size: 13px; color: #666;">
+                                    Prace oddane: <strong>{{ counts.completed }}</strong> | 
+                                    Do sprawdzenia: <strong style="color: {% if counts.pending > 0 %}#dc3545{% else %}#28a745{% endif %};">{{ counts.pending }}</strong>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="copyLink('https://{{ request.host }}/student/{{ student.url_slug }}')" style="background: #17a2b8; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">🔗 Link do ucznia</button>
+                                <button onclick="copyLink('https://{{ request.host }}/exam/{{ student.url_slug }}')" style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">🚨 Egzamin</button>
+                            </div>
+                        </div>
                     {% else %}
                         <p style="color: #666; font-style: italic;">Brak aktywnych uczniów pasujących do kryteriów.</p>
                     {% endfor %}
@@ -66,5 +90,15 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function copyLink(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Pomyślnie skopiowano link:\n' + url);
+            }).catch(err => {
+                alert('Nie udało się skopiować linku.');
+            });
+        }
+    </script>
 </body>
 </html>

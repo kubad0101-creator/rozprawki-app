@@ -110,6 +110,7 @@ def admin():
         for title, full_topic in PRACTICE_TOPICS:
             db.session.add(Essay(title=title, topic_full=full_topic, is_exam=False, student=new_student))
         db.session.add(Essay(title="Egzamin", topic_full="[EGZAMIN] Tematy będą dostępne po wejściu.", is_exam=True, student=new_student))
+        db.session.add(Essay(title="Egzamin Dodatkowy", topic_full="Wpisz temat nr 1...|||Wpisz temat nr 2...", is_exam=True, student=new_student))
         db.session.commit()
         return redirect(url_for('admin'))
         
@@ -162,6 +163,23 @@ def toggle_archive(student_id):
     db.session.commit()
     return redirect(url_for('admin'))
 
+@app.route('/admin/student/<int:student_id>/extra_exam', methods=['POST'])
+@admin_required
+def update_extra_exam(student_id):
+    student = Student.query.get_or_404(student_id)
+    extra_exam = Essay.query.filter_by(student_id=student.id, title="Egzamin Dodatkowy").first()
+    
+    if not extra_exam:
+        extra_exam = Essay(title="Egzamin Dodatkowy", is_exam=True, student_id=student.id)
+        db.session.add(extra_exam)
+        
+    t1 = request.form.get('topic1', 'Temat 1')
+    t2 = request.form.get('topic2', 'Temat 2')
+    extra_exam.topic_full = f"{t1}|||{t2}"
+    db.session.commit()
+    
+    return redirect(url_for('admin_student_detail', student_id=student.id))
+
 @app.route('/admin/essay/<int:essay_id>/feedback', methods=['POST'])
 @admin_required
 def save_feedback(essay_id):
@@ -169,13 +187,11 @@ def save_feedback(essay_id):
     essay.feedback = request.form.get('feedback')
     essay.marked_content = request.form.get('marked_content')
     
-    # 1. Usuwanie powiadomień o dokończeniu dla tej rozprawki i ucznia
     all_notifs = Notification.query.all()
     for n in all_notifs:
         if essay.title[:30] in n.message and essay.student.name in n.message:
             db.session.delete(n)
 
-    # 2. Jeśli sprawdził Kuba, wyślij powiadomienie "do zaakceptowania"
     current_user = session.get('admin_user')
     if current_user == 'Kuba':
         msg = f"<a href='/admin/student/{essay.student_id}' class='notif-link'>[DO ZAAKCEPTOWANIA] <b>{essay.student.name}</b> - '{essay.title[:40]}'</a>"
@@ -206,13 +222,29 @@ def student_dashboard(url_slug):
 @app.route('/exam/<url_slug>')
 def exam_direct_link(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
-    exam_essay = Essay.query.filter_by(student_id=student.id, is_exam=True).first_or_404()
+    exam_essay = Essay.query.filter_by(student_id=student.id, title="Egzamin").first_or_404()
     return render_template('write.html', essay=exam_essay, exam_topics=EXAM_TOPICS)
+
+@app.route('/exam_extra/<url_slug>')
+def exam_extra_direct_link(url_slug):
+    student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    exam_essay = Essay.query.filter_by(student_id=student.id, title="Egzamin Dodatkowy").first()
+    if not exam_essay:
+        return "Egzamin Dodatkowy nie został jeszcze utworzony. Nauczyciel musi go zapisać w panelu.", 404
+        
+    custom_topics = ["Brak tematu 1", "Brak tematu 2"]
+    if exam_essay.topic_full and '|||' in exam_essay.topic_full:
+        custom_topics = exam_essay.topic_full.split('|||')
+        
+    return render_template('write.html', essay=exam_essay, exam_topics=custom_topics)
 
 @app.route('/write/<int:essay_id>')
 def write_essay(essay_id):
     essay = Essay.query.get_or_404(essay_id)
-    return render_template('write.html', essay=essay, exam_topics=EXAM_TOPICS)
+    topics = EXAM_TOPICS
+    if essay.title == "Egzamin Dodatkowy":
+        topics = essay.topic_full.split('|||') if essay.topic_full and '|||' in essay.topic_full else ["Brak tematu 1", "Brak tematu 2"]
+    return render_template('write.html', essay=essay, exam_topics=topics)
 
 @app.route('/api/save/<int:essay_id>', methods=['POST'])
 def auto_save(essay_id):

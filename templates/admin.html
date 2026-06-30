@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head><meta charset="UTF-8"><title>Panel Administratora</title></head>
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Administratora</title>
+    <style>
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+        .notif-link { color: inherit; text-decoration: none; }
+        .notif-link:hover { text-decoration: underline; color: #0056b3; }
+    </style>
+</head>
 <body style="font-family: sans-serif; padding: 25px; max-width: 1200px; margin: auto; background: #f4f6f9;">
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
@@ -9,6 +21,7 @@
     </div>
 
     <div style="display: flex; gap: 25px;">
+        <!-- Lewa kolumna: Studenci -->
         <div style="flex: 2;">
             
             <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
@@ -35,12 +48,10 @@
 
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     {% for student in active_students %}
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: {% if loop.index % 2 == 0 %}#f8f9fa{% else %}#ffffff{% endif %}; border: 1px solid #dee2e6; border-radius: 5px;">
                             <div style="flex: 1;">
-                                <a href="/admin/student/{{ student.id }}" style="text-decoration: none; color: #333; font-weight: bold; font-size: 16px; display: block; margin-bottom: 5px;">
-                                    👤 {{ student.name }}
-                                </a>
                                 
+                                <!-- Obliczenia statystyk studenta -->
                                 {% set counts = namespace(completed=0, pending=0) %}
                                 {% for essay in student.essays %}
                                     {% if essay.is_completed %}
@@ -50,10 +61,19 @@
                                         {% endif %}
                                     {% endif %}
                                 {% endfor %}
+
+                                <a href="/admin/student/{{ student.id }}" style="text-decoration: none; color: #333; font-weight: bold; font-size: 16px; display: flex; align-items: center; margin-bottom: 5px;">
+                                    👤 {{ student.name }}
+                                    {% if counts.pending > 0 %}
+                                        <span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 10px; animation: pulse 1.5s infinite;">
+                                            {{ counts.pending }} DO SPRAWDZENIA
+                                        </span>
+                                    {% endif %}
+                                </a>
                                 
                                 <div style="font-size: 13px; color: #666;">
-                                    Prace oddane: <strong>{{ counts.completed }}</strong> | 
-                                    Do sprawdzenia: <strong style="color: {% if counts.pending > 0 %}#dc3545{% else %}#28a745{% endif %};">{{ counts.pending }}</strong>
+                                    Napisane: <strong>{{ counts.completed }}</strong> | 
+                                    Niesprawdzone: <strong style="color: {% if counts.pending > 0 %}#dc3545{% else %}#28a745{% endif %};">{{ counts.pending }}</strong>
                                 </div>
                             </div>
                             
@@ -69,13 +89,16 @@
             </div>
         </div>
 
+        <!-- Prawa kolumna: Powiadomienia -->
         <div style="flex: 1;">
             <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 25px;">
                 <h3 style="margin-top: 0; border-bottom: 2px solid #ffc107; padding-bottom: 10px;">Powiadomienia</h3>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     {% for notif in notifications %}
                         <div style="background: {% if 'DO ZAAKCEPTOWANIA' in notif.message %}#d4edda{% else %}#fff3cd{% endif %}; padding: 15px; border-left: 4px solid {% if 'DO ZAAKCEPTOWANIA' in notif.message %}#28a745{% else %}#ffc107{% endif %}; border-radius: 5px; font-size: 14px;">
-                            <p style="margin: 0; margin-bottom: 8px; font-weight: 500;">{{ notif.message }}</p>
+                            <p style="margin: 0; margin-bottom: 8px; font-weight: 500;">
+                                {{ notif.message | safe }}
+                            </p>
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-size: 12px; color: #666;">{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                                 <form action="/admin/notif/delete/{{ notif.id }}" method="POST" style="margin: 0;">
@@ -91,6 +114,7 @@
         </div>
     </div>
 
+    <!-- Skrypt do przycisków kopiowania linków -->
     <script>
         function copyLink(url) {
             navigator.clipboard.writeText(url).then(() => {

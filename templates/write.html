@@ -113,7 +113,7 @@
             font-size: 14px;
             border: 1px solid #888;
             border-radius: 2px;
-            background-color: #ececec; /* Charakterystyczny szary kolor tła pola tekstowego */
+            background-color: #ececec;
             font-family: Arial, Helvetica, sans-serif;
             resize: vertical;
             box-sizing: border-box;
@@ -147,6 +147,7 @@
 </head>
 <body>
 
+    <!-- Górny pasek sterowania -->
     <div class="system-bar">
         <div>
             Status: <span id="save-status" style="color: #4caf50;">Połączono</span>
@@ -164,6 +165,7 @@
         </div>
     </div>
 
+    <!-- Główny arkusz egzaminacyjny -->
     <div class="exam-paper">
         
         <div class="student-name">
@@ -199,6 +201,7 @@
             </div>
             
         {% else %}
+            <!-- Wygląd dla trybu ćwiczeń -->
             <h2 class="exam-title">{{ essay.title }}</h2>
             
             <div class="instruction-box">
@@ -233,7 +236,7 @@
             wordCount.innerText = words;
 
             if (isExam && timerDisplay) {
-                let timeLeft = 2400 - seconds; // 40 minut = 2400 sekund
+                let timeLeft = 2400 - seconds;
                 if(timeLeft < 0) timeLeft = 0;
                 let m = Math.floor(timeLeft / 60);
                 let s = (timeLeft % 60).toString().padStart(2, '0');
@@ -246,10 +249,9 @@
             }
         }
 
-        // Aktywuj liczniki i autosave tylko gdy praca nie jest ukończona
         if (!isCompleted) {
             setInterval(() => { seconds++; updateStats(); }, 1000);
-            setInterval(() => save(false), 5000); // Automatyczny zapis co 5 sekund
+            setInterval(() => save(false), 5000);
         }
 
         function save(isDone = false) {
@@ -296,7 +298,6 @@
             }
         }
 
-        // Inicjalizacja
         updateStats();
         editor.addEventListener('input', updateStats);
     </script>

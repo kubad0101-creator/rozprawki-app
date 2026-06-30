@@ -1,112 +1,119 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Writing Test - Task</title>
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
-            background-color: #d4d8db; /* Ciemniejsze tło przypominające aplikacje testowe */
+            background-color: #6b7278; /* Ciemnoszare tło poza arkuszem, jak w aplikacjach testowych */
             margin: 0;
             padding: 0;
             color: #333;
+            padding-top: 50px; /* Miejsce na pasek systemowy */
         }
-        /* Pasek systemowy u góry, niezależny od arkusza */
+        
+        /* Pasek systemowy u góry (dyskretny) */
         .system-bar {
-            background-color: #2c3e50;
-            color: white;
-            padding: 10px 20px;
+            background-color: #222;
+            color: #ccc;
+            padding: 8px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 14px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-size: 13px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 1000;
         }
         .system-bar button, .system-bar a {
-            padding: 8px 15px;
+            padding: 6px 15px;
             border: none;
-            border-radius: 4px;
-            font-weight: bold;
+            border-radius: 3px;
+            font-family: Arial, sans-serif;
             cursor: pointer;
             text-decoration: none;
             font-size: 13px;
         }
-        .btn-submit { background-color: #27ae60; color: white; }
-        .btn-submit:hover { background-color: #219653; }
-        .btn-reset { background-color: #c0392b; color: white; margin-right: 10px; }
-        .btn-reset:hover { background-color: #a53125; }
-        .btn-back { background-color: #7f8c8d; color: white; }
+        .btn-submit { background-color: #28a745; color: white; font-weight: bold; }
+        .btn-submit:hover { background-color: #218838; }
+        .btn-reset { background-color: #dc3545; color: white; margin-right: 10px; }
+        .btn-reset:hover { background-color: #c82333; }
+        .btn-back { background-color: #6c757d; color: white; }
         
-        /* Arkusz egzaminacyjny */
+        /* Arkusz egzaminacyjny (1:1 ze screenem) */
         .exam-paper {
-            max-width: 900px;
-            margin: 30px auto;
+            max-width: 950px;
+            margin: 20px auto 40px auto;
             background-color: #ffffff;
-            padding: 45px 55px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            border-radius: 2px;
+            padding: 40px 50px;
+            box-sizing: border-box;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
-        .student-id {
+        .student-name {
             color: #777;
-            font-size: 13px;
-            margin-bottom: 25px;
+            font-size: 15px;
+            margin-bottom: 30px;
         }
         .exam-title {
-            font-family: Georgia, 'Times New Roman', Times, serif;
-            color: #5a6b7c;
+            font-family: "Times New Roman", Times, serif;
+            color: #556677;
             font-size: 24px;
             font-weight: normal;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #d5d5d5;
             padding-bottom: 15px;
             margin-top: 0;
             margin-bottom: 25px;
         }
         .instruction-box {
-            background-color: #f0f7fd;
-            border: 1px solid #bce8f1;
+            background-color: #f3f8fc;
+            border: 1px solid #aecae6;
             padding: 15px;
             margin-bottom: 25px;
         }
         .instruction-box p {
             margin: 0;
-            color: #5a82a0;
+            color: #6385a6;
             font-size: 14px;
         }
         .topics-list {
-            font-size: 14.5px;
-            color: #444;
-            line-height: 1.6;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
             margin-bottom: 25px;
         }
-        .topics-list p { margin: 0 0 10px 0; }
+        .topics-list p { margin: 0 0 15px 0; }
         .topic-selector {
-            display: flex;
-            align-items: center;
-            font-size: 14.5px;
-            color: #444;
-            margin-bottom: 15px;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
         }
         .topic-selector input {
-            width: 30px;
-            height: 24px;
-            margin-left: 10px;
-            border: 1px solid #a9a9a9;
+            width: 26px;
+            height: 20px;
+            margin-left: 5px;
+            border: 1px solid #999;
             text-align: center;
             font-size: 14px;
             background-color: #fff;
+            padding: 2px;
         }
         .timer-info {
-            color: #777;
-            font-size: 13.5px;
-            margin-bottom: 15px;
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 8px;
         }
         .editor-textarea {
             width: 100%;
-            height: 400px;
-            padding: 15px;
+            height: 350px;
+            padding: 12px;
             font-size: 14px;
-            border: 1px solid #a9a9a9;
-            background-color: #f9f9f9;
+            border: 1px solid #888;
+            border-radius: 2px;
+            background-color: #ececec; /* Charakterystyczny szary kolor tła pola tekstowego */
             font-family: Arial, Helvetica, sans-serif;
             resize: vertical;
             box-sizing: border-box;
@@ -115,20 +122,18 @@
         }
         .editor-textarea:focus {
             outline: none;
-            border-color: #66afe9;
-            background-color: #ffffff;
+            border-color: #555;
+            background-color: #fff;
         }
         .editor-textarea[readonly] {
-            background-color: #f1f3f5;
-            color: #555;
+            color: #666;
         }
         .word-count-footer {
             font-size: 12px;
-            color: #888;
-            margin-top: 5px;
+            color: #999;
+            margin-top: 6px;
         }
         
-        /* Styl dla komunikatu o zablokowaniu pracy */
         .completed-banner {
             background-color: #fff3cd;
             color: #856404;
@@ -144,17 +149,15 @@
 
     <div class="system-bar">
         <div>
-            <span style="font-weight: bold; letter-spacing: 1px;">SYSTEM ROZPRAWEK</span>
-            <span id="save-status" style="color: #2ecc71; margin-left: 15px; font-weight: normal;">
-                {% if essay.is_completed %}Praca zapisana na serwerze{% else %}Trwa łączenie...{% endif %}
-            </span>
+            Status: <span id="save-status" style="color: #4caf50;">Połączono</span>
+            {% if essay.is_completed %}<span style="color: #ff9800; margin-left: 10px;">(Praca zablokowana - oddana)</span>{% endif %}
         </div>
         <div>
             {% if not essay.is_completed %}
                 {% if not essay.is_exam %}
-                <button onclick="resetWork()" class="btn-reset">Resetuj (Zacznij od nowa)</button>
+                <button onclick="resetWork()" class="btn-reset">Resetuj</button>
                 {% endif %}
-                <button onclick="finishWork()" class="btn-submit">Zakończ i oddaj pracę</button>
+                <button onclick="finishWork()" class="btn-submit">Oddaj pracę</button>
             {% else %}
                 <a href="/student/{{ essay.student.url_slug }}" class="btn-back">Wróć do pulpitu</a>
             {% endif %}
@@ -163,13 +166,13 @@
 
     <div class="exam-paper">
         
-        <div class="student-id">
-            {{ essay.student.name }} [APP-{{ essay.student.id + 198400 }}]
+        <div class="student-name">
+            {{ essay.student.name }}
         </div>
 
         {% if essay.is_completed %}
         <div class="completed-banner">
-            Ta praca została już oddana. Tryb edycji jest zablokowany.
+            This task has been submitted and is locked for review.
         </div>
         {% endif %}
 
@@ -182,7 +185,7 @@
 
             <div class="topics-list">
                 <p>1. {{ exam_topics[0] }}</p>
-                <p style="text-align: center; margin: 20px 0;">or</p>
+                <p style="text-align: center; margin: 25px 0;">or</p>
                 <p>2. {{ exam_topics[1] }}</p>
             </div>
 
@@ -192,7 +195,7 @@
             </div>
 
             <div class="timer-info">
-                You have <strong><span id="timer" style="color: inherit;">40:00</span> minutes</strong> to write at least 250 words.
+                You have <span id="timer" style="color: inherit;">40:00</span> minutes to write at least 250 words.
             </div>
             
         {% else %}
@@ -203,14 +206,14 @@
             </div>
             
             <div class="timer-info">
-                Write at least 250 words. Time spent: <strong><span id="timer_practice">0:00</span> minutes</strong>.
+                Write at least 250 words. Time spent: <span id="timer_practice">0:00</span>.
             </div>
         {% endif %}
 
-        <textarea id="editor" class="editor-textarea" {% if essay.is_completed %}readonly{% endif %} placeholder="">{{ essay.content }}</textarea>
+        <textarea id="editor" class="editor-textarea" {% if essay.is_completed %}readonly{% endif %}>{{ essay.content }}</textarea>
         
         <div class="word-count-footer">
-            Total Word Count : <span id="word-count">0</span> words.
+            Total Word Count: <span id="word-count">0</span> words.
         </div>
 
     </div>
@@ -236,10 +239,6 @@
                 let s = (timeLeft % 60).toString().padStart(2, '0');
                 timerDisplay.innerText = m + ":" + s;
                 
-                // Zmiana koloru na czerwony pod koniec czasu
-                if (timeLeft < 300 && !isCompleted) {
-                    timerDisplay.style.color = "#d32f2f";
-                }
             } else if (!isExam && timerPracticeDisplay) {
                 let m = Math.floor(seconds / 60);
                 let s = (seconds % 60).toString().padStart(2, '0');
@@ -249,9 +248,8 @@
 
         // Aktywuj liczniki i autosave tylko gdy praca nie jest ukończona
         if (!isCompleted) {
-            document.getElementById('save-status').innerText = "Autozapis aktywny co 5s";
             setInterval(() => { seconds++; updateStats(); }, 1000);
-            setInterval(() => save(false), 5000); // Automatyczny bezpieczny zapis na dysku co 5 sekund
+            setInterval(() => save(false), 5000); // Automatyczny zapis co 5 sekund
         }
 
         function save(isDone = false) {
@@ -269,21 +267,21 @@
             }).then(() => {
                 if(!isDone) {
                     const status = document.getElementById('save-status');
-                    status.innerText = "Zapisano " + new Date().toLocaleTimeString();
+                    status.innerText = "Zapisano automatycznie";
                     setTimeout(() => {
-                        if(status.innerText.includes("Zapisano")) status.innerText = "Autozapis aktywny co 5s";
+                        if(status.innerText === "Zapisano automatycznie") status.innerText = "Połączono";
                     }, 2000);
                 }
                 if(isDone) window.location.href = "/student/{{ essay.student.url_slug }}";
             }).catch(err => {
-                document.getElementById('save-status').innerText = "Błąd zapisu! Sprawdź internet.";
-                document.getElementById('save-status').style.color = "#e74c3c";
+                document.getElementById('save-status').innerText = "Błąd połączenia!";
+                document.getElementById('save-status').style.color = "#ff5252";
             });
         }
 
         function finishWork() { 
             if(isExam && chosenTopicInput && !chosenTopicInput.value.trim()) {
-                alert("Proszę wpisać numer wybranego tematu (1 lub 2) w wyznaczonym polu przed oddaniem pracy.");
+                alert("Please enter the topic number (1 or 2) in the box before submitting.");
                 chosenTopicInput.focus();
                 return;
             }

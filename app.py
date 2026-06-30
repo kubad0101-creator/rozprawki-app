@@ -28,13 +28,13 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# MODELE BAZY DANYCH (v5) - BEZ ZMIAN! Gwarantuje zachowanie danych.
+# MODELE BAZY DANYCH (v5)
 class Student(db.Model):
     __tablename__ = 'student_v5'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     url_slug = db.Column(db.String(150), unique=True, nullable=False)
-    exam_unlocked = db.Column(db.Boolean, default=False) # Pole zostaje, żeby nie popsuć bazy
+    exam_unlocked = db.Column(db.Boolean, default=False)
     is_archived = db.Column(db.Boolean, default=False)
     essays = db.relationship('Essay', backref='student', lazy=True)
 
@@ -115,7 +115,6 @@ def admin():
         
     search_query = request.args.get('q', '').lower()
     
-    # Filtrowanie alfabetyczne i wyszukiwarka
     active_students_query = Student.query.filter_by(is_archived=False)
     if search_query:
         active_students_query = active_students_query.filter(db.func.lower(Student.name).contains(search_query))
@@ -170,16 +169,17 @@ def save_feedback(essay_id):
     essay.feedback = request.form.get('feedback')
     essay.marked_content = request.form.get('marked_content')
     
-    # 1. Usunięcie powiadomienia o ukończeniu, jeśli istnieje
-    completion_msg = f"Student {essay.student.name} ukończył: '{essay.title}'"
-    notif_to_delete = Notification.query.filter_by(message=completion_msg).first()
-    if notif_to_delete:
-        db.session.delete(notif_to_delete)
+    # 1. Usuwanie powiadomień o dokończeniu dla tej rozprawki i ucznia
+    all_notifs = Notification.query.all()
+    for n in all_notifs:
+        if essay.title[:30] in n.message and essay.student.name in n.message:
+            db.session.delete(n)
 
-    # 2. Jeśli sprawdził Kuba, wyślij powiadomienie "do zaakceptowania" dla Julii
+    # 2. Jeśli sprawdził Kuba, wyślij powiadomienie "do zaakceptowania"
     current_user = session.get('admin_user')
     if current_user == 'Kuba':
-        db.session.add(Notification(message=f"[DO ZAAKCEPTOWANIA] Praca: {essay.title} - Uczeń: {essay.student.name} (Sprawdził Kuba)"))
+        msg = f"<a href='/admin/student/{essay.student_id}' class='notif-link'>[DO ZAAKCEPTOWANIA] <b>{essay.student.name}</b> - '{essay.title[:40]}'</a>"
+        db.session.add(Notification(message=msg))
 
     db.session.commit()
     return redirect(url_for('admin_student_detail', student_id=essay.student_id))
@@ -207,7 +207,6 @@ def student_dashboard(url_slug):
 def exam_direct_link(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     exam_essay = Essay.query.filter_by(student_id=student.id, is_exam=True).first_or_404()
-    # Usunęto warunek sprawdzania exam_unlocked. Dostęp od razu!
     return render_template('write.html', essay=exam_essay, exam_topics=EXAM_TOPICS)
 
 @app.route('/write/<int:essay_id>')
@@ -235,8 +234,10 @@ def auto_save(essay_id):
     db.session.commit()
 
     if became_completed:
-        db.session.add(Notification(message=f"Student {essay.student.name} ukończył: '{essay.title}'"))
+        msg = f"<a href='/admin/student/{essay.student_id}' class='notif-link'><b>{essay.student.name}</b> ukończył/ukończyła: '{essay.title[:50]}'</a>"
+        db.session.add(Notification(message=msg))
         db.session.commit()
+        
     return jsonify({"status": "success"})
 
 @app.route('/api/reset/<int:essay_id>', methods=['POST'])

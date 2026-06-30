@@ -2,17 +2,12 @@
 <html lang="pl">
 <head><meta charset="UTF-8"><title>Student: {{ student.name }}</title></head>
 <body style="font-family: sans-serif; padding: 25px; max-width: 1000px; margin: auto; background: #f4f6f9;">
-    <a href="/admin" style="color: #007bff; text-decoration: none; font-weight: bold;">← Wróć do listy</a>
+    <a href="/admin" style="color: #007bff; text-decoration: none; font-weight: bold;">⬅ Wróć do listy</a>
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
         <h1>Uczeń: {{ student.name }}</h1>
         <div style="display: flex; gap: 10px;">
-            {% if not student.exam_unlocked %}
-            <form action="/admin/student/{{ student.id }}/unlock" method="POST"><button type="submit" style="padding: 10px; background: red; color: white; border: none; border-radius: 5px; font-weight:bold; cursor: pointer;">🔓 ODBLOKUJ EGZAMIN</button></form>
-            {% else %}
-            <span style="padding: 10px; background: green; color: white; border-radius: 5px; font-weight:bold;">Egzamin odblokowany</span>
-            {% endif %}
-            <form action="/admin/student/{{ student.id }}/archive" method="POST"><button type="submit" style="padding: 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight:bold;">📁 Archiwizuj studenta</button></form>
+            <form action="/admin/student/{{ student.id }}/archive" method="POST"><button type="submit" style="padding: 10px 20px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight:bold;"> Przenieś do archiwum</button></form>
         </div>
     </div>
 
@@ -20,21 +15,21 @@
         <label style="font-weight: bold; color: #495057;">Ogólny link do pulpitu studenta:</label>
         <input type="text" value="https://{{ request.host }}/student/{{ student.url_slug }}" readonly style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; background: #fff;">
 
-        <label style="font-weight: bold; color: #d32f2f;">🔥 BEZPOŚREDNI LINK DO EGZAMINU (Wyślij studentowi w dniu testu):</label>
+        <label style="font-weight: bold; color: #d32f2f;"> BEZPOŚREDNI LINK DO EGZAMINU (Wyślij studentowi w dniu testu):</label>
         <input type="text" value="https://{{ request.host }}/exam/{{ student.url_slug }}" readonly style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #f5c6cb; font-weight: bold; background: #fff3cd; color: #d32f2f;">
     </div>
 
     <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 25px; position: sticky; top: 10px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-        <strong>🎨 Globalne narzędzie podświetlania tekstu:</strong> (Zaznacz tekst myszką w wypracowaniu LUB w komentarzu opisowym i kliknij kolor)
+        <strong> Globalne narzędzie podświetlania tekstu:</strong> (Zaznacz tekst myszką w wypracowaniu LUB w komentarzu opisowym i kliknij kolor)
         <div style="margin-top: 8px; display: flex; gap: 5px;">
             <button type="button" onclick="highlight('yellow')" style="background: yellow; border: 1px solid #ccc; padding: 8px 20px; cursor: pointer; font-weight:bold; border-radius:4px;">Żółty</button>
-            <button type="button" onclick="highlight('#28a745')" style="background: #28a745; color: white; border: none; padding: 8px 20px; cursor: pointer; font-weight:bold; border-radius:4px;">Zielony</button>
+            <button type="button" onclick="highlight('#98fb98')" style="background: #98fb98; color: black; border: 1px solid #ccc; padding: 8px 20px; cursor: pointer; font-weight:bold; border-radius:4px;">Jasny Zielony</button>
             <button type="button" onclick="highlight('#dc3545')" style="background: #dc3545; color: white; border: none; padding: 8px 20px; cursor: pointer; font-weight:bold; border-radius:4px;">Czerwony</button>
             <button type="button" onclick="highlight('transparent')" style="background: #eee; border: 1px solid #ccc; padding: 8px 20px; cursor: pointer; border-radius:4px;">Usuń kolor</button>
         </div>
     </div>
 
-    <h2 style="color: #343a40; border-bottom: 2px solid #007bff; padding-bottom: 10px;">⏳ W trakcie pracy / Do sprawdzenia</h2>
+    <h2 style="color: #343a40; border-bottom: 2px solid #007bff; padding-bottom: 10px;"> W trakcie pracy / Do sprawdzenia</h2>
     {% set ns_pending = namespace(has_items=false) %}
     
     {% for essay in essays_sorted if not essay.feedback %}
@@ -44,7 +39,8 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 style="margin: 0;">{{ essay.title }}</h3>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <button type="button" onclick="loadLiveContent({{ essay.id }})" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; border-radius: 4px;">⏱️ Podgląd LIVE</button>
+                <button type="button" onclick="copyEssay('{{ essay.id }}')" style="background: #6f42c1; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; border-radius: 4px;">Kopiuj treść do AI</button>
+                <button type="button" onclick="loadLiveContent({{ essay.id }})" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; border-radius: 4px;"> Podgląd LIVE</button>
                 {% if essay.is_completed %}<span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">ODDANE PRZEZ UCZNIA</span>{% else %}<span style="background: #ffc107; color: #212529; padding: 5px 10px; border-radius: 4px; font-weight: bold;">STUDENT JESZCZE PISZE</span>{% endif %}
             </div>
         </div>
@@ -53,7 +49,11 @@
         <p style="background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; font-weight: bold;">Uczeń wpisał temat: {{ essay.chosen_topic }}</p>
         {% endif %}
         
-        <p style="color: #666;">Czas pracy: <span id="time_display_{{ essay.id }}">{{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</span></p>
+        {% set word_count = (essay.marked_content | safe if essay.marked_content else essay.content).split() | length %}
+        <div style="display: flex; gap: 20px; color: #666; margin-top: 10px;">
+            <p style="margin: 0;">Czas pracy: <span id="time_display_{{ essay.id }}">{{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</span></p>
+            <p style="margin: 0; font-weight: bold; color: #007bff;">Słowa: <span id="word_count_{{ essay.id }}">{{ word_count }}</span></p>
+        </div>
 
         <div style="margin-top: 15px;">
             <strong>Treść studenta:</strong>
@@ -62,16 +62,16 @@
 
         <form action="/admin/essay/{{ essay.id }}/feedback" method="POST" onsubmit="prepareSubmit({{ essay.id }})" style="margin-top: 25px; background: #fdfdfd; border-top: 2px solid #007bff; padding-top: 15px;">
             
-            <h4 style="margin-top: 0; color: #007bff;">📋 Elementy do sprawdzenia (Skopiuj do komentarza poniżej):</h4>
-            <textarea id="checklist_text_{{ essay.id }}" readonly style="width: 100%; height: 130px; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; background: #f8f9fa; font-family: monospace; font-size: 14px;">Ponad 250 słów: 
-Schemat + podział na 5 akapitów: 
-Zwroty rozpoczynające: 
-Jasna teza we wstępie: 
-Wartościowe argumenty broniące tezy: 
-Przykład z własnego doświadczenia: 
-Ponowne podkreślenie tezy w zakończeniu: </textarea>
+            <h4 style="margin-top: 0; color: #007bff;"> Elementy do sprawdzenia (Skopiuj do komentarza poniżej):</h4>
+            <textarea id="checklist_text_{{ essay.id }}" readonly style="width: 100%; height: 130px; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; background: #f8f9fa; font-family: monospace; font-size: 14px;">Ponad 250 słów
+Schemat + podział na 5 akapitów
+Zwroty rozpoczynające
+Jasna teza we wstępie
+Wartościowe argumenty broniące tezy
+Przykład z własnego doświadczenia
+Ponowne podkreślenie tezy w zakończeniu</textarea>
             
-            <button type="button" onclick="copyChecklist('{{ essay.id }}')" style="padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 15px;">📋 Skopiuj schemat</button>
+            <button type="button" onclick="copyChecklist('{{ essay.id }}')" style="padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 15px;"> Skopiuj schemat</button>
 
             <input type="hidden" name="marked_content" id="hidden_content_{{ essay.id }}">
             <input type="hidden" name="feedback" id="hidden_feedback_{{ essay.id }}">
@@ -88,20 +88,21 @@ Ponowne podkreślenie tezy w zakończeniu: </textarea>
     <p style="color: #6c757d; font-style: italic; margin-bottom: 40px;">Brak prac oczekujących na sprawdzenie.</p>
     {% endif %}
 
-
-    <h2 style="margin-top: 50px; color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 10px;">📁 Sprawdzone prace (Wysłany feedback)</h2>
+    <h2 style="margin-top: 50px; color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 10px;"> Sprawdzone prace (Wysłany feedback)</h2>
     {% set ns_graded = namespace(has_items=false) %}
 
     {% for essay in essays_sorted if essay.feedback %}
     {% set ns_graded.has_items = true %}
     <div style="background: #f8f9fa; border: 1px solid #c3e6cb; padding: 25px; margin-bottom: 20px; border-radius: 8px;">
         <h3 style="margin: 0; color: #155724;">{{ essay.title }} <span style="font-size: 0.7em; color: #28a745;">(Sprawdzono)</span></h3>
-        <p style="color: #666; font-size: 0.9em;">Czas pracy: {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</p>
+        
+        {% set word_count_done = (essay.marked_content | safe if essay.marked_content else essay.content).split() | length %}
+        <p style="color: #666; font-size: 0.9em; margin-bottom: 0;">Czas pracy: {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s | <strong style="color: #007bff;">Słowa: {{ word_count_done }}</strong></p>
 
         <div style="margin-top: 15px; background: white; border: 1px solid #ccc; padding: 15px; font-family: 'Times New Roman', serif; font-size: 16px; min-height: 50px; white-space: pre-wrap; line-height: 1.6;">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
         
         <div style="margin-top: 15px; background: #d4edda; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
-            <strong>💬 Wysłany Komentarz:</strong>
+            <strong> Wysłany Komentarz:</strong>
             <div style="margin-top: 10px; white-space: pre-wrap; background: white; padding: 10px; border: 1px solid #c3e6cb; color: black;">{{ essay.feedback | safe }}</div>
         </div>
 
@@ -127,6 +128,13 @@ Ponowne podkreślenie tezy w zakończeniu: </textarea>
             document.execCommand('backColor', false, color);
         }
 
+        function copyEssay(essayId) {
+            const text = document.getElementById('content_' + essayId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Treść rozprawki skopiowana! Możesz teraz wkleić ją do ChatGPT.");
+            });
+        }
+
         function copyChecklist(essayId) {
             const textarea = document.getElementById('checklist_text_' + essayId);
             textarea.select();
@@ -142,15 +150,33 @@ Ponowne podkreślenie tezy w zakończeniu: </textarea>
                     if(div) {
                         div.innerText = data.content; 
                     }
+                    
                     const timeSpan = document.getElementById('time_display_' + essayId);
                     if(timeSpan) {
                         let m = Math.floor(data.time_spent / 60);
                         let s = data.time_spent % 60;
                         timeSpan.innerText = m + "m " + s + "s";
                     }
+                    
+                    const wordSpan = document.getElementById('word_count_' + essayId);
+                    if(wordSpan) {
+                        let words = data.content.trim() ? data.content.trim().split(/\s+/).length : 0;
+                        wordSpan.innerText = words;
+                    }
+
                     alert('Pobrano aktualną treść prosto z ekranu studenta!');
                 });
         }
+
+        // Live word counting when teacher types/highlights
+        document.querySelectorAll('div[id^="content_"]').forEach(el => {
+            el.addEventListener('input', function() {
+                const id = this.id.split('_')[1];
+                const count = this.innerText.trim() ? this.innerText.trim().split(/\s+/).length : 0;
+                const span = document.getElementById('word_count_' + id);
+                if(span) span.innerText = count;
+            });
+        });
 
         function prepareSubmit(essayId) {
             const editableDiv = document.getElementById('content_' + essayId);

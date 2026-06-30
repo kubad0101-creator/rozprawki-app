@@ -39,7 +39,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 style="margin: 0;">{{ essay.title }}</h3>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <button type="button" onclick="copyEssay('{{ essay.id }}')" style="background: #6f42c1; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; border-radius: 4px;">Kopiuj treść do AI</button>
+                <button type="button" onclick="copyEssay('{{ essay.id }}')" style="background: #6f42c1; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; border-radius: 4px;">Kopiuj treść</button>
                 <button type="button" onclick="loadLiveContent({{ essay.id }})" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; border-radius: 4px;"> Podgląd LIVE</button>
                 {% if essay.is_completed %}<span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">ODDANE PRZEZ UCZNIA</span>{% else %}<span style="background: #ffc107; color: #212529; padding: 5px 10px; border-radius: 4px; font-weight: bold;">STUDENT JESZCZE PISZE</span>{% endif %}
             </div>
@@ -131,7 +131,7 @@ Ponowne podkreślenie tezy w zakończeniu</textarea>
         function copyEssay(essayId) {
             const text = document.getElementById('content_' + essayId).innerText;
             navigator.clipboard.writeText(text).then(() => {
-                alert("Treść rozprawki skopiowana! Możesz teraz wkleić ją do ChatGPT.");
+                alert("Treść rozprawki została skopiowana do schowka.");
             });
         }
 

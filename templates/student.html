@@ -5,7 +5,7 @@
     <h1>Witaj, {{ student.name }}</h1>
     
     <div style="background: #e3f2fd; border-left: 5px solid #0d47a1; padding: 20px; margin-bottom: 30px; border-radius: 5px;">
-        <h3 style="margin-top: 0; color: #0d47a1;">📚 Jak pisać rozprawki (Instrukcja do egzaminu)</h3>
+        <h3 style="margin-top: 0; color: #0d47a1;"> Jak pisać rozprawki (Instrukcja do egzaminu)</h3>
         <p>Pamiętaj o najważniejszych zasadach pisania rozprawki:</p>
         <ul style="line-height: 1.6;">
             <li><strong>Długość:</strong> Ponad 250 słów.</li>
@@ -27,24 +27,24 @@
             <div style="background: {% if ns.locked %}#f8f9fa{% else %}white{% endif %}; border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; border-radius: 8px; opacity: {% if ns.locked %}0.6{% else %}1{% endif %};">
                 <div style="display: flex; justify-content: space-between;">
                     <h3 style="margin:0; color: #333;">{{ essay.title }}</h3>
-                    {% if essay.is_completed %}<span style="color: green; font-weight: bold;">✓ Oddano do sprawdzenia</span>{% endif %}
+                    {% if essay.is_completed %}<span style="color: green; font-weight: bold;"> Oddano do sprawdzenia</span>{% endif %}
                 </div>
                 
                 {% if ns.locked %}
                     <p style="font-style: italic; color: #999; background:#f4f4f4; padding:10px; border-radius:4px;">[Polecenie ukryte. Dostępne po ukończeniu poprzednich zadań]</p>
-                    <p style="color: #d32f2f; font-weight: bold; font-size: 0.9em;">🔒 Zablokowane. Ukończ poprzednią rozprawkę, aby pisać dalej.</p>
+                    <p style="color: #d32f2f; font-weight: bold; font-size: 0.9em;"> Zablokowane. Ukończ poprzednią rozprawkę, aby pisać dalej.</p>
                 {% else %}
                     <p style="font-style: italic; color: #555; background:#f4f4f4; padding:10px; border-radius:4px;">{{ essay.topic_full }}</p>
                     {% if essay.is_completed %}
-                        <a href="/write/{{ essay.id }}" style="display: inline-block; background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">👁️ Przejrzyj swoją pracę</a>
+                        <a href="/write/{{ essay.id }}" style="display: inline-block; background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;"> Przejrzyj swoją pracę</a>
                     {% else %}
-                        <a href="/write/{{ essay.id }}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📝 Przejdź do pisania</a>
+                        <a href="/write/{{ essay.id }}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;"> Przejdź do pisania</a>
                     {% endif %}
                 {% endif %}
 
                 {% if essay.feedback %}
                 <div style="margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
-                    <strong>💬 Feedback Nauczyciela:</strong><br>
+                    <strong> Feedback Nauczyciela:</strong><br>
                     <div style="white-space: pre-wrap; font-family: 'Times New Roman', serif; font-size: 16px; margin-top: 10px; background: white; padding: 10px; border: 1px solid #ffeeba;">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
                     <p style="margin-top: 10px; color: #856404;"><strong>Komentarz nauczyciela:</strong><br><div style="white-space: pre-wrap; background: white; padding: 10px; border: 1px solid #ffeeba; color: black;">{{ essay.feedback | safe }}</div></p>
                 </div>
@@ -57,31 +57,25 @@
         {% endif %}
     {% endfor %}
 
-    <hr style="margin: 40px 0;">
-
-    <h2 style="color: #d32f2f;">🔥 EGZAMIN GŁÓWNY</h2>
     {% set exam_essay = student.essays | selectattr("is_exam", "equalto", True) | first %}
     
-    <div style="background: white; border: 2px solid {% if student.exam_unlocked %}#4caf50{% else %}#f44336{% endif %}; padding: 20px; border-radius: 8px;">
-        {% if not student.exam_unlocked %}
-            <p style="color: #d32f2f; font-weight: bold;">🔒 Egzamin zablokowany. Czekaj na sygnał nauczyciela.</p>
-        {% else %}
-            <p style="color: #388e3c; font-weight: bold;">🔓 Egzamin odblokowany!</p>
-            {% if exam_essay.is_completed %}
-                <span style="color: green; font-weight: bold;">✓ Arkusz egzaminacyjny został oddany.</span><br><br>
-                <a href="/write/{{ exam_essay.id }}" style="display: inline-block; background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">👁️ Przejrzyj arkusz egzaminacyjny</a>
-            {% else %}
-                <a href="/write/{{ exam_essay.id }}" style="display: inline-block; background: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">➡️ Otwórz arkusz egzaminacyjny</a>
-            {% endif %}
-        {% endif %}
+    {% if exam_essay and (exam_essay.is_completed or exam_essay.feedback) %}
+    <hr style="margin: 40px 0;">
+    <h2 style="color: #d32f2f;"> EGZAMIN GŁÓWNY (Napisany)</h2>
+    
+    <div style="background: white; border: 2px solid #4caf50; padding: 20px; border-radius: 8px;">
+        <span style="color: green; font-weight: bold;"> Arkusz egzaminacyjny został pomyślnie oddany i zablokowany.</span><br><br>
+        <a href="/write/{{ exam_essay.id }}" style="display: inline-block; background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;"> Przejrzyj swój arkusz egzaminacyjny</a>
         
         {% if exam_essay.feedback %}
         <div style="margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
-            <strong>💬 Oceniony egzamin:</strong>
+            <strong> Oceniony egzamin:</strong>
             <div style="white-space: pre-wrap; font-family: 'Times New Roman', serif; margin-top: 10px; background: white; padding: 10px;">{{ exam_essay.marked_content | safe if exam_essay.marked_content else exam_essay.content }}</div>
             <p style="margin-top: 10px; color: #856404;"><strong>Komentarz końcowy:</strong><br><div style="white-space: pre-wrap; background: white; padding: 10px; color: black;">{{ exam_essay.feedback | safe }}</div></p>
         </div>
         {% endif %}
     </div>
+    {% endif %}
+
 </body>
 </html>

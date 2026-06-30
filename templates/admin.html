@@ -1,60 +1,70 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head><meta charset="UTF-8"><title>Panel Admina</title></head>
-<body style="font-family: sans-serif; padding: 25px; background: #f8f9fa; max-width: 900px; margin: auto;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1>Panel Administracyjny</h1>
-        <a href="/logout" style="color: red; font-weight: bold; text-decoration: none;">Wyloguj się</a>
+<head><meta charset="UTF-8"><title>Panel Administratora</title></head>
+<body style="font-family: sans-serif; padding: 25px; max-width: 1200px; margin: auto; background: #f4f6f9;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <h1 style="margin: 0;">Panel Nauczyciela</h1>
+        <a href="/logout" style="background: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Wyloguj się</a>
     </div>
 
-    <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 25px;">
-        <h3 style="margin-top:0; color: #0056b3;">🔔 Ostatnie powiadomienia</h3>
-        <ul style="padding-left: 20px; font-size: 0.95em;">
-            {% for n in notifications %}
-            <li style="margin-bottom: 8px; display: flex; justify-content: space-between;">
-                <span><strong>[{{ n.created_at.strftime('%d.%m %H:%M') }}]</strong> {{ n.message }}</span>
-                <form action="/admin/notif/delete/{{ n.id }}" method="POST" style="margin:0;">
-                    <button type="submit" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">✖</button>
+    <div style="display: flex; gap: 25px;">
+        <div style="flex: 2;">
+            
+            <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <h3 style="margin-top: 0;">Dodaj nowego ucznia</h3>
+                <form method="POST" action="/admin" style="display: flex; gap: 15px;">
+                    <input type="text" name="name" placeholder="Imię i nazwisko" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
+                    <button type="submit" style="background: #28a745; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Dodaj ucznia</button>
                 </form>
-            </li>
-            {% else %}<li>Brak nowych powiadomień.</li>{% endfor %}
-        </ul>
-    </div>
+            </div>
 
-    <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 25px;">
-        <h3>Dodaj Studenta</h3>
-        <form method="POST">
-            <input type="text" name="name" placeholder="Imię i nazwisko" required style="padding: 10px; width: 60%; border-radius: 5px; border: 1px solid #ccc;">
-            <button type="submit" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight:bold;">Utwórz konto</button>
-        </form>
-    </div>
+            <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">Lista Uczniów (Aktywni)</h3>
+                    <a href="/admin/archive" style="background: #6c757d; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">📁 Otwórz Archiwum</a>
+                </div>
+                
+                <form method="GET" action="/admin" style="margin-bottom: 20px; display: flex; gap: 10px;">
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Wyszukaj po imieniu/nazwisku..." style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                    <button type="submit" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Szukaj</button>
+                    {% if search_query %}
+                        <a href="/admin" style="padding: 10px 20px; background: #e2e3e5; color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">Wyczyść</a>
+                    {% endif %}
+                </form>
 
-    <h2>Aktywni studenci</h2>
-    <div style="background: white; border-radius: 8px; border: 1px solid #dee2e6;">
-        {% for s in active_students %}
-        <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <a href="/admin/student/{{ s.id }}" style="text-decoration: none; font-weight: bold; color: #007bff; font-size: 1.1em;">👤 {{ s.name }}</a>
-                <div style="margin-top: 5px; display: flex; gap: 10px;">
-                    {% set completed_count = s.essays | selectattr("is_completed", "equalto", True) | list | length %}
-                    {% set unchecked_count = s.essays | selectattr("is_completed", "equalto", True) | rejectattr("feedback") | list | length %}
-                    <span style="background: #e2e3e5; color: #383d41; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">Napisane ogółem: {{ completed_count }}</span>
-                    <span style="background: {% if unchecked_count > 0 %}#dc3545{% else %}#28a745{% endif %}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">Niesprawdzone: {{ unchecked_count }}</span>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    {% for student in active_students %}
+                        <a href="/admin/student/{{ student.id }}" style="display: block; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; text-decoration: none; color: #333; font-weight: bold;">
+                            👤 {{ student.name }}
+                        </a>
+                    {% else %}
+                        <p style="color: #666; font-style: italic;">Brak aktywnych uczniów pasujących do kryteriów.</p>
+                    {% endfor %}
                 </div>
             </div>
-            <span style="color: #888; font-size: 0.9em;">Kliknij, aby sprawdzić prace</span>
         </div>
-        {% endfor %}
-    </div>
 
-    <h2 style="margin-top: 50px; color: #6c757d;">📂 Archiwum</h2>
-    <div style="background: #e9ecef; border-radius: 8px; padding: 10px;">
-        {% for s in archived_students %}
-        <div style="padding: 10px; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between;">
-            <a href="/admin/student/{{ s.id }}" style="color: #495057; font-weight:bold; text-decoration:none;">📁 {{ s.name }}</a>
-            <form action="/admin/student/{{ s.id }}/archive" method="POST"><button type="submit" style="background:none; border:none; color:#007bff; cursor:pointer; font-weight:bold;">Przywróć</button></form>
+        <div style="flex: 1;">
+            <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 25px;">
+                <h3 style="margin-top: 0; border-bottom: 2px solid #ffc107; padding-bottom: 10px;">Powiadomienia</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    {% for notif in notifications %}
+                        <div style="background: {% if 'DO ZAAKCEPTOWANIA' in notif.message %}#d4edda{% else %}#fff3cd{% endif %}; padding: 15px; border-left: 4px solid {% if 'DO ZAAKCEPTOWANIA' in notif.message %}#28a745{% else %}#ffc107{% endif %}; border-radius: 5px; font-size: 14px;">
+                            <p style="margin: 0; margin-bottom: 8px; font-weight: 500;">{{ notif.message }}</p>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 12px; color: #666;">{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                <form action="/admin/notif/delete/{{ notif.id }}" method="POST" style="margin: 0;">
+                                    <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 13px; text-decoration: underline; font-weight: bold;">Usuń</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p style="color: #666; font-size: 14px; font-style: italic;">Brak nowych powiadomień.</p>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
-        {% endfor %}
     </div>
 </body>
 </html>

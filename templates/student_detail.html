@@ -11,14 +11,48 @@
         </div>
     </div>
 
-    <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #ced4da;">
-        <label style="font-weight: bold; color: #495057;">Ogólny link do pulpitu studenta:</label>
-        <input type="text" value="https://{{ request.host }}/student/{{ student.url_slug }}" readonly style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; background: #fff;">
+    <!-- Sekcja Linków Głównych -->
+    <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ced4da;">
+        <label style="font-weight: bold; color: #495057;">Ogólny link do pulpitu studenta (Ćwiczenia):</label>
+        <div style="display: flex; gap: 10px; margin-top: 5px; margin-bottom: 15px;">
+            <input type="text" value="https://{{ request.host }}/student/{{ student.url_slug }}" readonly style="flex:1; padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; background: #fff;">
+            <button onclick="copyLink('https://{{ request.host }}/student/{{ student.url_slug }}')" style="background: #007bff; color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Kopiuj</button>
+        </div>
 
-        <label style="font-weight: bold; color: #d32f2f;"> BEZPOŚREDNI LINK DO EGZAMINU (Wyślij studentowi w dniu testu):</label>
-        <input type="text" value="https://{{ request.host }}/exam/{{ student.url_slug }}" readonly style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #f5c6cb; font-weight: bold; background: #fff3cd; color: #d32f2f;">
+        <label style="font-weight: bold; color: #d32f2f;">🚨 BEZPOŚREDNI LINK DO EGZAMINU GŁÓWNEGO:</label>
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+            <input type="text" value="https://{{ request.host }}/exam/{{ student.url_slug }}" readonly style="flex:1; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb; font-weight: bold; background: #fff3cd; color: #d32f2f;">
+            <button onclick="copyLink('https://{{ request.host }}/exam/{{ student.url_slug }}')" style="background: #d32f2f; color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Kopiuj</button>
+        </div>
     </div>
 
+    <!-- Sekcja Egzaminu Dodatkowego -->
+    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; margin-bottom: 30px;">
+        <h3 style="margin-top: 0; color: #856404; border-bottom: 1px solid #ffeeba; padding-bottom: 5px;">⚙️ Egzamin Dodatkowy (Tajny Link)</h3>
+        <p style="font-size: 14px; color: #666; margin-top: 0;">Egzamin ten ma własne tematy i nie pojawia się u studenta na pulpicie. Dostęp możliwy tylko z poniższego linku.</p>
+        
+        <label style="font-weight: bold; color: #856404;">Link do wysłania dla ucznia:</label>
+        <div style="display: flex; gap: 10px; margin-top: 5px; margin-bottom: 20px;">
+            <input type="text" value="https://{{ request.host }}/exam_extra/{{ student.url_slug }}" readonly style="flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;">
+            <button onclick="copyLink('https://{{ request.host }}/exam_extra/{{ student.url_slug }}')" style="background: #856404; color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Kopiuj</button>
+        </div>
+        
+        <label style="font-weight: bold; color: #856404;">Wpisz tematy na Egzamin Dodatkowy:</label>
+        <form action="/admin/student/{{ student.id }}/extra_exam" method="POST" style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+            {% set extra_exam = student.essays | selectattr("title", "equalto", "Egzamin Dodatkowy") | first %}
+            {% set t1, t2 = ("", "") %}
+            {% if extra_exam and extra_exam.topic_full and '|||' in extra_exam.topic_full %}
+                {% set parts = extra_exam.topic_full.split('|||') %}
+                {% set t1 = parts[0] %}
+                {% set t2 = parts[1] %}
+            {% endif %}
+            <input type="text" name="topic1" value="{{ t1 }}" placeholder="Treść tematu nr 1..." required style="padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            <input type="text" name="topic2" value="{{ t2 }}" placeholder="Treść tematu nr 2..." required style="padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; align-self: flex-start;">Zapisz nowe tematy</button>
+        </form>
+    </div>
+
+    <!-- Narzędzia Systemowe (Kolorowanie) -->
     <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 25px; position: sticky; top: 10px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
         <strong> Globalne narzędzie podświetlania tekstu:</strong> (Zaznacz tekst myszką w wypracowaniu LUB w komentarzu opisowym i kliknij kolor)
         <div style="margin-top: 8px; display: flex; gap: 5px;">
@@ -34,10 +68,15 @@
     
     {% for essay in essays_sorted if not essay.feedback %}
     {% set ns_pending.has_items = true %}
-    <div style="background: white; border: 1px solid #dee2e6; padding: 25px; margin-bottom: 35px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+    <div style="background: white; border: 1px solid {% if essay.is_exam %}#f5c6cb{% else %}#dee2e6{% endif %}; padding: 25px; margin-bottom: 35px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0;">{{ essay.title }}</h3>
+            <h3 style="margin: 0; display: flex; align-items: center;">
+                {{ essay.title }}
+                {% if essay.is_exam %}
+                    <span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; margin-left: 10px; font-weight: bold; text-transform: uppercase;">EGZAMIN</span>
+                {% endif %}
+            </h3>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <button type="button" onclick="copyEssay('{{ essay.id }}')" style="background: #6f42c1; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; border-radius: 4px;">Kopiuj treść</button>
                 <button type="button" onclick="loadLiveContent({{ essay.id }})" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; border-radius: 4px;"> Podgląd LIVE</button>
@@ -94,7 +133,9 @@ Ponowne podkreślenie tezy w zakończeniu</textarea>
     {% for essay in essays_sorted if essay.feedback %}
     {% set ns_graded.has_items = true %}
     <div style="background: #f8f9fa; border: 1px solid #c3e6cb; padding: 25px; margin-bottom: 20px; border-radius: 8px;">
-        <h3 style="margin: 0; color: #155724;">{{ essay.title }} <span style="font-size: 0.7em; color: #28a745;">(Sprawdzono)</span></h3>
+        <h3 style="margin: 0; color: #155724;">
+            {{ essay.title }} <span style="font-size: 0.7em; color: #28a745;">(Sprawdzono)</span>
+        </h3>
         
         {% set word_count_done = (essay.marked_content | safe if essay.marked_content else essay.content).split() | length %}
         <p style="color: #666; font-size: 0.9em; margin-bottom: 0;">Czas pracy: {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s | <strong style="color: #007bff;">Słowa: {{ word_count_done }}</strong></p>
@@ -128,10 +169,16 @@ Ponowne podkreślenie tezy w zakończeniu</textarea>
             document.execCommand('backColor', false, color);
         }
 
+        function copyLink(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Skopiowano link:\n' + url);
+            });
+        }
+
         function copyEssay(essayId) {
             const text = document.getElementById('content_' + essayId).innerText;
             navigator.clipboard.writeText(text).then(() => {
-                alert("Treść rozprawki została skopiowana do schowka.");
+                alert("Treść rozprawki skopiowana.");
             });
         }
 
@@ -139,7 +186,7 @@ Ponowne podkreślenie tezy w zakończeniu</textarea>
             const textarea = document.getElementById('checklist_text_' + essayId);
             textarea.select();
             document.execCommand('copy');
-            alert('Schemat skopiowany! Możesz go teraz wkleić w polu komentarza opisowego.');
+            alert('Schemat skopiowany!');
         }
 
         function loadLiveContent(essayId) {
@@ -164,11 +211,10 @@ Ponowne podkreślenie tezy w zakończeniu</textarea>
                         wordSpan.innerText = words;
                     }
 
-                    alert('Pobrano aktualną treść prosto z ekranu studenta!');
+                    alert('Odświeżono treść LIVE.');
                 });
         }
 
-        // Live word counting when teacher types/highlights
         document.querySelectorAll('div[id^="content_"]').forEach(el => {
             el.addEventListener('input', function() {
                 const id = this.id.split('_')[1];
@@ -180,20 +226,14 @@ Ponowne podkreślenie tezy w zakończeniu</textarea>
 
         function prepareSubmit(essayId) {
             const editableDiv = document.getElementById('content_' + essayId);
-            if (editableDiv) {
-                document.getElementById('hidden_content_' + essayId).value = editableDiv.innerHTML;
-            }
+            if (editableDiv) document.getElementById('hidden_content_' + essayId).value = editableDiv.innerHTML;
             const editableFeedback = document.getElementById('feedback_editable_' + essayId);
-            if (editableFeedback) {
-                document.getElementById('hidden_feedback_' + essayId).value = editableFeedback.innerHTML;
-            }
+            if (editableFeedback) document.getElementById('hidden_feedback_' + essayId).value = editableFeedback.innerHTML;
         }
 
         function prepareSubmitEdit(essayId) {
             const editableFeedback = document.getElementById('feedback_editable_' + essayId + '_edit');
-            if (editableFeedback) {
-                document.getElementById('hidden_feedback_' + essayId + '_edit').value = editableFeedback.innerHTML;
-            }
+            if (editableFeedback) document.getElementById('hidden_feedback_' + essayId + '_edit').value = editableFeedback.innerHTML;
         }
     </script>
 </body>

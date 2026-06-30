@@ -28,13 +28,13 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# MODELE BAZY DANYCH (v5)
+# MODELE BAZY DANYCH (v5) - BEZ ZMIAN! Gwarantuje zachowanie danych.
 class Student(db.Model):
     __tablename__ = 'student_v5'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     url_slug = db.Column(db.String(150), unique=True, nullable=False)
-    exam_unlocked = db.Column(db.Boolean, default=False)
+    exam_unlocked = db.Column(db.Boolean, default=False) # Pole zostaje, żeby nie popsuć bazy
     is_archived = db.Column(db.Boolean, default=False)
     essays = db.relationship('Essay', backref='student', lazy=True)
 
@@ -113,10 +113,40 @@ def admin():
         db.session.commit()
         return redirect(url_for('admin'))
         
-    active_students = Student.query.filter_by(is_archived=False).all()
-    archived_students = Student.query.filter_by(is_archived=True).all()
+    search_query = request.args.get('q', '').lower()
+    
+    # Filtrowanie alfabetyczne i wyszukiwarka
+    active_students_query = Student.query.filter_by(is_archived=False)
+    if search_query:
+        active_students_query = active_students_query.filter(db.func.lower(Student.name).contains(search_query))
+    
+    active_students = active_students_query.order_by(Student.name.asc()).all()
     notifications = Notification.query.order_by(Notification.created_at.desc()).limit(15).all()
-    return render_template('admin.html', active_students=active_students, archived_students=archived_students, notifications=notifications)
+    
+    return render_template('admin.html', active_students=active_students, notifications=notifications, search_query=search_query)
+
+@app.route('/admin/archive')
+@admin_required
+def admin_archive():
+    archived_students = Student.query.filter_by(is_archived=True).order_by(Student.name.asc()).all()
+    return render_template('admin_archive.html', archived_students=archived_students)
+
+@app.route('/admin/student/<int:student_id>/restore', methods=['POST'])
+@admin_required
+def restore_student(student_id):
+    student = Student.query.get_or_404(student_id)
+    student.is_archived = False
+    db.session.commit()
+    return redirect(url_for('admin_archive'))
+
+@app.route('/admin/student/<int:student_id>/delete_forever', methods=['POST'])
+@admin_required
+def delete_student_forever(student_id):
+    student = Student.query.get_or_404(student_id)
+    Essay.query.filter_by(student_id=student.id).delete()
+    db.session.delete(student)
+    db.session.commit()
+    return redirect(url_for('admin_archive'))
 
 @app.route('/admin/student/<int:student_id>')
 @admin_required
@@ -125,19 +155,11 @@ def admin_student_detail(student_id):
     essays_sorted = sorted(student.essays, key=lambda x: x.last_edited_at or datetime.min, reverse=True)
     return render_template('student_detail.html', student=student, essays_sorted=essays_sorted)
 
-@app.route('/admin/student/<int:student_id>/unlock', methods=['POST'])
-@admin_required
-def unlock_exam_individual(student_id):
-    student = Student.query.get_or_404(student_id)
-    student.exam_unlocked = True
-    db.session.commit()
-    return redirect(url_for('admin_student_detail', student_id=student_id))
-
 @app.route('/admin/student/<int:student_id>/archive', methods=['POST'])
 @admin_required
 def toggle_archive(student_id):
     student = Student.query.get_or_404(student_id)
-    student.is_archived = not student.is_archived
+    student.is_archived = True
     db.session.commit()
     return redirect(url_for('admin'))
 
@@ -147,6 +169,18 @@ def save_feedback(essay_id):
     essay = Essay.query.get_or_404(essay_id)
     essay.feedback = request.form.get('feedback')
     essay.marked_content = request.form.get('marked_content')
+    
+    # 1. Usunięcie powiadomienia o ukończeniu, jeśli istnieje
+    completion_msg = f"Student {essay.student.name} ukończył: '{essay.title}'"
+    notif_to_delete = Notification.query.filter_by(message=completion_msg).first()
+    if notif_to_delete:
+        db.session.delete(notif_to_delete)
+
+    # 2. Jeśli sprawdził Kuba, wyślij powiadomienie "do zaakceptowania" dla Julii
+    current_user = session.get('admin_user')
+    if current_user == 'Kuba':
+        db.session.add(Notification(message=f"[DO ZAAKCEPTOWANIA] Praca: {essay.title} - Uczeń: {essay.student.name} (Sprawdził Kuba)"))
+
     db.session.commit()
     return redirect(url_for('admin_student_detail', student_id=essay.student_id))
 
@@ -173,15 +207,12 @@ def student_dashboard(url_slug):
 def exam_direct_link(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     exam_essay = Essay.query.filter_by(student_id=student.id, is_exam=True).first_or_404()
-    if not student.exam_unlocked:
-        return "Egzamin zablokowany. Czekaj na odblokowanie przez nauczyciela.", 403
+    # Usunęto warunek sprawdzania exam_unlocked. Dostęp od razu!
     return render_template('write.html', essay=exam_essay, exam_topics=EXAM_TOPICS)
 
 @app.route('/write/<int:essay_id>')
 def write_essay(essay_id):
     essay = Essay.query.get_or_404(essay_id)
-    if essay.is_exam and not essay.student.exam_unlocked:
-        return "Egzamin zablokowany.", 403
     return render_template('write.html', essay=essay, exam_topics=EXAM_TOPICS)
 
 @app.route('/api/save/<int:essay_id>', methods=['POST'])

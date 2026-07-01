@@ -20,12 +20,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# ----------------- NOWE MODELE (PLATFORMA EDUKACYJNA) -----------------
+# ----------------- MODELE BAZY DANYCH -----------------
 
-# Tabela asocjacyjna: Nauczyciel <-> Uniwersytet
 teacher_university = db.Table('teacher_university',
-    db.Column('teacher_id', db.Integer, db.ForeignKey('users.id')),
-    db.Column('university_id', db.Integer, db.ForeignKey('universities.id'))
+    db.Column('teacher_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE')),
+    db.Column('university_id', db.Integer, db.ForeignKey('universities.id', ondelete='CASCADE'))
 )
 
 class User(db.Model):
@@ -33,24 +32,22 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    role = db.Column(db.String(20), default='teacher', nullable=False) # Role: 'admin' lub 'teacher'
+    role = db.Column(db.String(20), default='teacher', nullable=False) # 'admin' lub 'teacher'
     universities = db.relationship('University', secondary=teacher_university, backref='teachers')
 
 class University(db.Model):
     __tablename__ = 'universities'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    materials = db.relationship('Material', backref='university', lazy=True)
+    materials = db.relationship('Material', backref='university', lazy=True, cascade="all, delete-orphan")
     students = db.relationship('Student', backref='university', lazy=True)
 
 class Material(db.Model):
     __tablename__ = 'materials'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
-    content_url = db.Column(db.String(500))
-    university_id = db.Column(db.Integer, db.ForeignKey('universities.id'))
-
-# ----------------- STARE MODELE (BEZPIECZNIE ROZSZERZONE) -----------------
+    content_url = db.Column(db.String(500), nullable=False)
+    university_id = db.Column(db.Integer, db.ForeignKey('universities.id', ondelete='CASCADE'), nullable=False)
 
 class Student(db.Model):
     __tablename__ = 'student_v5'
@@ -60,11 +57,10 @@ class Student(db.Model):
     exam_unlocked = db.Column(db.Boolean, default=False)
     is_archived = db.Column(db.Boolean, default=False)
     
-    # NOWE KOLUMNY: (nullable=True sprawia, że starzy studenci nie znikną)
     university_id = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=True)
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
-    essays = db.relationship('Essay', backref='student', lazy=True)
+    essays = db.relationship('Essay', backref='student', lazy=True, cascade="all, delete-orphan")
 
 class Essay(db.Model):
     __tablename__ = 'essay_v5'
@@ -89,40 +85,41 @@ class Notification(db.Model):
     message = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-# ----------------- SYSTEM MIGRACJI I INICJALIZACJI -----------------
+# ----------------- INICJALIZACJA BAZY DANYCH -----------------
 
 def setup_database():
     db.create_all()
-    # Bezpieczna "łatka" dodająca kolumny do istniejącej tabeli na żywo
     try:
         db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN university_id INTEGER REFERENCES universities(id)'))
         db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN creator_id INTEGER REFERENCES users(id)'))
         db.session.commit()
-    except Exception as e:
-        db.session.rollback() # Błąd oznacza, że kolumny już tam są (zabezpieczenie)
+    except Exception:
+        db.session.rollback()
 
-    # Automatyczne odtworzenie kont adminów
     if not User.query.filter_by(username="Julia").first():
-        admin1 = User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin")
-        db.session.add(admin1)
+        db.session.add(User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin"))
     if not User.query.filter_by(username="Kuba").first():
-        admin2 = User(username="Kuba", password_hash=generate_password_hash("Open196!"), role="admin")
-        db.session.add(admin2)
+        db.session.add(User(username="Kuba", password_hash=generate_password_hash("Open196!"), role="admin"))
     db.session.commit()
     
-    # Automatyczne dodanie uniwersytetów startowych
     if not University.query.filter_by(name="QA Higher Education").first():
-        uni1 = University(name="QA Higher Education")
-        db.session.add(uni1)
+        db.session.add(University(name="QA Higher Education"))
     if not University.query.filter_by(name="GBS").first():
-        uni2 = University(name="GBS")
-        db.session.add(uni2)
+        db.session.add(University(name="GBS"))
     db.session.commit()
 
 with app.app_context():
     setup_database()
 
-# ----------------- ZABEZPIECZENIA DOSTĘPU -----------------
+# ----------------- DEKORATORY ZABEZPIECZEŃ -----------------
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def admin_required(f):
     @wraps(f)
@@ -132,7 +129,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# ----------------- LOGIKA SYSTEMU (BEZ ZMIAN) -----------------
+# ----------------- POMOCNICZE -----------------
 
 def slugify(value):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
@@ -153,20 +150,19 @@ EXAM_TOPICS = [
     "Some people think that introducing children to team sports is the best way to teach children teamwork. Do you agree or disagree? Give reasons using your own knowledge and examples from your own experience."
 ]
 
+# ----------------- ŚCIEŻKI AUTORYZACJI -----------------
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        
         user = User.query.filter_by(username=username).first()
-        
         if user and check_password_hash(user.password_hash, password):
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
-            return redirect(url_for('admin'))
-            
+            return redirect(url_for('panel_dashboard'))
         return render_template('login.html', error="Błędny login lub hasło")
     return render_template('login.html')
 
@@ -174,6 +170,111 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+# ----------------- NOWY PANEL KOORDYNACJI SYSTEMU PŁATFORMY (/panel) -----------------
+
+@app.route('/panel')
+@login_required
+def panel_dashboard():
+    user = User.query.get(session['user_id'])
+    universities = University.query.all() if user.role == 'admin' else user.universities
+    uni_ids = [u.id for u in universities]
+    
+    search_query = request.args.get('q', '').lower()
+    students_query = Student.query.filter_by(is_archived=False)
+    
+    if user.role != 'admin':
+        students_query = students_query.filter(Student.university_id.in_(uni_ids))
+        
+    if search_query:
+        students_query = students_query.filter(db.func.lower(Student.name).contains(search_query))
+        
+    students = students_query.order_by(Student.name.asc()).all()
+    notifications = Notification.query.order_by(Notification.created_at.desc()).limit(10).all()
+    
+    return render_template('panel_dashboard.html', students=students, universities=universities, notifications=notifications, search_query=search_query, user=user)
+
+@app.route('/panel/student/add', methods=['POST'])
+@login_required
+def panel_add_student():
+    name = request.form.get('name')
+    university_id = request.form.get('university_id')
+    
+    if not name or not university_id:
+        return redirect(url_for('panel_dashboard'))
+        
+    slug = f"{uuid.uuid4().hex[:4]}-{slugify(name)}"
+    new_student = Student(name=name, url_slug=slug, university_id=int(university_id), creator_id=session['user_id'])
+    db.session.add(new_student)
+    
+    for title, full_topic in PRACTICE_TOPICS:
+        db.session.add(Essay(title=title, topic_full=full_topic, is_exam=False, student=new_student))
+    db.session.add(Essay(title="Egzamin", topic_full="[EGZAMIN] Tematy będą dostępne po wejściu.", is_exam=True, student=new_student))
+    db.session.add(Essay(title="Egzamin Dodatkowy", topic_full="Wpisz temat nr 1...|||Wpisz temat nr 2...", is_exam=True, student=new_student))
+    
+    db.session.commit()
+    return redirect(url_for('panel_dashboard'))
+
+@app.route('/panel/materials', methods=['GET', 'POST'])
+@login_required
+def panel_materials():
+    user = User.query.get(session['user_id'])
+    universities = University.query.all() if user.role == 'admin' else user.universities
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content_url = request.form.get('content_url')
+        university_id = request.form.get('university_id')
+        
+        if title and content_url and university_id:
+            db.session.add(Material(title=title, content_url=content_url, university_id=int(university_id)))
+            db.session.commit()
+        return redirect(url_for('panel_materials'))
+        
+    return render_template('panel_materials.html', universities=universities, user=user)
+
+@app.route('/panel/material/delete/<int:material_id>', methods=['POST'])
+@login_required
+def panel_delete_material(material_id):
+    material = Material.query.get_or_404(material_id)
+    user = User.query.get(session['user_id'])
+    if user.role == 'admin' or material.university in user.universities:
+        db.session.delete(material)
+        db.session.commit()
+    return redirect(url_for('panel_materials'))
+
+@app.route('/panel/teachers', methods=['GET', 'POST'])
+@admin_required
+def panel_teachers():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        uni_ids = request.form.getlist('universities')
+        
+        if username and password:
+            hashed_pw = generate_password_hash(password)
+            new_teacher = User(username=username, password_hash=hashed_pw, role='teacher')
+            for uid in uni_ids:
+                uni = University.query.get(int(uid))
+                if uni:
+                    new_teacher.universities.append(uni)
+            db.session.add(new_teacher)
+            db.session.commit()
+        return redirect(url_for('panel_teachers'))
+        
+    teachers = User.query.filter_by(role='teacher').all()
+    all_unis = University.query.all()
+    return render_template('panel_teachers.html', teachers=teachers, all_unis=all_unis)
+
+@app.route('/panel/teacher/delete/<int:teacher_id>', methods=['POST'])
+@admin_required
+def panel_delete_teacher(teacher_id):
+    teacher = User.query.get_or_404(teacher_id)
+    db.session.delete(teacher)
+    db.session.commit()
+    return redirect(url_for('panel_teachers'))
+
+# ----------------- STARE ŚCIEŻKI ADMINA (WYPRACOWANIA - BEZ ZMIAN) -----------------
 
 @app.route('/admin', methods=['GET', 'POST'])
 @admin_required
@@ -191,14 +292,12 @@ def admin():
         return redirect(url_for('admin'))
         
     search_query = request.args.get('q', '').lower()
-    
     active_students_query = Student.query.filter_by(is_archived=False)
     if search_query:
         active_students_query = active_students_query.filter(db.func.lower(Student.name).contains(search_query))
     
     active_students = active_students_query.order_by(Student.name.asc()).all()
     notifications = Notification.query.order_by(Notification.created_at.desc()).limit(15).all()
-    
     return render_template('admin.html', active_students=active_students, notifications=notifications, search_query=search_query)
 
 @app.route('/admin/archive')
@@ -244,16 +343,13 @@ def toggle_archive(student_id):
 def update_extra_exam(student_id):
     student = Student.query.get_or_404(student_id)
     extra_exam = Essay.query.filter_by(student_id=student.id, title="Egzamin Dodatkowy").first()
-    
     if not extra_exam:
         extra_exam = Essay(title="Egzamin Dodatkowy", is_exam=True, student_id=student.id)
         db.session.add(extra_exam)
-        
     t1 = request.form.get('topic1', 'Temat 1')
     t2 = request.form.get('topic2', 'Temat 2')
     extra_exam.topic_full = f"{t1}|||{t2}"
     db.session.commit()
-    
     return redirect(url_for('admin_student_detail', student_id=student.id))
 
 @app.route('/admin/essay/<int:essay_id>/return', methods=['POST'])
@@ -261,12 +357,10 @@ def update_extra_exam(student_id):
 def return_essay(essay_id):
     essay = Essay.query.get_or_404(essay_id)
     essay.is_completed = False
-    
     all_notifs = Notification.query.all()
     for n in all_notifs:
         if str(essay.student.name) in n.message and ("ukończył" in n.message or "ukończyła" in n.message):
             db.session.delete(n)
-            
     db.session.commit()
     return redirect(url_for('admin_student_detail', student_id=essay.student_id))
 
@@ -276,17 +370,14 @@ def save_feedback(essay_id):
     essay = Essay.query.get_or_404(essay_id)
     essay.feedback = request.form.get('feedback')
     essay.marked_content = request.form.get('marked_content')
-    
     all_notifs = Notification.query.all()
     for n in all_notifs:
         if essay.title[:30] in n.message and essay.student.name in n.message:
             db.session.delete(n)
-
     current_user = session.get('username')
     if current_user == 'Kuba':
         msg = f"<a href='/admin/student/{essay.student_id}' class='notif-link'>[DO ZAAKCEPTOWANIA] <b>{essay.student.name}</b> - '{essay.title[:40]}'</a>"
         db.session.add(Notification(message=msg))
-
     db.session.commit()
     return redirect(url_for('admin_student_detail', student_id=essay.student_id))
 
@@ -304,10 +395,15 @@ def delete_notif(notif_id):
     db.session.commit()
     return redirect(url_for('admin'))
 
+# ----------------- WIDOKI STUDENTA -----------------
+
 @app.route('/student/<url_slug>')
 def student_dashboard(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
-    return render_template('student.html', student=student, exam_topics=EXAM_TOPICS)
+    materials = []
+    if student.university:
+        materials = student.university.materials
+    return render_template('student.html', student=student, exam_topics=EXAM_TOPICS, materials=materials)
 
 @app.route('/exam/<url_slug>')
 def exam_direct_link(url_slug):
@@ -320,12 +416,10 @@ def exam_extra_direct_link(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     exam_essay = Essay.query.filter_by(student_id=student.id, title="Egzamin Dodatkowy").first()
     if not exam_essay:
-        return "Egzamin Dodatkowy nie został jeszcze utworzony. Nauczyciel musi go zapisać w panelu.", 404
-        
+        return "Egzamin Dodatkowy nie został jeszcze utworzony.", 404
     custom_topics = ["Brak tematu 1", "Brak tematu 2"]
     if exam_essay.topic_full and '|||' in exam_essay.topic_full:
         custom_topics = exam_essay.topic_full.split('|||')
-        
     return render_template('write.html', essay=exam_essay, exam_topics=custom_topics)
 
 @app.route('/write/<int:essay_id>')

@@ -84,10 +84,9 @@ class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     message = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
-    # NOWE: Przypisanie powiadomienia do konkretnego nauczyciela
     recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
-# ----------------- INICJALIZACJA BAZY DANYCH -----------------
+# ----------------- INICJALIZACJA I RESET BAZY DANYCH -----------------
 
 def setup_database():
     db.create_all()
@@ -104,16 +103,41 @@ def setup_database():
     except Exception:
         db.session.rollback()
 
-    if not User.query.filter_by(username="Julia").first():
-        db.session.add(User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin"))
-    if not User.query.filter_by(username="Kuba").first():
-        db.session.add(User(username="Kuba", password_hash=generate_password_hash("Open196!"), role="admin"))
+    # Zapewnienie istnienia uniwersytetów
+    qa_uni = University.query.filter_by(name="QA Higher Education").first()
+    if not qa_uni:
+        qa_uni = University(name="QA Higher Education")
+        db.session.add(qa_uni)
+        
+    gbs_uni = University.query.filter_by(name="GBS").first()
+    if not gbs_uni:
+        gbs_uni = University(name="GBS")
+        db.session.add(gbs_uni)
     db.session.commit()
-    
-    if not University.query.filter_by(name="QA Higher Education").first():
-        db.session.add(University(name="QA Higher Education"))
-    if not University.query.filter_by(name="GBS").first():
-        db.session.add(University(name="GBS"))
+
+    # TWARDY RESET KONT KUBY I JULII
+    kuba = User.query.filter_by(username="Kuba").first()
+    if not kuba:
+        kuba = User(username="Kuba", password_hash=generate_password_hash("Open196!"), role="admin")
+        db.session.add(kuba)
+    else:
+        kuba.role = "admin"
+        kuba.password_hash = generate_password_hash("Open196!")
+
+    julia = User.query.filter_by(username="Julia").first()
+    if not julia:
+        julia = User(username="Julia", password_hash=generate_password_hash("Open196!"), role="teacher")
+        db.session.add(julia)
+    else:
+        julia.role = "teacher"
+        julia.password_hash = generate_password_hash("Open196!")
+    db.session.commit()
+
+    # Ustawienie dostępu tylko do QA Higher Education dla Julii
+    if qa_uni not in julia.universities:
+        julia.universities.append(qa_uni)
+    if gbs_uni in julia.universities:
+        julia.universities.remove(gbs_uni)
     db.session.commit()
 
 with app.app_context():
@@ -202,7 +226,7 @@ def panel_dashboard():
     if search_query:
         students_query = students_query.filter(db.func.lower(Student.name).contains(search_query))
         
-    students = students_query.order_by(Student.name.asc()).all()
+    students = students_query.order_by(Student.name.desc()).all()
     
     return render_template('panel_dashboard.html', students=students, universities=universities, notifications=notifications, search_query=search_query, user=user)
 
@@ -330,7 +354,7 @@ def panel_master():
 # ----------------- MODUŁ SPRAWDZANIA ROZPRAWEK (/admin) -----------------
 
 @app.route('/admin', methods=['GET', 'POST'])
-@login_required # Zmiana! Teraz nauczyciele mają tu dostęp, ale widzą tylko swoich
+@login_required
 def admin():
     user = User.query.get(session['user_id'])
     uni_ids = [u.id for u in user.universities]
@@ -338,7 +362,6 @@ def admin():
     if request.method == 'POST':
         student_name = request.form.get('name')
         slug = f"{uuid.uuid4().hex[:4]}-{slugify(student_name)}"
-        # Domyślnie przypisz pierwszą uczelnię z listy nauczyciela, jeśli dodaje ucznia z tego panelu
         uni_id = uni_ids[0] if uni_ids else None 
         new_student = Student(name=student_name, url_slug=slug, creator_id=user.id, university_id=uni_id)
         db.session.add(new_student)
@@ -353,7 +376,6 @@ def admin():
     search_query = request.args.get('q', '').lower()
     active_students_query = Student.query.filter_by(is_archived=False)
     
-    # IZOLACJA DANYCH NAUCZYCIELI
     if user.role != 'admin':
         active_students_query = active_students_query.filter(Student.university_id.in_(uni_ids))
         notifications = Notification.query.filter_by(recipient_id=user.id).order_by(Notification.created_at.desc()).limit(15).all()
@@ -386,7 +408,7 @@ def restore_student(student_id):
     return redirect(url_for('admin_archive'))
 
 @app.route('/admin/student/<int:student_id>/delete_forever', methods=['POST'])
-@admin_required # Tylko admin może całkowicie usunąć
+@admin_required
 def delete_student_forever(student_id):
     student = Student.query.get_or_404(student_id)
     Essay.query.filter_by(student_id=student.id).delete()
@@ -441,7 +463,6 @@ def save_feedback(essay_id):
     essay.feedback = request.form.get('feedback')
     essay.marked_content = request.form.get('marked_content')
     
-    # Usuwanie powiadomień po sprawdzeniu
     all_notifs = Notification.query.filter(Notification.message.contains(essay.student.name)).all()
     for n in all_notifs:
         db.session.delete(n)
@@ -517,7 +538,6 @@ def auto_save(essay_id):
     essay.last_edited_at = now
     db.session.commit()
 
-    # Logika powiadomień po ukończeniu pracy
     if became_completed:
         msg = f"<a href='/admin/student/{essay.student_id}' class='notif-link'><b>{essay.student.name}</b> ukończył/a: '{essay.title[:30]}'</a>"
         notif = Notification(message=msg, recipient_id=essay.student.creator_id)

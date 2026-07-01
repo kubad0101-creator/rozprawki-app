@@ -180,6 +180,22 @@ def update_extra_exam(student_id):
     
     return redirect(url_for('admin_student_detail', student_id=student.id))
 
+@app.route('/admin/essay/<int:essay_id>/return', methods=['POST'])
+@admin_required
+def return_essay(essay_id):
+    """Cofa status oddania pracy i odblokowuje ją uczniowi do ponownej edycji."""
+    essay = Essay.query.get_or_404(essay_id)
+    essay.is_completed = False
+    
+    # Usuwamy stare powiadomienia o ukończeniu tej pracy
+    all_notifs = Notification.query.all()
+    for n in all_notifs:
+        if str(essay.student.name) in n.message and ("ukończył" in n.message or "ukończyła" in n.message):
+            db.session.delete(n)
+            
+    db.session.commit()
+    return redirect(url_for('admin_student_detail', student_id=essay.student_id))
+
 @app.route('/admin/essay/<int:essay_id>/feedback', methods=['POST'])
 @admin_required
 def save_feedback(essay_id):

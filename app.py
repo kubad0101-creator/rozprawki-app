@@ -6,6 +6,8 @@ from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import text
 
 app = Flask(__name__)
 app.secret_key = "Open196!_System_Rozprawek_2024"
@@ -18,17 +20,38 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-ADMIN_CREDENTIALS = {"Julia": "Open196!", "Kuba": "Open196!"}
+# ----------------- NOWE MODELE (PLATFORMA EDUKACYJNA) -----------------
 
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'admin_user' not in session:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
+# Tabela asocjacyjna: Nauczyciel <-> Uniwersytet
+teacher_university = db.Table('teacher_university',
+    db.Column('teacher_id', db.Integer, db.ForeignKey('users.id')),
+    db.Column('university_id', db.Integer, db.ForeignKey('universities.id'))
+)
 
-# MODELE BAZY DANYCH (v5)
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    role = db.Column(db.String(20), default='teacher', nullable=False) # Role: 'admin' lub 'teacher'
+    universities = db.relationship('University', secondary=teacher_university, backref='teachers')
+
+class University(db.Model):
+    __tablename__ = 'universities'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    materials = db.relationship('Material', backref='university', lazy=True)
+    students = db.relationship('Student', backref='university', lazy=True)
+
+class Material(db.Model):
+    __tablename__ = 'materials'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content_url = db.Column(db.String(500))
+    university_id = db.Column(db.Integer, db.ForeignKey('universities.id'))
+
+# ----------------- STARE MODELE (BEZPIECZNIE ROZSZERZONE) -----------------
+
 class Student(db.Model):
     __tablename__ = 'student_v5'
     id = db.Column(db.Integer, primary_key=True)
@@ -36,6 +59,11 @@ class Student(db.Model):
     url_slug = db.Column(db.String(150), unique=True, nullable=False)
     exam_unlocked = db.Column(db.Boolean, default=False)
     is_archived = db.Column(db.Boolean, default=False)
+    
+    # NOWE KOLUMNY: (nullable=True sprawia, że starzy studenci nie znikną)
+    university_id = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=True)
+    creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
     essays = db.relationship('Essay', backref='student', lazy=True)
 
 class Essay(db.Model):
@@ -61,8 +89,50 @@ class Notification(db.Model):
     message = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-with app.app_context():
+# ----------------- SYSTEM MIGRACJI I INICJALIZACJI -----------------
+
+def setup_database():
     db.create_all()
+    # Bezpieczna "łatka" dodająca kolumny do istniejącej tabeli na żywo
+    try:
+        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN university_id INTEGER REFERENCES universities(id)'))
+        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN creator_id INTEGER REFERENCES users(id)'))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback() # Błąd oznacza, że kolumny już tam są (zabezpieczenie)
+
+    # Automatyczne odtworzenie kont adminów
+    if not User.query.filter_by(username="Julia").first():
+        admin1 = User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin")
+        db.session.add(admin1)
+    if not User.query.filter_by(username="Kuba").first():
+        admin2 = User(username="Kuba", password_hash=generate_password_hash("Open196!"), role="admin")
+        db.session.add(admin2)
+    db.session.commit()
+    
+    # Automatyczne dodanie uniwersytetów startowych
+    if not University.query.filter_by(name="QA Higher Education").first():
+        uni1 = University(name="QA Higher Education")
+        db.session.add(uni1)
+    if not University.query.filter_by(name="GBS").first():
+        uni2 = University(name="GBS")
+        db.session.add(uni2)
+    db.session.commit()
+
+with app.app_context():
+    setup_database()
+
+# ----------------- ZABEZPIECZENIA DOSTĘPU -----------------
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session or session.get('role') != 'admin':
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# ----------------- LOGIKA SYSTEMU (BEZ ZMIAN) -----------------
 
 def slugify(value):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
@@ -88,15 +158,21 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        if username in ADMIN_CREDENTIALS and ADMIN_CREDENTIALS[username] == password:
-            session['admin_user'] = username
+        
+        user = User.query.filter_by(username=username).first()
+        
+        if user and check_password_hash(user.password_hash, password):
+            session['user_id'] = user.id
+            session['username'] = user.username
+            session['role'] = user.role
             return redirect(url_for('admin'))
+            
         return render_template('login.html', error="Błędny login lub hasło")
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
-    session.pop('admin_user', None)
+    session.clear()
     return redirect(url_for('login'))
 
 @app.route('/admin', methods=['GET', 'POST'])
@@ -183,11 +259,9 @@ def update_extra_exam(student_id):
 @app.route('/admin/essay/<int:essay_id>/return', methods=['POST'])
 @admin_required
 def return_essay(essay_id):
-    """Cofa status oddania pracy i odblokowuje ją uczniowi do ponownej edycji."""
     essay = Essay.query.get_or_404(essay_id)
     essay.is_completed = False
     
-    # Usuwamy stare powiadomienia o ukończeniu tej pracy
     all_notifs = Notification.query.all()
     for n in all_notifs:
         if str(essay.student.name) in n.message and ("ukończył" in n.message or "ukończyła" in n.message):
@@ -208,7 +282,7 @@ def save_feedback(essay_id):
         if essay.title[:30] in n.message and essay.student.name in n.message:
             db.session.delete(n)
 
-    current_user = session.get('admin_user')
+    current_user = session.get('username')
     if current_user == 'Kuba':
         msg = f"<a href='/admin/student/{essay.student_id}' class='notif-link'>[DO ZAAKCEPTOWANIA] <b>{essay.student.name}</b> - '{essay.title[:40]}'</a>"
         db.session.add(Notification(message=msg))

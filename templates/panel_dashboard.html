@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Panel Edukacyjny - Uniwersytety</title>
+    <style>
+        .flash-messages { margin-bottom: 20px; }
+        .alert { padding: 15px; margin-bottom: 15px; border-radius: 6px; font-weight: bold; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    </style>
 </head>
 <body style="font-family: sans-serif; padding: 25px; max-width: 1200px; margin: auto; background: #f4f6f9;">
     
@@ -13,12 +18,24 @@
         </div>
         <div style="display: flex; gap: 10px;">
             <a href="{{ url_for('panel_materials') }}" style="background: #17a2b8; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">📚 Materiały dydaktyczne</a>
+            <a href="{{ url_for('admin') }}" style="background: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">📝 Wszystkie Rozprawki</a>
             {% if user.role == 'admin' %}
-                <a href="{{ url_for('panel_teachers') }}" style="background: #6f42c1; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">👥 Nauczyciele</a>
-                <a href="{{ url_for('admin') }}" style="background: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">📝 Sprawdzanie Rozprawek</a>
+                <a href="{{ url_for('panel_master') }}" style="background: #c8102e; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">⚙️ Panel Master</a>
             {% endif %}
             <a href="/logout" style="background: #dc3545; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">Wyloguj</a>
         </div>
+    </div>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
     </div>
 
     <div style="display: flex; gap: 25px;">
@@ -28,19 +45,27 @@
                 <form method="POST" action="{{ url_for('panel_add_student') }}" style="display: flex; flex-direction: column; gap: 15px;">
                     <div style="display: flex; gap: 15px;">
                         <input type="text" name="name" placeholder="Imię i nazwisko studenta" required style="flex: 2; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
-                        <select name="university_id" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
-                            <option value="" disabled selected>Wybierz uniwersytet...</option>
-                            {% for uni in universities %}
-                                <option value="{{ uni.id }}">{{ uni.name }}</option>
-                            {% endfor %}
-                        </select>
+                        
+                        {% if universities|length == 1 %}
+                            <input type="hidden" name="university_id" value="{{ universities[0].id }}">
+                            <div style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; background-color: #eef2f5; color: #555;">
+                                Zostanie dodany do: <strong>{{ universities[0].name }}</strong>
+                            </div>
+                        {% else %}
+                            <select name="university_id" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
+                                <option value="" disabled selected>Wybierz uniwersytet...</option>
+                                {% for uni in universities %}
+                                    <option value="{{ uni.id }}">{{ uni.name }}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
                     </div>
                     <button type="submit" style="background: #28a745; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; align-self: flex-start;">Utwórz konto studenta</button>
                 </form>
             </div>
 
             <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <h3 style="margin: 0; margin-bottom: 15px;">Lista Studentów w Twoich uniwersytetach</h3>
+                <h3 style="margin: 0; margin-bottom: 15px;">Lista Twoich Studentów</h3>
                 
                 <form method="GET" action="{{ url_for('panel_dashboard') }}" style="margin-bottom: 20px; display: flex; gap: 10px;">
                     <input type="text" name="q" value="{{ search_query }}" placeholder="Szukaj po imieniu/nazwisku..." style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
@@ -62,7 +87,8 @@
                                 </div>
                             </div>
                             <div style="display: flex; gap: 8px;">
-                                <button onclick="copy('https://{{ request.host }}/student/{{ student.url_slug }}')" style="background: #17a2b8; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">🔗 Link dla studenta</button>
+                                <a href="{{ url_for('admin_student_detail', student_id=student.id) }}" style="background: #28a745; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-decoration: none;">📝 Oceny i Profil</a>
+                                <button onclick="copy('https://{{ request.host }}/student/{{ student.url_slug }}')" style="background: #17a2b8; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">🔗 Skopiuj Link</button>
                             </div>
                         </div>
                     {% else %}
@@ -74,7 +100,7 @@
 
         <div style="flex: 1;">
             <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <h3 style="margin-top: 0; border-bottom: 2px solid #ffc107; padding-bottom: 10px;">Ostatnie powiadomienia</h3>
+                <h3 style="margin-top: 0; border-bottom: 2px solid #ffc107; padding-bottom: 10px;">Powiadomienia od studentów</h3>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     {% for notif in notifications %}
                         <div style="background: #fff3cd; padding: 12px; border-left: 4px solid #ffc107; border-radius: 5px; font-size: 13px;">
@@ -82,7 +108,7 @@
                             <small style="color: #777;">{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
                         </div>
                     {% else %}
-                        <p style="color: #666; font-style: italic; font-size: 13px;">Brak powiadomień.</p>
+                        <p style="color: #666; font-style: italic; font-size: 13px;">Nie masz nowych powiadomień.</p>
                     {% endfor %}
                 </div>
             </div>

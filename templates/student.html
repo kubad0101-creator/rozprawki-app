@@ -1,8 +1,36 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head><meta charset="UTF-8"><title>Pulpit Studenta</title></head>
+<head>
+    <meta charset="UTF-8">
+    <title>Pulpit Studenta</title>
+</head>
 <body style="font-family: sans-serif; padding: 20px; max-width: 850px; margin: auto; background: #fdfdfd;">
-    <h1>Witaj, {{ student.name }}</h1>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px;">
+        <h1 style="margin: 0;">Witaj, {{ student.name }}</h1>
+        {% if student.university %}
+            <span style="background: #0d47a1; color: white; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+                🏛️ Uniwersytet: {{ student.university.name }}
+            </span>
+        {% endif %}
+    </div>
+
+    {% if materials %}
+    <div style="background: #fff; border: 1px solid #b6effb; padding: 20px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <h3 style="margin-top: 0; color: #055160; display: flex; align-items: center; gap: 8px;">
+            📚 Twoje materiały przygotowawcze i dydaktyczne:
+        </h3>
+        <p style="font-size: 14px; color: #666; margin-top: 0;">Poniżej znajdują się oficjalne pliki oraz testy udostępnione przez Twojego koordynatora:</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+            {% for mat in materials %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: #f0fdfa; border: 1px solid #c3fae8; border-radius: 6px;">
+                    <span style="font-weight: bold; color: #0f5132;">📄 {{ mat.title }}</span>
+                    <a href="{{ mat.content_url }}" target="_blank" style="background: #0f5132; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 13px;">Otwórz materiał ↗</a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
     
     <div style="background: #e3f2fd; border-left: 5px solid #0d47a1; padding: 20px; margin-bottom: 30px; border-radius: 5px;">
         <h3 style="margin-top: 0; color: #0d47a1;"> Jak pisać rozprawki (Instrukcja do egzaminu)</h3>
@@ -10,15 +38,14 @@
         <ul style="line-height: 1.6;">
             <li><strong>Długość:</strong> Ponad 250 słów.</li>
             <li><strong>Schemat:</strong> Podział tekstu na 5 akapitów (wstęp, 3 argumenty, zakończenie).</li>
-            <li><strong>Słownictwo:</strong> Używaj zwrotów rozpoczynających akapity (np. <em>First of all</em>, <em>Secondly</em>, <em>In addition to</em>, <em>In conclusion</em>).</li>
-            <li><strong>Wstęp:</strong> 2-3 zdania ogólne wprowadzające oraz jasna teza na końcu wstępu (np. <em>I strongly agree/disagree that...</em>).</li>
-            <li><strong>Rozwinięcie:</strong> Wartościowe argumenty broniące tezy, w tym <em>jeden argument oparty na przykładzie z własnego doświadczenia</em> (<em>from my experience...</em> - może być zmyślony).</li>
+            <li><strong>Słownictwo:</strong> Używaj zwrotów rozpoczynających akapity (np. <em>First of all</em>, <em>Secondly</em>, <em>In conclusion</em>).</li>
+            <li><strong>Wstęp:</strong> 2-3 zdania ogólne wprowadzające oraz jasna teza na końcu wstępu.</li>
+            <li><strong>Rozwinięcie:</strong> Wartościowe argumenty, w tym jeden oparty na przykładzie z własnego doświadczenia.</li>
             <li><strong>Zakończenie:</strong> Podsumowanie i ponowne podkreślenie tezy ze wstępu.</li>
         </ul>
-        <p style="margin-bottom: 0;">BARDZO dokładnie trzymaj się tematu i przeczytaj pracę po napisaniu, aby poprawić drobne błędy.</p>
     </div>
 
-    <h2>Twoje zadania:</h2>
+    <h2>Twoje zadania (Moduł Pisania):</h2>
     
     {% set ns = namespace(locked=false) %}
     
@@ -57,14 +84,10 @@
         {% endif %}
     {% endfor %}
 
-    <!-- Sekcja Egzaminu widoczna tylko jeśli oddany. 
-         Filtruje tylko po tytule 'Egzamin', więc tajny Egzamin Dodatkowy nie pokaże się tu nigdy! -->
     {% set exam_essay = student.essays | selectattr("title", "equalto", "Egzamin") | first %}
-    
     {% if exam_essay and (exam_essay.is_completed or exam_essay.feedback) %}
     <hr style="margin: 40px 0;">
     <h2 style="color: #d32f2f;"> EGZAMIN GŁÓWNY (Napisany)</h2>
-    
     <div style="background: white; border: 2px solid #4caf50; padding: 20px; border-radius: 8px;">
         <span style="color: green; font-weight: bold;"> Arkusz egzaminacyjny został pomyślnie oddany i zablokowany.</span><br><br>
         <a href="/write/{{ exam_essay.id }}" style="display: inline-block; background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;"> Przejrzyj swój arkusz egzaminacyjny</a>

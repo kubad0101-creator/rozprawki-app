@@ -3,11 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <title>Zarządzanie Materiałami Edukacyjnymi</title>
+    <style>
+        .flash-messages { margin-bottom: 20px; }
+        .alert { padding: 15px; margin-bottom: 15px; border-radius: 6px; font-weight: bold; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    </style>
 </head>
 <body style="font-family: sans-serif; padding: 25px; max-width: 1000px; margin: auto; background: #f4f6f9;">
     
     <div style="margin-bottom: 20px;">
         <a href="{{ url_for('panel_dashboard') }}" style="text-decoration: none; color: #007bff; font-weight: bold;">⬅ Wróć do panelu głównego</a>
+    </div>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
     </div>
 
     <h1 style="color: #333;">📚 Zarządzanie Materiałami</h1>
@@ -17,12 +34,20 @@
         <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
             <div style="display: flex; gap: 15px;">
                 <input type="text" name="title" placeholder="Nazwa materiału (np. Przewodnik po testach GBS)" required style="flex: 2; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
-                <select name="university_id" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
-                    <option value="" disabled selected>Wybierz uniwersytet...</option>
-                    {% for uni in universities %}
-                        <option value="{{ uni.id }}">{{ uni.name }}</option>
-                    {% endfor %}
-                </select>
+                
+                {% if universities|length == 1 %}
+                    <input type="hidden" name="university_id" value="{{ universities[0].id }}">
+                    <div style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; background-color: #eef2f5; color: #555;">
+                        Uniwersytet: <strong>{{ universities[0].name }}</strong>
+                    </div>
+                {% else %}
+                    <select name="university_id" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
+                        <option value="" disabled selected>Wybierz uniwersytet...</option>
+                        {% for uni in universities %}
+                            <option value="{{ uni.id }}">{{ uni.name }}</option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
             </div>
             <input type="url" name="content_url" placeholder="Pełny link URL do materiału (np. z Google Drive, OneDrive, itp.)" required style="padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
             <button type="submit" style="background: #17a2b8; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; align-self: flex-start;">Udostępnij materiał</button>

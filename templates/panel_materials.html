@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Zarządzanie Materiałami Edukacyjnymi</title>
+</head>
+<body style="font-family: sans-serif; padding: 25px; max-width: 1000px; margin: auto; background: #f4f6f9;">
+    
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('panel_dashboard') }}" style="text-decoration: none; color: #007bff; font-weight: bold;">⬅ Wróć do panelu głównego</a>
+    </div>
+
+    <h1 style="color: #333;">📚 Zarządzanie Materiałami</h1>
+
+    <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <h3 style="margin-top: 0;">Dodaj nowy materiał (plik/link)</h3>
+        <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="display: flex; gap: 15px;">
+                <input type="text" name="title" placeholder="Nazwa materiału (np. Przewodnik po testach GBS)" required style="flex: 2; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
+                <select name="university_id" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
+                    <option value="" disabled selected>Wybierz uniwersytet...</option>
+                    {% for uni in universities %}
+                        <option value="{{ uni.id }}">{{ uni.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <input type="url" name="content_url" placeholder="Pełny link URL do materiału (np. z Google Drive, OneDrive, itp.)" required style="padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
+            <button type="submit" style="background: #17a2b8; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; align-self: flex-start;">Udostępnij materiał</button>
+        </form>
+    </div>
+
+    {% for uni in universities %}
+        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <h2 style="margin-top: 0; color: #0d47a1; border-bottom: 2px solid #e3f2fd; padding-bottom: 8px;">🏛️ Materiały dla: {{ uni.name }}</h2>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                {% for mat in uni.materials %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px;">
+                        <div>
+                            <strong style="color: #333;">{{ mat.title }}</strong><br>
+                            <small><a href="{{ mat.content_url }}" target="_blank" style="color: #007bff;">{{ mat.content_url }}</a></small>
+                        </div>
+                        <form action="{{ url_for('panel_delete_material', material_id=mat.id) }}" method="POST" style="margin: 0;">
+                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;" onclick="return confirm('Czy na pewno chcesz usunąć ten materiał?')">Usuń</button>
+                        </form>
+                    </div>
+                {% else %}
+                    <p style="color: #777; font-style: italic;">Brak wgranych materiałów dla tego uniwersytetu.</p>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+
+</body>
+</html>

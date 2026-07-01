@@ -162,7 +162,12 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
+            
+            # Przekierowanie zależne od roli
+            if user.role == 'admin':
+                return redirect(url_for('panel_master'))
             return redirect(url_for('panel_dashboard'))
+            
         return render_template('login.html', error="Błędny login lub hasło")
     return render_template('login.html')
 
@@ -243,36 +248,78 @@ def panel_delete_material(material_id):
         db.session.commit()
     return redirect(url_for('panel_materials'))
 
-@app.route('/panel/teachers', methods=['GET', 'POST'])
+# ----------------- PANEL MASTER DLA ADMINA -----------------
+
+@app.route('/panel/master', methods=['GET', 'POST'])
 @admin_required
-def panel_teachers():
+def panel_master():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        uni_ids = request.form.getlist('universities')
+        action = request.form.get('action')
         
-        if username and password:
-            hashed_pw = generate_password_hash(password)
-            new_teacher = User(username=username, password_hash=hashed_pw, role='teacher')
-            for uid in uni_ids:
-                uni = University.query.get(int(uid))
-                if uni:
-                    new_teacher.universities.append(uni)
-            db.session.add(new_teacher)
-            db.session.commit()
-        return redirect(url_for('panel_teachers'))
-        
+        # Tworzenie nowego nauczyciela
+        if action == 'create_teacher':
+            username = request.form.get('username')
+            password = request.form.get('password')
+            uni_ids = request.form.getlist('universities')
+            
+            if username and password:
+                # Sprawdzenie czy login już istnieje
+                if not User.query.filter_by(username=username).first():
+                    hashed_pw = generate_password_hash(password)
+                    new_teacher = User(username=username, password_hash=hashed_pw, role='teacher')
+                    for uid in uni_ids:
+                        uni = University.query.get(int(uid))
+                        if uni:
+                            new_teacher.universities.append(uni)
+                    db.session.add(new_teacher)
+                    db.session.commit()
+                    
+        # Edycja istniejącego nauczyciela (hasło / uniwersytety)
+        elif action == 'edit_teacher':
+            teacher_id = request.form.get('teacher_id')
+            new_password = request.form.get('new_password')
+            uni_ids = request.form.getlist('universities')
+            
+            teacher = User.query.get(teacher_id)
+            if teacher:
+                if new_password: # Jeśli wpisano nowe hasło, zaktualizuj
+                    teacher.password_hash = generate_password_hash(new_password)
+                
+                # Aktualizacja przypisanych uniwersytetów
+                teacher.universities = []
+                for uid in uni_ids:
+                    uni = University.query.get(int(uid))
+                    if uni:
+                        teacher.universities.append(uni)
+                db.session.commit()
+                
+        # Usuwanie nauczyciela
+        elif action == 'delete_teacher':
+            teacher_id = request.form.get('teacher_id')
+            teacher = User.query.get(teacher_id)
+            if teacher:
+                db.session.delete(teacher)
+                db.session.commit()
+                
+        return redirect(url_for('panel_master'))
+
+    # POBIERANIE DANYCH DO WIDOKU GET
     teachers = User.query.filter_by(role='teacher').all()
     all_unis = University.query.all()
-    return render_template('panel_teachers.html', teachers=teachers, all_unis=all_unis)
+    
+    # Obliczanie raportów/statystyk dla każdego nauczyciela
+    teacher_stats = {}
+    for t in teachers:
+        active_students = Student.query.filter_by(creator_id=t.id, is_archived=False).count()
+        archived_students = Student.query.filter_by(creator_id=t.id, is_archived=True).count()
+        teacher_stats[t.id] = {
+            'active': active_students,
+            'archived': archived_students,
+            'total': active_students + archived_students
+        }
+        
+    return render_template('panel_master.html', teachers=teachers, all_unis=all_unis, stats=teacher_stats)
 
-@app.route('/panel/teacher/delete/<int:teacher_id>', methods=['POST'])
-@admin_required
-def panel_delete_teacher(teacher_id):
-    teacher = User.query.get_or_404(teacher_id)
-    db.session.delete(teacher)
-    db.session.commit()
-    return redirect(url_for('panel_teachers'))
 
 # ----------------- STARE ŚCIEŻKI ADMINA (WYPRACOWANIA - BEZ ZMIAN) -----------------
 

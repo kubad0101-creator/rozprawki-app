@@ -4,11 +4,51 @@
     <meta charset="UTF-8">
     <title>Panel Administratora - Sprawdzanie Rozprawek</title>
     <style>
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        .student-card {
+            background: #ffffff; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 8px; 
+            padding: 15px 20px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
+        .student-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+        }
+        .uni-badge-qa {
+            background-color: #001f5b; color: white; border-radius: 6px; padding: 4px 10px; font-weight: 800; font-size: 14px; letter-spacing: 0.5px;
+        }
+        .uni-badge-gbs {
+            background-color: #c8102e; color: white; border-radius: 6px; padding: 4px 10px; font-weight: 800; font-size: 14px; letter-spacing: 0.5px;
+        }
+        .uni-badge-other {
+            background-color: #6c757d; color: white; border-radius: 6px; padding: 4px 10px; font-weight: 800; font-size: 14px; letter-spacing: 0.5px;
+        }
+        .student-name {
+            font-size: 22px; font-weight: 800; color: #333; text-decoration: none; margin-left: 2px;
+        }
+        .student-name:hover {
+            text-decoration: underline;
+        }
+        .pending-badge {
+            background-color: #d9534f; color: white; border-radius: 20px; padding: 4px 12px; font-size: 13px; font-weight: 800; border: 3px solid #f2b8bc;
+        }
+        .stats-text {
+            font-size: 16px; color: #666; margin-top: 6px; margin-left: 4px;
+        }
+        .btn-link {
+            background-color: #52a8b9; color: white; border: none; border-radius: 6px; padding: 10px 16px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px;
+        }
+        .btn-link:hover { background-color: #438f9e; }
+        .btn-exam {
+            background-color: #cc444b; color: white; border: none; border-radius: 6px; padding: 10px 16px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px;
+        }
+        .btn-exam:hover { background-color: #b3393f; }
         .notif-link { color: inherit; text-decoration: none; }
         .notif-link:hover { text-decoration: underline; color: #0056b3; }
     </style>
@@ -16,7 +56,7 @@
 <body style="font-family: sans-serif; padding: 25px; max-width: 1200px; margin: auto; background: #f4f6f9;">
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-        <h1 style="margin: 0;">Panel Nauczyciela (Ocenianie)</h1>
+        <h1 style="margin: 0; color: #333;">Panel Nauczyciela (Ocenianie)</h1>
         <div style="display: flex; gap: 10px;">
             <a href="/panel" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">⬅ Wróć do Panelu Głównego</a>
             <a href="/logout" style="background: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Wyloguj się</a>
@@ -48,51 +88,52 @@
                     {% endif %}
                 </form>
 
-                <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; flex-direction: column;">
                     {% for student in active_students %}
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: {% if loop.index % 2 == 0 %}#f8f9fa{% else %}#ffffff{% endif %}; border: 1px solid #dee2e6; border-radius: 5px;">
-                            <div style="flex: 1;">
-                                
-                                {% set counts = namespace(completed=0, pending=0) %}
-                                {% for essay in student.essays %}
-                                    {% if essay.is_completed %}
-                                        {% set counts.completed = counts.completed + 1 %}
-                                        {% if not essay.feedback %}
-                                            {% set counts.pending = counts.pending + 1 %}
-                                        {% endif %}
-                                    {% endif %}
-                                {% endfor %}
+                        {% set counts = namespace(completed=0, pending=0) %}
+                        {% for essay in student.essays %}
+                            {% if essay.is_completed %}
+                                {% set counts.completed = counts.completed + 1 %}
+                                {% if not essay.feedback %}
+                                    {% set counts.pending = counts.pending + 1 %}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
 
-                                <a href="/admin/student/{{ student.id }}" style="text-decoration: none; color: #333; font-weight: bold; font-size: 16px; display: flex; align-items: center; margin-bottom: 5px;">
+                        <div class="student-card">
+                            <div style="display: flex; flex-direction: column;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
                                     
                                     {% if student.university %}
                                         {% if 'QA' in student.university.name %}
-                                            <span style="background: #001f5b; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 8px;">QA</span>
+                                            <span class="uni-badge-qa">QA</span>
                                         {% elif 'GBS' in student.university.name %}
-                                            <span style="background: #c8102e; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 8px;">GBS</span>
+                                            <span class="uni-badge-gbs">GBS</span>
                                         {% else %}
-                                            <span style="background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 8px;">{{ student.university.name }}</span>
+                                            <span class="uni-badge-other">{{ student.university.name }}</span>
                                         {% endif %}
                                     {% endif %}
 
-                                    👤 {{ student.name }}
+                                    <span style="font-size: 24px; color: #8ba1b2;">👤</span>
+                                    <a href="/admin/student/{{ student.id }}" class="student-name">
+                                        {{ student.name }}
+                                    </a>
                                     
                                     {% if counts.pending > 0 %}
-                                        <span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 10px; animation: pulse 1.5s infinite;">
+                                        <span class="pending-badge">
                                             {{ counts.pending }} DO SPRAWDZENIA
                                         </span>
                                     {% endif %}
-                                </a>
+                                </div>
                                 
-                                <div style="font-size: 13px; color: #666;">
-                                    Napisane: <strong>{{ counts.completed }}</strong> | 
-                                    Niesprawdzone: <strong style="color: {% if counts.pending > 0 %}#dc3545{% else %}#28a745{% endif %};">{{ counts.pending }}</strong>
+                                <div class="stats-text">
+                                    Napisane: <strong>{{ counts.completed }}</strong> | Niesprawdzone: <strong style="color: {% if counts.pending > 0 %}#d9534f{% else %}#28a745{% endif %};">{{ counts.pending }}</strong>
                                 </div>
                             </div>
                             
-                            <div style="display: flex; gap: 8px;">
-                                <button onclick="copyLink('https://{{ request.host }}/student/{{ student.url_slug }}')" style="background: #17a2b8; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">🔗 Link do ucznia</button>
-                                <button onclick="copyLink('https://{{ request.host }}/exam/{{ student.url_slug }}')" style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">🚨 Egzamin</button>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="copyLink('https://{{ request.host }}/student/{{ student.url_slug }}')" class="btn-link">🔗 Link do ucznia</button>
+                                <button onclick="copyLink('https://{{ request.host }}/exam/{{ student.url_slug }}')" class="btn-exam">🚨 Egzamin</button>
                             </div>
                         </div>
                     {% else %}

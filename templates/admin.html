@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administratora</title>
+    <title>Panel Administratora - Sprawdzanie Rozprawek</title>
     <style>
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
@@ -16,16 +16,18 @@
 <body style="font-family: sans-serif; padding: 25px; max-width: 1200px; margin: auto; background: #f4f6f9;">
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-        <h1 style="margin: 0;">Panel Nauczyciela</h1>
-        <a href="/logout" style="background: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Wyloguj się</a>
+        <h1 style="margin: 0;">Panel Nauczyciela (Ocenianie)</h1>
+        <div style="display: flex; gap: 10px;">
+            <a href="/panel" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">⬅ Wróć do Panelu Głównego</a>
+            <a href="/logout" style="background: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Wyloguj się</a>
+        </div>
     </div>
 
     <div style="display: flex; gap: 25px;">
-        <!-- Lewa kolumna: Studenci -->
         <div style="flex: 2;">
             
             <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <h3 style="margin-top: 0;">Dodaj nowego ucznia</h3>
+                <h3 style="margin-top: 0;">Dodaj nowego ucznia (Szybkie dodawanie)</h3>
                 <form method="POST" action="/admin" style="display: flex; gap: 15px;">
                     <input type="text" name="name" placeholder="Imię i nazwisko" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
                     <button type="submit" style="background: #28a745; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Dodaj ucznia</button>
@@ -51,7 +53,6 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: {% if loop.index % 2 == 0 %}#f8f9fa{% else %}#ffffff{% endif %}; border: 1px solid #dee2e6; border-radius: 5px;">
                             <div style="flex: 1;">
                                 
-                                <!-- Obliczenia statystyk studenta -->
                                 {% set counts = namespace(completed=0, pending=0) %}
                                 {% for essay in student.essays %}
                                     {% if essay.is_completed %}
@@ -63,7 +64,19 @@
                                 {% endfor %}
 
                                 <a href="/admin/student/{{ student.id }}" style="text-decoration: none; color: #333; font-weight: bold; font-size: 16px; display: flex; align-items: center; margin-bottom: 5px;">
+                                    
+                                    {% if student.university %}
+                                        {% if 'QA' in student.university.name %}
+                                            <span style="background: #001f5b; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 8px;">QA</span>
+                                        {% elif 'GBS' in student.university.name %}
+                                            <span style="background: #c8102e; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 8px;">GBS</span>
+                                        {% else %}
+                                            <span style="background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 8px;">{{ student.university.name }}</span>
+                                        {% endif %}
+                                    {% endif %}
+
                                     👤 {{ student.name }}
+                                    
                                     {% if counts.pending > 0 %}
                                         <span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 10px; animation: pulse 1.5s infinite;">
                                             {{ counts.pending }} DO SPRAWDZENIA
@@ -89,7 +102,6 @@
             </div>
         </div>
 
-        <!-- Prawa kolumna: Powiadomienia -->
         <div style="flex: 1;">
             <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 25px;">
                 <h3 style="margin-top: 0; border-bottom: 2px solid #ffc107; padding-bottom: 10px;">Powiadomienia</h3>
@@ -114,7 +126,6 @@
         </div>
     </div>
 
-    <!-- Skrypt do przycisków kopiowania linków -->
     <script>
         function copyLink(url) {
             navigator.clipboard.writeText(url).then(() => {

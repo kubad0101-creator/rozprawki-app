@@ -103,7 +103,6 @@ def setup_database():
     except Exception:
         db.session.rollback()
 
-    # Zapewnienie istnienia uniwersytetów
     qa_uni = University.query.filter_by(name="QA Higher Education").first()
     if not qa_uni:
         qa_uni = University(name="QA Higher Education")
@@ -115,15 +114,12 @@ def setup_database():
         db.session.add(gbs_uni)
     db.session.commit()
 
-    # --- PRZYPISANIE STARYCH STUDENTÓW DO QA HIGHER EDUCATION ---
     unassigned_students = Student.query.filter_by(university_id=None).all()
     if unassigned_students:
         for student in unassigned_students:
             student.university_id = qa_uni.id
         db.session.commit()
-    # ------------------------------------------------------------
 
-    # Tworzenie głównych adminów
     if not User.query.filter_by(username="Julia").first():
         db.session.add(User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin"))
     if not User.query.filter_by(username="Kuba").first():
@@ -205,20 +201,32 @@ def panel_dashboard():
     uni_ids = [u.id for u in universities]
     
     search_query = request.args.get('q', '').lower()
+    sort_by = request.args.get('sort', 'alpha') # Domyślnie alfabetycznie
+    
     students_query = Student.query.filter_by(is_archived=False)
     
     if user.role != 'admin':
         students_query = students_query.filter(Student.university_id.in_(uni_ids))
-        notifications = Notification.query.filter_by(recipient_id=user.id).order_by(Notification.created_at.desc()).limit(10).all()
+        notifications = Notification.query.filter(
+            (Notification.recipient_id == user.id) | (Notification.recipient_id == None)
+        ).order_by(Notification.created_at.desc()).limit(10).all()
     else:
         notifications = Notification.query.order_by(Notification.created_at.desc()).limit(10).all()
         
     if search_query:
         students_query = students_query.filter(db.func.lower(Student.name).contains(search_query))
         
-    students = students_query.order_by(Student.name.desc()).all()
+    students = students_query.all()
     
-    return render_template('panel_dashboard.html', students=students, universities=universities, notifications=notifications, search_query=search_query, user=user)
+    # SYSTEM SORTOWANIA Z PYTHONA
+    if sort_by == 'pending':
+        # Sortuj po liczbie niesprawdzonych prac (Malejąco)
+        students.sort(key=lambda s: sum(1 for e in s.essays if e.is_completed and not e.feedback), reverse=True)
+    else:
+        # Sortuj alfabetycznie (A-Z)
+        students.sort(key=lambda s: s.name.lower())
+    
+    return render_template('panel_dashboard.html', students=students, universities=universities, notifications=notifications, search_query=search_query, user=user, sort_by=sort_by)
 
 @app.route('/panel/student/add', methods=['POST'])
 @login_required
@@ -371,6 +379,8 @@ def admin():
         return redirect(url_for('admin'))
         
     search_query = request.args.get('q', '').lower()
+    sort_by = request.args.get('sort', 'alpha') # Domyślnie alfabetycznie
+    
     active_students_query = Student.query.filter_by(is_archived=False)
     
     if user.role != 'admin':
@@ -384,8 +394,15 @@ def admin():
     if search_query:
         active_students_query = active_students_query.filter(db.func.lower(Student.name).contains(search_query))
     
-    active_students = active_students_query.order_by(Student.name.asc()).all()
-    return render_template('admin.html', active_students=active_students, notifications=notifications, search_query=search_query)
+    active_students = active_students_query.all()
+    
+    # SYSTEM SORTOWANIA Z PYTHONA
+    if sort_by == 'pending':
+        active_students.sort(key=lambda s: sum(1 for e in s.essays if e.is_completed and not e.feedback), reverse=True)
+    else:
+        active_students.sort(key=lambda s: s.name.lower())
+
+    return render_template('admin.html', active_students=active_students, notifications=notifications, search_query=search_query, sort_by=sort_by)
 
 @app.route('/admin/archive')
 @login_required

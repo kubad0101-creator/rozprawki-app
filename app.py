@@ -115,29 +115,19 @@ def setup_database():
         db.session.add(gbs_uni)
     db.session.commit()
 
-    # TWARDY RESET KONT KUBY I JULII
-    kuba = User.query.filter_by(username="Kuba").first()
-    if not kuba:
-        kuba = User(username="Kuba", password_hash=generate_password_hash("Open196!"), role="admin")
-        db.session.add(kuba)
-    else:
-        kuba.role = "admin"
-        kuba.password_hash = generate_password_hash("Open196!")
+    # --- PRZYPISANIE STARYCH STUDENTÓW DO QA HIGHER EDUCATION ---
+    unassigned_students = Student.query.filter_by(university_id=None).all()
+    if unassigned_students:
+        for student in unassigned_students:
+            student.university_id = qa_uni.id
+        db.session.commit()
+    # ------------------------------------------------------------
 
-    julia = User.query.filter_by(username="Julia").first()
-    if not julia:
-        julia = User(username="Julia", password_hash=generate_password_hash("Open196!"), role="teacher")
-        db.session.add(julia)
-    else:
-        julia.role = "teacher"
-        julia.password_hash = generate_password_hash("Open196!")
-    db.session.commit()
-
-    # Ustawienie dostępu tylko do QA Higher Education dla Julii
-    if qa_uni not in julia.universities:
-        julia.universities.append(qa_uni)
-    if gbs_uni in julia.universities:
-        julia.universities.remove(gbs_uni)
+    # Tworzenie głównych adminów (tylko jeśli nie istnieją, stary schemat)
+    if not User.query.filter_by(username="Julia").first():
+        db.session.add(User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin"))
+    if not User.query.filter_by(username="Kuba").first():
+        db.session.add(User(username="Kuba", password_hash=generate_password_hash("Open196!"), role="admin"))
     db.session.commit()
 
 with app.app_context():
@@ -235,12 +225,16 @@ def panel_dashboard():
 def panel_add_student():
     name = request.form.get('name')
     university_id = request.form.get('university_id')
+    user = User.query.get(session['user_id'])
     
+    if not university_id and len(user.universities) == 1:
+        university_id = user.universities[0].id
+        
     if not name or not university_id:
         return redirect(url_for('panel_dashboard'))
         
     slug = f"{uuid.uuid4().hex[:4]}-{slugify(name)}"
-    new_student = Student(name=name, url_slug=slug, university_id=int(university_id), creator_id=session['user_id'])
+    new_student = Student(name=name, url_slug=slug, university_id=int(university_id), creator_id=user.id)
     db.session.add(new_student)
     
     for title, full_topic in PRACTICE_TOPICS:
@@ -263,6 +257,9 @@ def panel_materials():
         content_url = request.form.get('content_url')
         university_id = request.form.get('university_id')
         
+        if not university_id and len(universities) == 1:
+            university_id = universities[0].id
+            
         if title and content_url and university_id:
             db.session.add(Material(title=title, content_url=content_url, university_id=int(university_id)))
             db.session.commit()
@@ -420,6 +417,14 @@ def delete_student_forever(student_id):
 @login_required
 def admin_student_detail(student_id):
     student = Student.query.get_or_404(student_id)
+    user = User.query.get(session['user_id'])
+    
+    if user.role != 'admin':
+        uni_ids = [u.id for u in user.universities]
+        if student.university_id not in uni_ids:
+            flash("Odmowa dostępu: Ten uczeń nie należy do przypisanej Ci uczelni.", "error")
+            return redirect(url_for('panel_dashboard'))
+
     essays_sorted = sorted(student.essays, key=lambda x: x.last_edited_at or datetime.min, reverse=True)
     return render_template('student_detail.html', student=student, essays_sorted=essays_sorted)
 

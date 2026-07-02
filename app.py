@@ -86,7 +86,7 @@ class Notification(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
-# ----------------- INICJALIZACJA I RESET BAZY DANYCH -----------------
+# ----------------- INICJALIZACJA BAZY DANYCH -----------------
 
 def setup_database():
     db.create_all()
@@ -123,7 +123,7 @@ def setup_database():
         db.session.commit()
     # ------------------------------------------------------------
 
-    # Tworzenie głównych adminów (tylko jeśli nie istnieją, stary schemat)
+    # Tworzenie głównych adminów
     if not User.query.filter_by(username="Julia").first():
         db.session.add(User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin"))
     if not User.query.filter_by(username="Kuba").first():
@@ -373,9 +373,12 @@ def admin():
     search_query = request.args.get('q', '').lower()
     active_students_query = Student.query.filter_by(is_archived=False)
     
+    # Naprawione wyświetlanie starych powiadomień
     if user.role != 'admin':
         active_students_query = active_students_query.filter(Student.university_id.in_(uni_ids))
-        notifications = Notification.query.filter_by(recipient_id=user.id).order_by(Notification.created_at.desc()).limit(15).all()
+        notifications = Notification.query.filter(
+            (Notification.recipient_id == user.id) | (Notification.recipient_id == None)
+        ).order_by(Notification.created_at.desc()).limit(15).all()
     else:
         notifications = Notification.query.order_by(Notification.created_at.desc()).limit(15).all()
 
@@ -545,22 +548,4 @@ def auto_save(essay_id):
 
     if became_completed:
         msg = f"<a href='/admin/student/{essay.student_id}' class='notif-link'><b>{essay.student.name}</b> ukończył/a: '{essay.title[:30]}'</a>"
-        notif = Notification(message=msg, recipient_id=essay.student.creator_id)
-        db.session.add(notif)
-        db.session.commit()
-        
-    return jsonify({"status": "success"})
-
-@app.route('/api/reset/<int:essay_id>', methods=['POST'])
-def reset_essay(essay_id):
-    essay = Essay.query.get_or_404(essay_id)
-    if not essay.is_exam:
-        essay.content = ""
-        essay.marked_content = ""
-        essay.time_spent = 0
-        essay.is_completed = False
-        db.session.commit()
-    return jsonify({"status": "reset"})
-
-if __name__ == '__main__':
-    app.run(debug=True)
+        notif =

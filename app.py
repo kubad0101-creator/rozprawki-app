@@ -158,26 +158,28 @@ MATH_QUESTIONS = [
     {"id": 11, "text": "Evaluate 5/15 as percentage:", "options": {"a": "0.33", "b": "33.33", "c": "66.66", "d": "3.33"}, "answer": "b", "exp": "5/15 = 1/3, which is approximately 33.33%"}
 ]
 
-# ----------------- INICJALIZACJA BAZY DANYCH -----------------
+# ----------------- INICJALIZACJA BAZY DANYCH (ZMODYFIKOWANA) -----------------
 
 def setup_database():
     db.create_all()
-    try:
-        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN university_id INTEGER REFERENCES universities(id)'))
-        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN creator_id INTEGER REFERENCES users(id)'))
-        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN email VARCHAR(120)'))
-        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN gbs_major_id INTEGER REFERENCES gbs_majors(id)'))
-        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN gbs_intake_id INTEGER REFERENCES gbs_intakes(id)'))
-        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN has_math_test BOOLEAN DEFAULT FALSE'))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
+    
+    # KROK NAPRAWCZY: Dodawanie nowych kolumn pojedynczo, aby uniknąć przerwania całego bloku, gdy jedna już istnieje.
+    queries = [
+        'ALTER TABLE student_v5 ADD COLUMN university_id INTEGER REFERENCES universities(id)',
+        'ALTER TABLE student_v5 ADD COLUMN creator_id INTEGER REFERENCES users(id)',
+        'ALTER TABLE student_v5 ADD COLUMN email VARCHAR(120)',
+        'ALTER TABLE student_v5 ADD COLUMN gbs_major_id INTEGER REFERENCES gbs_majors(id)',
+        'ALTER TABLE student_v5 ADD COLUMN gbs_intake_id INTEGER REFERENCES gbs_intakes(id)',
+        'ALTER TABLE student_v5 ADD COLUMN has_math_test BOOLEAN DEFAULT FALSE',
+        'ALTER TABLE notification_v5 ADD COLUMN recipient_id INTEGER REFERENCES users(id)'
+    ]
 
-    try:
-        db.session.execute(text('ALTER TABLE notification_v5 ADD COLUMN recipient_id INTEGER REFERENCES users(id)'))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
+    for q in queries:
+        try:
+            db.session.execute(text(q))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
     # Zapewnienie istnienia uniwersytetów
     qa_uni = University.query.filter_by(name="QA Higher Education").first()
@@ -295,9 +297,9 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# ----------------- PANEL GŁÓWNY I DODAWANIE (CRM) -----------------
+# ----------------- NOWY PANEL KOORDYNACJI SYSTEMU PŁATFORMY (/panel) -----------------
 
-@app.route('/panel', methods=['GET'])
+@app.route('/panel')
 @login_required
 def panel_dashboard():
     user = User.query.get(session['user_id'])

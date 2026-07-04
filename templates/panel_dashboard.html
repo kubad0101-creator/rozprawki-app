@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Edukacyjny - Uniwersytety</title>
+    <title>Panel Koordynacji - CRM</title>
     <style>
         .flash-messages { margin-bottom: 20px; }
         .alert { padding: 15px; margin-bottom: 15px; border-radius: 6px; font-weight: bold; }
@@ -16,22 +16,23 @@
         .uni-badge-qa { background-color: #001f5b; color: white; border-radius: 6px; padding: 4px 10px; font-weight: 800; font-size: 14px; }
         .uni-badge-gbs { background-color: #c8102e; color: white; border-radius: 6px; padding: 4px 10px; font-weight: 800; font-size: 14px; }
         .student-name { font-size: 20px; font-weight: 800; color: #333; text-decoration: none; margin-left: 10px; }
-        .pending-badge { background-color: #d9534f; color: white; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 800; margin-left: 10px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
         .btn-link { background-color: #52a8b9; color: white; border: none; border-radius: 6px; padding: 8px 12px; font-weight: bold; font-size: 13px; cursor: pointer; }
         .btn-exam { background-color: #cc444b; color: white; border: none; border-radius: 6px; padding: 8px 12px; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; }
+        
+        .gbs-fields { display: none; background: #fdfdfd; border-left: 4px solid #c8102e; padding: 15px; margin-top: 15px; border-radius: 4px; }
     </style>
 </head>
 <body style="font-family: sans-serif; padding: 25px; max-width: 1200px; margin: auto; background: #f4f6f9;">
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
         <div>
-            <h1 style="margin: 0;">Panel Koordynacji Procesów</h1>
-            <small>Zalogowany: <strong>{{ user.username }}</strong></small>
+            <h1 style="margin: 0; display: flex; align-items: center; gap: 15px;">
+                <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="Logo" style="height: 40px;"> 
+                Panel Koordynacji
+            </h1>
         </div>
         <div style="display: flex; gap: 10px;">
-            <a href="{{ url_for('panel_materials') }}" style="background: #17a2b8; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">📚 Materiały</a>
-            <a href="{{ url_for('admin') }}" style="background: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">📝 Wszystkie Rozprawki</a>
+            <a href="{{ url_for('panel_gbs') }}" style="background: #c8102e; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">⚙️ Konfiguracja GBS</a>
             <a href="/logout" style="background: #dc3545; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">Wyloguj</a>
         </div>
     </div>
@@ -42,41 +43,54 @@
 
     <div style="display: flex; gap: 25px;">
         <div style="flex: 2;">
-            <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <form method="POST" action="{{ url_for('panel_add_student') }}" style="display: flex; gap: 15px;">
-                    <input type="text" name="name" placeholder="Imię i nazwisko" required style="flex: 2; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
-                    {% if universities|length == 1 %}
-                        <input type="hidden" name="university_id" value="{{ universities[0].id }}">
-                        <div style="padding: 12px; background: #eef2f5;">{{ universities[0].name }}</div>
-                    {% else %}
-                        <select name="university_id" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
-                            <option value="" disabled selected>Wybierz uczelnię</option>
-                            {% for uni in universities %}<option value="{{ uni.id }}">{{ uni.name }}</option>{% endfor %}
+            <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 25px;">
+                <h3 style="margin-top: 0;">Dodaj nowego studenta</h3>
+                <form method="POST" action="{{ url_for('panel_add_student') }}">
+                    <div style="display: flex; gap: 15px;">
+                        <input type="text" name="name" placeholder="Imię i nazwisko" required style="flex: 2; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
+                        
+                        <select name="university_id" id="uniSelect" onchange="toggleGbs()" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
+                            <option value="" disabled selected>Wybierz uczelnię...</option>
+                            {% for uni in universities %}
+                                <option value="{{ uni.id }}" data-name="{{ uni.name }}">{{ uni.name }}</option>
+                            {% endfor %}
                         </select>
-                    {% endif %}
-                    <button type="submit" style="background: #28a745; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Dodaj studenta</button>
+                    </div>
+
+                    <!-- Dynamiczne pola dla GBS -->
+                    <div id="gbsFields" class="gbs-fields">
+                        <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+                            <input type="email" name="email" placeholder="Email ucznia" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                            <select name="intake_id" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                                <option value="" disabled selected>Wybierz Nabór...</option>
+                                {% for intake in intakes %}<option value="{{ intake.id }}">{{ intake.name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <select name="major_id" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px;">
+                            <option value="" disabled selected>Kierunek...</option>
+                            {% for major in majors %}<option value="{{ major.id }}">{{ major.name }}</option>{% endfor %}
+                        </select>
+                        <label style="font-weight: bold; cursor: pointer; color: #c8102e;">
+                            <input type="checkbox" name="has_math_test" value="1"> Udostępnić Test z Matematyki?
+                        </label>
+                    </div>
+
+                    <button type="submit" style="background: #28a745; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px;">Dodaj studenta</button>
                 </form>
             </div>
 
-            <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <div style="background: white; padding: 25px; border-radius: 8px;">
                 <form method="GET" action="{{ url_for('panel_dashboard') }}" style="margin-bottom: 20px; display: flex; gap: 10px;">
                     <input type="text" name="q" value="{{ search_query }}" placeholder="Szukaj..." style="flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                    <select name="sort" onchange="this.form.submit()" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                        <option value="alpha" {% if sort_by == 'alpha' %}selected{% endif %}>Sortuj: A-Z</option>
-                        <option value="alpha_desc" {% if sort_by == 'alpha_desc' %}selected{% endif %}>Sortuj: Z-A</option>
-                        <option value="pending" {% if sort_by == 'pending' %}selected{% endif %}>Sortuj: Do sprawdzenia</option>
-                    </select>
+                    <button type="submit" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold;">Szukaj</button>
                 </form>
 
                 {% for student in students %}
-                    {% set pending = namespace(count=0) %}
-                    {% for e in student.essays if e.is_completed and not e.feedback %}{% set pending.count = pending.count + 1 %}{% endfor %}
-                    
                     <div class="student-card">
                         <div>
-                            {% if 'QA' in student.university.name %}<span class="uni-badge-qa">QA</span>{% else %}<span class="uni-badge-gbs">GBS</span>{% endif %}
+                            {% if student.university and 'GBS' in student.university.name %}<span class="uni-badge-gbs">GBS</span>{% else %}<span class="uni-badge-qa">QA</span>{% endif %}
                             <a href="/admin/student/{{ student.id }}" class="student-name">{{ student.name }}</a>
-                            {% if pending.count > 0 %}<span class="pending-badge">{{ pending.count }} DO SPRAWDZENIA</span>{% endif %}
+                            {% if student.major %}<div style="font-size: 12px; color: #666; margin-top: 5px;">{{ student.major.name }}</div>{% endif %}
                         </div>
                         <div style="display: flex; gap: 10px;">
                             <button onclick="copy('https://{{ request.host }}/student/{{ student.url_slug }}')" class="btn-link">🔗 Link</button>
@@ -87,6 +101,14 @@
             </div>
         </div>
     </div>
-    <script>function copy(u){navigator.clipboard.writeText(u); alert('Skopiowano!');}</script>
+
+    <script>
+        function toggleGbs() {
+            let select = document.getElementById('uniSelect');
+            let isGbs = select.options[select.selectedIndex].getAttribute('data-name').includes('GBS');
+            document.getElementById('gbsFields').style.display = isGbs ? 'block' : 'none';
+        }
+        function copy(u){navigator.clipboard.writeText(u); alert('Skopiowano!');}
+    </script>
 </body>
 </html>

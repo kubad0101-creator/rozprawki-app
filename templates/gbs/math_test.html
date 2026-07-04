@@ -1,47 +1,132 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Math Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #f4f6f9; --box-bg: #fff; --text: #333; --border: #ccc; }
-        .dark-mode { --bg: #1e1e1e; --box-bg: #2d2d2d; --text: #f0f0f0; --border: #555; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 30px; max-width: 800px; margin: auto; transition: 0.3s; }
-        .question-box { background: var(--box-bg); padding: 20px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; }
-        .options label { display: block; margin: 10px 0; cursor: pointer; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 5px; }
-        .options label:hover { background: rgba(0,0,0,0.1); }
-        .btn-submit { background: #001f5b; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
-        .theme-toggle { position: absolute; top: 20px; right: 20px; background: none; border: 1px solid var(--border); color: var(--text); padding: 8px; cursor: pointer; border-radius: 4px; }
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --navy: #2d3fb0;
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+            --option-bg: rgba(255,255,255,0.04);
+            --option-bg-hover: rgba(124,92,255,0.14);
+        }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+            --option-bg: rgba(32,28,48,0.03);
+            --option-bg-hover: rgba(124,92,255,0.10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 48px 20px 70px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 15% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        .wrap { max-width: 760px; margin: auto; position: relative; }
+
+        .theme-toggle { position: absolute; top: -14px; right: 0; display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+        .switch { position: relative; width: 56px; height: 30px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(26px); }
+
+        .header { text-align: center; margin-bottom: 40px; padding-top: 46px; }
+        .header img { height: 88px; width: auto; border-radius: 14px; margin-bottom: 18px; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.3px; color: #9db3ff; }
+        html[data-theme="light"] .header h1 { color: var(--navy); }
+
+        .question-box {
+            background: var(--card-bg); border: 1px solid var(--border-soft); padding: 22px 24px;
+            border-radius: 16px; margin-bottom: 18px; backdrop-filter: blur(10px);
+        }
+        .question-box strong { display: block; margin-bottom: 14px; font-size: 15px; font-weight: 700; }
+
+        .options label {
+            display: block; margin: 8px 0; cursor: pointer; padding: 12px 14px;
+            background: var(--option-bg); border: 1px solid var(--border-soft); border-radius: 10px;
+            font-size: 14px; transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .options label:hover { background: var(--option-bg-hover); border-color: rgba(124,92,255,0.35); }
+        .options input[type=radio] { margin-right: 8px; accent-color: #7c5cff; }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #2d3fb0, #7c5cff); color: #fff; border: none;
+            padding: 16px 30px; font-size: 17px; border-radius: 999px; cursor: pointer; width: 100%;
+            font-weight: 800; margin-top: 10px; box-shadow: 0 8px 22px rgba(124,92,255,0.35);
+            transition: transform 0.15s ease;
+        }
+        .btn-submit:hover { transform: translateY(-2px); }
     </style>
 </head>
 <body>
-    <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')">🌓 Tryb</button>
-    <div style="text-align: center; margin-bottom: 30px;">
-        <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="Logo" style="height: 50px;">
-        <h1 style="color: #001f5b;">Math Test</h1>
-    </div>
+    <div class="wrap">
 
-    <form id="mathForm">
-        {% for q in questions %}
-        <div class="question-box">
-            <strong>{{ loop.index }}. {{ q.text }}</strong>
-            <div class="options">
-                <label><input type="radio" name="{{ q.id }}" value="a"> a) {{ q.options.a }}</label>
-                <label><input type="radio" name="{{ q.id }}" value="b"> b) {{ q.options.b }}</label>
-                <label><input type="radio" name="{{ q.id }}" value="c"> c) {{ q.options.c }}</label>
-                <label><input type="radio" name="{{ q.id }}" value="d"> d) {{ q.options.d }}</label>
+        <div class="theme-toggle">
+            <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+            <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                <div class="knob" id="themeKnob">🌙</div>
             </div>
         </div>
-        {% endfor %}
-        <button type="button" class="btn-submit" onclick="submitMath()">Zakończ Test</button>
-    </form>
+
+        <div class="header">
+            <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="OpenUK Study Logo">
+            <h1>Math Test</h1>
+        </div>
+
+        <form id="mathForm">
+            {% for q in questions %}
+            <div class="question-box">
+                <strong>{{ loop.index }}. {{ q.text }}</strong>
+                <div class="options">
+                    <label><input type="radio" name="{{ q.id }}" value="a"> a) {{ q.options.a }}</label>
+                    <label><input type="radio" name="{{ q.id }}" value="b"> b) {{ q.options.b }}</label>
+                    <label><input type="radio" name="{{ q.id }}" value="c"> c) {{ q.options.c }}</label>
+                    <label><input type="radio" name="{{ q.id }}" value="d"> d) {{ q.options.d }}</label>
+                </div>
+            </div>
+            {% endfor %}
+            <button type="button" class="btn-submit" onclick="submitMath()">Zakończ Test</button>
+        </form>
+    </div>
 
     <script>
         function submitMath() {
             let data = {};
             let formData = new FormData(document.getElementById('mathForm'));
-            for(let [key, val] of formData.entries()) { data[key] = val; }
-            
+            for (let [key, val] of formData.entries()) { data[key] = val; }
+
             fetch('/api/math/submit/{{ student.id }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -51,6 +136,31 @@
                 window.location.href = "/student/{{ student.url_slug }}";
             });
         }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
     </script>
 </body>
 </html>

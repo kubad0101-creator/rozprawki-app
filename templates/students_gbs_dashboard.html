@@ -6,7 +6,7 @@
     <div style="text-align: center; margin-bottom: 40px;">
         <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="Logo" style="height: 60px;">
         <h2>Witaj, {{ student.name }}</h2>
-        <p style="color: #666;">Kierunek: <strong>{{ student.major.name }}</strong></p>
+        <p style="color: #666;">Kierunek: <strong>{{ student.major.name if student.major else 'Brak przypisanego kierunku' }}</strong></p>
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 20px;">

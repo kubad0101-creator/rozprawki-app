@@ -184,19 +184,21 @@
         </div>
 
         <div class="tasks">
-            <div class="task-card materials">
-                <h3>📚 Materiały przygotowawcze</h3>
-                <p>Zapoznaj się z poniższymi materiałami przed przystąpieniem do testów.</p>
-                <div class="material-list">
-                    {% if student.university and student.university.materials %}
-                        {% for mat in student.university.materials %}
-                            <a href="{{ mat.content_url }}" target="_blank" class="material-link">📖 {{ mat.title }}</a>
-                        {% endfor %}
-                    {% else %}
-                        <p class="no-materials">Brak udostępnionych materiałów.</p>
-                    {% endif %}
-                </div>
-            </div>
+            <div style="background: white; border: 2px solid #17a2b8; padding: 25px; border-radius: 8px; text-align: center;">
+    <h3 style="margin-top: 0; color: #17a2b8;">📚 Materiały przygotowawcze</h3>
+    
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+        {% if student.university and student.university.materials %}
+            {% for mat in student.university.materials %}
+                <a href="{{ mat.content_url }}" target="_blank" style="display: block; background: #e0f2f4; color: #0c5460; padding: 12px; text-decoration: none; border-radius: 5px; font-weight: bold; border: 1px solid #bee5eb;">
+                    📖 {{ mat.title }}
+                </a>
+            {% endfor %}
+        {% else %}
+            <p style="color: #999; font-style: italic;">Brak materiałów przypisanych do uczelni: {{ student.university.name if student.university else 'Brak uczelni' }} (ID: {{ student.university_id }})</p>
+        {% endif %}
+    </div>
+</div>
 
             <div class="task-card homework">
                 <h3>Zadanie Domowe (3 pytania)</h3>

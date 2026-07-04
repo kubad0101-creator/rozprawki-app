@@ -1,38 +1,72 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head><title>Konfiguracja GBS</title></head>
+<head>
+    <meta charset="UTF-8">
+    <title>Baza Pytań i Nabory GBS</title>
+    <style>
+        .flash-messages { margin-bottom: 20px; }
+        .alert { padding: 15px; margin-bottom: 15px; border-radius: 6px; font-weight: bold; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .intake-card { background: white; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
+    </style>
+</head>
 <body style="font-family: sans-serif; padding: 25px; background: #f4f6f9; max-width: 1000px; margin: auto;">
-    <h1>⚙️ Konfiguracja Naborów GBS</h1>
-    <a href="/panel" style="color: #c8102e; font-weight: bold;">⬅ Wróć do panelu</a>
-    <hr>
     
-    <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h3>1. Utwórz nowy Nabór</h3>
-        <form method="POST">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1 style="color: #c8102e; margin: 0;">⚙️ Baza Pytań i Nabory GBS</h1>
+        <a href="/panel" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć do panelu głównego</a>
+    </div>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+    </div>
+    
+    <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <h3 style="margin-top: 0; color: #333;">1. Utwórz nowy Nabór</h3>
+        <form method="POST" style="display: flex; gap: 15px; align-items: center;">
             <input type="hidden" name="action" value="add_intake">
-            <input type="text" name="name" placeholder="Nazwa Naboru (np. Wiosna 2027)" required style="padding: 10px;">
-            <input type="color" name="color" value="#c8102e" style="padding: 5px;">
-            <button type="submit" style="padding: 10px; background: #c8102e; color: white; border: none;">Utwórz Nabór</button>
+            <input type="text" name="name" placeholder="Nazwa Naboru (np. Wiosna 2027)" required style="flex: 2; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
+            <input type="color" name="color" value="#c8102e" style="height: 40px; border: none; cursor: pointer;">
+            <button type="submit" style="padding: 12px 25px; background: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Dodaj Nabór</button>
         </form>
     </div>
 
-    <div style="background: white; padding: 20px; border-radius: 8px;">
-        <h3>2. Przypisz pytania do kierunków w naborze</h3>
-        <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
-            <input type="hidden" name="action" value="save_questions">
-            <select name="intake_id" required style="padding: 10px;">
-                <option disabled selected>Wybierz Nabór...</option>
-                {% for i in intakes %}<option value="{{ i.id }}">{{ i.name }}</option>{% endfor %}
-            </select>
-            <select name="major_id" required style="padding: 10px;">
-                <option disabled selected>Wybierz Kierunek...</option>
-                {% for m in majors %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
-            </select>
-            <textarea name="q1" placeholder="Pytanie 1 (min. 100 słów dla CCCU)" rows="3" style="padding: 10px;"></textarea>
-            <textarea name="q2" placeholder="Pytanie 2 (min. 70 słów dla CCCU)" rows="3" style="padding: 10px;"></textarea>
-            <textarea name="q3" placeholder="Pytanie 3 (min. 70 słów dla CCCU)" rows="3" style="padding: 10px;"></textarea>
-            <button type="submit" style="padding: 10px; background: #28a745; color: white; border: none;">Zapisz Zestaw Pytań</button>
-        </form>
-    </div>
+    <h2 style="color: #333;">2. Lista Naborów (Zarządzanie pytaniami)</h2>
+    
+    {% for intake in intakes %}
+        <div class="intake-card" style="border-left: 5px solid {{ intake.color }};">
+            <div>
+                <h3 style="margin: 0 0 5px 0;">{{ intake.name }}</h3>
+                <span style="font-size: 13px; color: #666;">Zdefiniowane zestawy pytań: {{ intake.question_sets|length }}</span>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <a href="/panel/gbs/intake/{{ intake.id }}" style="background: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">Zarządzaj pytaniami</a>
+                
+                <button onclick="document.getElementById('edit-{{ intake.id }}').style.display='block'" style="background: #6c757d; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Edytuj</button>
+                
+                <form method="POST" style="margin: 0;" onsubmit="return confirm('Czy na pewno chcesz usunąć ten nabór? Usunie to przypisane pytania.');">
+                    <input type="hidden" name="action" value="delete_intake">
+                    <input type="hidden" name="intake_id" value="{{ intake.id }}">
+                    <button type="submit" style="background: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Usuń</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="edit-{{ intake.id }}" style="display: none; background: #eef2f5; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+            <form method="POST" style="display: flex; gap: 15px;">
+                <input type="hidden" name="action" value="edit_intake">
+                <input type="hidden" name="intake_id" value="{{ intake.id }}">
+                <input type="text" name="name" value="{{ intake.name }}" required style="flex: 2; padding: 10px; border: 1px solid #ccc;">
+                <input type="color" name="color" value="{{ intake.color }}">
+                <button type="submit" style="padding: 10px; background: #28a745; color: white; border: none;">Zapisz</button>
+                <button type="button" onclick="document.getElementById('edit-{{ intake.id }}').style.display='none'" style="padding: 10px; background: #666; color: white; border: none;">Anuluj</button>
+            </form>
+        </div>
+
+    {% else %}
+        <p style="color: #666; font-style: italic;">Brak dodanych naborów. Stwórz pierwszy powyżej.</p>
+    {% endfor %}
+
 </body>
 </html>

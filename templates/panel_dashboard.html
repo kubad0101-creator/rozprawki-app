@@ -2,193 +2,615 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Koordynacji - CRM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel nauczyciela - OpenUK Study</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .flash-messages { margin-bottom: 20px; }
-        .alert { padding: 15px; margin-bottom: 15px; border-radius: 6px; font-weight: bold; }
-        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
-        
-        .qa-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #dee2e6; border-radius: 5px; margin-bottom: 12px; }
-        
-        .gbs-card { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; transition: transform 0.2s; }
-        .gbs-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.08); }
-        .uni-badge-gbs { background-color: #c8102e; color: white; border-radius: 6px; padding: 4px 10px; font-weight: 800; font-size: 14px; }
-        .student-name { font-size: 20px; font-weight: 800; color: #333; text-decoration: none; margin-left: 10px; }
-        .btn-link { background-color: #52a8b9; color: white; border: none; border-radius: 6px; padding: 8px 12px; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; }
-        .btn-exam { background-color: #cc444b; color: white; border: none; border-radius: 6px; padding: 8px 12px; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; }
-        
-        .gbs-fields { display: none; background: #fdfdfd; border-left: 4px solid #c8102e; padding: 15px; margin-top: 15px; border-radius: 4px; }
+        :root {
+            --bg-page: #0c0a14;
+            --bg-page-2: #14101f;
+            --bg-card: #18142499;
+            --bg-card-solid: #17131f;
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --text-faint: #766f8c;
+            --purple: #7c5cff;
+            --purple-2: #6d3cf0;
+            --pink: #ec4899;
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --gradient-soft: linear-gradient(135deg, rgba(124,92,255,0.16), rgba(236,72,153,0.16));
+            --gbs-red: #e0294f;
+            --teal: #23c1b3;
+            --amber: #ffc857;
+            --green: #3ecf8e;
+            --danger: #ef4759;
+            --radius: 18px;
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --surface-a: rgba(255,255,255,0.05);
+            --surface-b: rgba(255,255,255,0.07);
+            --surface-c: rgba(255,255,255,0.02);
+            --select-bg: #1c1830;
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+        }
+
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --bg-page-2: #efeaf9;
+            --bg-card: #ffffff;
+            --bg-card-solid: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --text-faint: #948dab;
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --surface-a: rgba(32,28,48,0.04);
+            --surface-b: rgba(32,28,48,0.06);
+            --surface-c: rgba(32,28,48,0.02);
+            --select-bg: #ffffff;
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 32px clamp(16px, 4vw, 40px) 60px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 12% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+
+        a { color: inherit; }
+
+        .wrap { max-width: 1300px; margin: 0 auto; }
+
+        .eyebrow {
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--pink);
+        }
+
+        /* Header */
+        .topbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid var(--border-soft);
+            padding: 16px 26px;
+            border-radius: var(--radius);
+            margin-bottom: 28px;
+            backdrop-filter: blur(10px);
+        }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand img { height: 42px; width: auto; border-radius: 8px; }
+        .brand h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+        .brand span { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); }
+
+        .nav-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+        .theme-toggle { display: flex; align-items: center; gap: 10px; user-select: none; margin-left: 4px; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+        .switch {
+            position: relative; width: 52px; height: 28px; border-radius: 999px;
+            background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer;
+            transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0;
+        }
+        .switch .knob {
+            position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+            background: var(--gradient); display: flex; align-items: center; justify-content: center;
+            font-size: 11px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease;
+        }
+        html[data-theme="light"] .switch .knob { transform: translateX(24px); }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-weight: 700;
+            font-size: 13px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+            white-space: nowrap;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-gradient { background: var(--gradient); color: #fff; box-shadow: 0 6px 18px rgba(124,92,255,0.35); }
+        .btn-outline { background: var(--surface-a); color: var(--text-main); border: 1px solid var(--border-strong); }
+        .btn-navy { background: linear-gradient(135deg, #1a1440, #392a7a); color: #fff; border: 1px solid rgba(255,255,255,0.12); }
+        .btn-danger-ghost { background: rgba(239,71,89,0.12); color: #ff8b96; border: 1px solid rgba(239,71,89,0.35); }
+        .btn-sm { padding: 8px 13px; font-size: 12px; border-radius: 8px; }
+        .btn-teal { background: linear-gradient(135deg, #1fb5a8, #23c1b3); color: #04241f; }
+        .btn-danger { background: linear-gradient(135deg, #d63451, #ef4759); color: #fff; }
+        .btn-grey { background: var(--surface-b); border: 1px solid var(--border-strong); color: var(--text-main); }
+
+        /* Flash messages */
+        .flash-messages { margin-bottom: 22px; }
+        .alert {
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid transparent;
+        }
+        .alert-success { background: rgba(62,207,142,0.12); color: #7be8b6; border-color: rgba(62,207,142,0.3); }
+        .alert-danger  { background: rgba(239,71,89,0.12); color: #ff8b96; border-color: rgba(239,71,89,0.3); }
+        .alert-warning { background: rgba(255,200,87,0.12); color: #ffd77d; border-color: rgba(255,200,87,0.3); }
+        .alert-info    { background: rgba(124,92,255,0.12); color: #c6b6ff; border-color: rgba(124,92,255,0.3); }
+
+        /* Layout */
+        .layout { display: flex; gap: 26px; align-items: flex-start; }
+        .col-main { flex: 2; min-width: 0; }
+        .col-side { flex: 1; min-width: 280px; }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius);
+            padding: 26px;
+            margin-bottom: 26px;
+            backdrop-filter: blur(10px);
+        }
+        .card h3 { margin: 0 0 16px; font-size: 17px; font-weight: 800; }
+
+        /* Form fields */
+        input[type=text], input[type=email], select {
+            background: var(--surface-a);
+            border: 1px solid var(--border-strong);
+            color: var(--text-main);
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        input[type=text]::placeholder, input[type=email]::placeholder { color: var(--text-faint); }
+        input[type=text]:focus, input[type=email]:focus, select:focus {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 3px rgba(124,92,255,0.25);
+        }
+        select option { background: var(--select-bg); color: var(--text-main); }
+
+        .form-row { display: flex; gap: 14px; flex-wrap: wrap; }
+        .form-row > * { flex: 1; min-width: 180px; }
+
+        .gbs-fields {
+            display: none;
+            background: rgba(224,41,79,0.08);
+            border-left: 3px solid var(--gbs-red);
+            padding: 16px;
+            margin-top: 16px;
+            border-radius: 0 12px 12px 0;
+        }
+        .gbs-fields label {
+            font-weight: 700;
+            cursor: pointer;
+            color: #ff7a94;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .submit-btn {
+            background: var(--gradient);
+            color: #fff;
+            border: none;
+            padding: 13px 24px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 14px;
+            margin-top: 16px;
+            box-shadow: 0 8px 20px rgba(124,92,255,0.35);
+            transition: transform 0.15s ease;
+        }
+        .submit-btn:hover { transform: translateY(-2px); }
+
+        /* Students header + filter */
+        .students-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .filter-form { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
+        .filter-form input[name=q] { flex: 2; min-width: 200px; }
+        .filter-form select { flex: 1; min-width: 140px; }
+        .filter-form button {
+            background: var(--gradient-soft);
+            border: 1px solid rgba(124,92,255,0.4);
+            color: var(--text-main);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 800;
+            padding-bottom: 10px;
+            margin: 0 0 16px;
+            border-bottom: 2px solid transparent;
+        }
+        .section-title.qa {
+            color: #cfc6ff;
+            border-image: linear-gradient(90deg, var(--purple), transparent) 1;
+            border-bottom: 2px solid rgba(124,92,255,0.4);
+        }
+        .section-title.gbs {
+            color: #ff9fb3;
+            border-bottom: 2px solid rgba(224,41,79,0.4);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239,71,89,0.6); }
+            70% { box-shadow: 0 0 0 8px rgba(239,71,89,0); }
+            100% { box-shadow: 0 0 0 0 rgba(239,71,89,0); }
+        }
+        @keyframes pulse-purple {
+            0% { box-shadow: 0 0 0 0 rgba(124,92,255,0.6); }
+            70% { box-shadow: 0 0 0 8px rgba(124,92,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(124,92,255,0); }
+        }
+
+        .qa-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 16px 18px;
+            border: 1px solid var(--border-soft);
+            border-radius: 14px;
+            margin-bottom: 12px;
+            background: var(--surface-c);
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .qa-row:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+        .qa-row .name-link {
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 800;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        .pending-pill {
+            background: var(--danger);
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            animation: pulse 1.6s infinite;
+        }
+        .qa-meta { font-size: 13px; color: var(--text-muted); }
+        .qa-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .gbs-card {
+            background: linear-gradient(135deg, rgba(224,41,79,0.07), rgba(255,255,255,0.02));
+            border: 1px solid rgba(224,41,79,0.25);
+            border-radius: 14px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .gbs-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(224,41,79,0.15); }
+        .uni-badge-gbs {
+            background: linear-gradient(135deg, #e0294f, #ff5f7e);
+            color: #fff;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-weight: 800;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        .student-name { font-size: 17px; font-weight: 800; color: var(--text-main); text-decoration: none; margin-left: 10px; }
+        .pending-badge {
+            background: var(--gradient);
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            margin-left: 10px;
+            animation: pulse-purple 1.6s infinite;
+        }
+        .btn-link {
+            background: linear-gradient(135deg, #1fb5a8, #23c1b3);
+            color: #04241f;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-exam {
+            background: linear-gradient(135deg, #d63451, #ef4759);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-copy {
+            background: var(--surface-b);
+            border: 1px solid var(--border-strong);
+            color: var(--text-main);
+            padding: 9px 11px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-green-solid {
+            background: linear-gradient(135deg, #22a878, #3ecf8e);
+            color: #04241f;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .empty-note { color: var(--text-muted); font-style: italic; font-size: 14px; }
+
+        /* Sidebar notifications */
+        .side-card { position: sticky; top: 20px; }
+        .side-card h3 {
+            border-bottom: 2px solid rgba(255,200,87,0.4);
+            padding-bottom: 12px;
+            color: #ffd77d;
+        }
+        .notif-list { display: flex; flex-direction: column; gap: 10px; }
+        .notif-item {
+            background: rgba(255,200,87,0.08);
+            border-left: 3px solid var(--amber);
+            padding: 13px 14px;
+            border-radius: 0 10px 10px 0;
+            font-size: 13px;
+        }
+        .notif-item p { margin: 0 0 8px; color: var(--text-main); line-height: 1.5; }
+        .notif-foot { display: flex; justify-content: space-between; align-items: center; }
+        .notif-foot span { font-size: 11px; color: var(--text-faint); }
+        .notif-delete {
+            background: none;
+            border: none;
+            color: #ff8b96;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 900px) {
+            .layout { flex-direction: column; }
+            .side-card { position: static; }
+        }
     </style>
 </head>
-<body style="font-family: sans-serif; padding: 25px; max-width: 1200px; margin: auto; background: #f4f6f9;" onload="toggleGbs()">
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-        <div>
-            <h1 style="margin: 0; display: flex; align-items: center; gap: 15px;">
-                <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="Logo" style="height: 40px;"> 
-                Panel nauczyciela: {{ teacher_name }}
-            </h1>
-        </div>
-        <div style="display: flex; gap: 10px;">
-            <a href="{{ url_for('panel_materials') }}" style="background: #17a2b8; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">📚 Materiały</a>
-            <a href="{{ url_for('panel_gbs') }}" style="background: #c8102e; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">⚙️ Baza pytań i nabory</a>
-            {% if user.role == 'admin' %}
-                <a href="{{ url_for('panel_master') }}" style="background: #001f5b; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">🔑 Master</a>
-            {% endif %}
-            <a href="/logout" style="background: #dc3545; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">Wyloguj</a>
-        </div>
-    </div>
+<body onload="toggleGbs()">
+    <div class="wrap">
 
-    <div class="flash-messages">
-        {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
-    </div>
-
-    <div style="display: flex; gap: 25px;">
-        <div style="flex: 2;">
-            
-            <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 25px;">
-                <h3 style="margin-top: 0;">Dodaj nowego studenta do procesu</h3>
-                <form method="POST" action="{{ url_for('panel_add_student') }}">
-                    <div style="display: flex; gap: 15px;">
-                        <input type="text" name="name" placeholder="Imię i nazwisko" required style="flex: 2; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
-                        
-                        <select name="university_id" id="uniSelect" onchange="toggleGbs()" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
-                            {% if universities|length != 1 %}
-                                <option value="" disabled selected>Wybierz uczelnię...</option>
-                            {% endif %}
-                            {% for uni in universities %}
-                                <option value="{{ uni.id }}" data-name="{{ uni.name }}" {% if universities|length == 1 %}selected{% endif %}>{{ uni.name }}</option>
-                            {% endfor %}
-                        </select>
+        <div class="topbar">
+            <div class="brand">
+                <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="OpenUK Study Logo">
+                <div>
+                    <h1>Panel nauczyciela: {{ teacher_name }}</h1>
+                    <span>OpenUK Study &mdash; CRM</span>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <a href="{{ url_for('panel_materials') }}" class="btn btn-outline">📚 Materiały</a>
+                <a href="{{ url_for('panel_gbs') }}" class="btn btn-gradient">⚙️ Baza pytań i nabory</a>
+                {% if user.role == 'admin' %}
+                    <a href="{{ url_for('panel_master') }}" class="btn btn-navy">🔑 Master</a>
+                {% endif %}
+                <a href="/logout" class="btn btn-danger-ghost">Wyloguj</a>
+                <div class="theme-toggle">
+                    <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+                    <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                        <div class="knob" id="themeKnob">🌙</div>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <div id="gbsFields" class="gbs-fields">
-                        <div style="display: flex; gap: 15px; margin-bottom: 10px;">
-                            <input type="email" name="email" placeholder="Email ucznia" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                            <select name="intake_id" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                                <option value="" disabled selected>Wybierz Nabór...</option>
-                                {% for intake in intakes %}<option value="{{ intake.id }}">{{ intake.name }}</option>{% endfor %}
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+        </div>
+
+        <div class="layout">
+            <div class="col-main">
+
+                <div class="card">
+                    <div class="eyebrow" style="margin-bottom:6px;">Nowy proces</div>
+                    <h3>Dodaj nowego studenta do procesu</h3>
+                    <form method="POST" action="{{ url_for('panel_add_student') }}">
+                        <div class="form-row">
+                            <input type="text" name="name" placeholder="Imię i nazwisko" required>
+                            <select name="university_id" id="uniSelect" onchange="toggleGbs()" required>
+                                {% if universities|length != 1 %}
+                                    <option value="" disabled selected>Wybierz uczelnię...</option>
+                                {% endif %}
+                                {% for uni in universities %}
+                                    <option value="{{ uni.id }}" data-name="{{ uni.name }}" {% if universities|length == 1 %}selected{% endif %}>{{ uni.name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
-                        <select name="major_id" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px;">
-                            <option value="" disabled selected>Kierunek...</option>
-                            {% for major in majors %}<option value="{{ major.id }}">{{ major.name }}</option>{% endfor %}
-                        </select>
-                        <label style="font-weight: bold; cursor: pointer; color: #c8102e;">
-                            <input type="checkbox" name="has_math_test" value="1"> Udostępnić Test z Matematyki?
-                        </label>
+
+                        <div id="gbsFields" class="gbs-fields">
+                            <div class="form-row" style="margin-bottom: 10px;">
+                                <input type="email" name="email" placeholder="Email ucznia">
+                                <select name="intake_id">
+                                    <option value="" disabled selected>Wybierz Nabór...</option>
+                                    {% for intake in intakes %}<option value="{{ intake.id }}">{{ intake.name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <select name="major_id" style="width: 100%; margin-bottom: 12px;">
+                                <option value="" disabled selected>Kierunek...</option>
+                                {% for major in majors %}<option value="{{ major.id }}">{{ major.name }}</option>{% endfor %}
+                            </select>
+                            <label>
+                                <input type="checkbox" name="has_math_test" value="1"> Udostępnić Test z Matematyki?
+                            </label>
+                        </div>
+
+                        <button type="submit" class="submit-btn">Dodaj studenta</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="students-head">
+                        <h3 style="margin:0;">Twoi Uczniowie</h3>
+                        <a href="/admin/archive" class="btn btn-grey btn-sm">📁 Archiwum</a>
                     </div>
 
-                    <button type="submit" style="background: #28a745; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px;">Dodaj studenta</button>
-                </form>
-            </div>
+                    <form method="GET" action="{{ url_for('panel_dashboard') }}" class="filter-form">
+                        <input type="text" name="q" value="{{ search_query }}" placeholder="Szukaj po nazwisku...">
+                        <select name="sort" onchange="this.form.submit()">
+                            <option value="alpha" {% if sort_by == 'alpha' %}selected{% endif %}>A - Z</option>
+                            <option value="alpha_desc" {% if sort_by == 'alpha_desc' %}selected{% endif %}>Z - A</option>
+                            <option value="pending" {% if sort_by == 'pending' %}selected{% endif %}>Do sprawdzenia</option>
+                        </select>
+                        <button type="submit">Filtruj</button>
+                    </form>
 
-            <div style="background: white; padding: 25px; border-radius: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0;">Twoi Uczniowie</h3>
-                    <a href="/admin/archive" style="background: #6c757d; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">📁 Archiwum</a>
-                </div>
+                    {% if qa_students %}
+                    <h2 class="section-title qa">Procesy QA Higher Education</h2>
+                    <div style="margin-bottom: 36px;">
+                        {% for student in qa_students %}
+                            {% set counts = namespace(completed=0, pending=0) %}
+                            {% for essay in student.essays %}
+                                {% if essay.is_completed %}
+                                    {% set counts.completed = counts.completed + 1 %}
+                                    {% if not essay.feedback %}{% set counts.pending = counts.pending + 1 %}{% endif %}
+                                {% endif %}
+                            {% endfor %}
 
-                <form method="GET" action="{{ url_for('panel_dashboard') }}" style="margin-bottom: 30px; display: flex; gap: 10px;">
-                    <input type="text" name="q" value="{{ search_query }}" placeholder="Szukaj po nazwisku..." style="flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                    <select name="sort" onchange="this.form.submit()" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                        <option value="alpha" {% if sort_by == 'alpha' %}selected{% endif %}>A - Z</option>
-                        <option value="alpha_desc" {% if sort_by == 'alpha_desc' %}selected{% endif %}>Z - A</option>
-                        <option value="pending" {% if sort_by == 'pending' %}selected{% endif %}>Do sprawdzenia</option>
-                    </select>
-                    <button type="submit" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold;">Filtruj</button>
-                </form>
-
-                {% if qa_students %}
-                <h2 style="color: #343a40; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-top: 0;">Procesy QA Higher Education</h2>
-                <div style="margin-bottom: 40px;">
-                    {% for student in qa_students %}
-                        {% set counts = namespace(completed=0, pending=0) %}
-                        {% for essay in student.essays %}
-                            {% if essay.is_completed %}
-                                {% set counts.completed = counts.completed + 1 %}
-                                {% if not essay.feedback %}{% set counts.pending = counts.pending + 1 %}{% endif %}
-                            {% endif %}
+                            <div class="qa-row">
+                                <div style="flex: 1; min-width: 220px;">
+                                    <a href="/admin/student/{{ student.id }}" class="name-link">
+                                        👤 {{ student.name }}
+                                        {% if counts.pending > 0 %}
+                                            <span class="pending-pill">{{ counts.pending }} DO SPRAWDZENIA</span>
+                                        {% endif %}
+                                    </a>
+                                    <div class="qa-meta">
+                                        Napisane: <strong style="color:var(--text-main);">{{ counts.completed }}</strong> | Niesprawdzone: <strong style="color: {% if counts.pending > 0 %}#ff8b96{% else %}#7be8b6{% endif %};">{{ counts.pending }}</strong>
+                                    </div>
+                                </div>
+                                <div class="qa-actions">
+                                    <button onclick="copy('https://{{ request.host }}/student/{{ student.url_slug }}')" class="btn-link">📋 Kopiuj Panel</button>
+                                    <button onclick="copy('https://{{ request.host }}/exam/{{ student.url_slug }}')" class="btn-exam">📋 Kopiuj Egzamin</button>
+                                    <a href="/admin/student/{{ student.id }}" class="btn-green-solid">✅ Oceny i Profil</a>
+                                </div>
+                            </div>
                         {% endfor %}
+                    </div>
+                    {% endif %}
 
-                        <div class="qa-row" style="background: {% if loop.index % 2 == 0 %}#f8f9fa{% else %}#ffffff{% endif %};">
-                            <div style="flex: 1;">
-                                <a href="/admin/student/{{ student.id }}" style="text-decoration: none; color: #333; font-weight: bold; font-size: 16px; display: flex; align-items: center; margin-bottom: 5px;">
-                                    👤 {{ student.name }}
-                                    {% if counts.pending > 0 %}
-                                        <span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 10px; animation: pulse 1.5s infinite;">{{ counts.pending }} DO SPRAWDZENIA</span>
-                                    {% endif %}
-                                </a>
-                                <div style="font-size: 13px; color: #666;">
-                                    Napisane: <strong>{{ counts.completed }}</strong> | Niesprawdzone: <strong style="color: {% if counts.pending > 0 %}#dc3545{% else %}#28a745{% endif %};">{{ counts.pending }}</strong>
+                    {% if gbs_students %}
+                    <h2 class="section-title gbs">Procesy GBS</h2>
+                    <div>
+                        {% for student in gbs_students %}
+                            <div class="gbs-card">
+                                <div>
+                                    <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                                        <span class="uni-badge-gbs">GBS</span>
+                                        <a href="/admin/student/{{ student.id }}" class="student-name">{{ student.name }}</a>
+                                        {% if student.gbs_attempts %}
+                                            <span class="pending-badge">NOWE ZADANIE!</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="qa-meta" style="margin-top: 8px; margin-left: 5px;">
+                                        Nabór: <strong style="color:var(--text-main);">{{ student.intake.name if student.intake else 'Brak' }}</strong> |
+                                        Dodano: <strong style="color:var(--text-main);">{{ student.created_at.strftime('%Y-%m-%d') if student.created_at else 'Brak' }}</strong> |
+                                        Liczba podejść: <strong style="color:var(--text-main);">{{ student.gbs_attempts|length }}</strong>
+                                    </div>
+                                </div>
+                                <div class="qa-actions">
+                                    <button onclick="copy('https://{{ request.host }}/student/{{ student.url_slug }}')" class="btn-link">📋 Kopiuj Panel</button>
+                                    <button onclick="copy('https://{{ request.host }}/gbs/task/{{ student.url_slug }}?exam=true')" class="btn-exam">📋 Kopiuj Egzamin</button>
+                                    <a href="/admin/student/{{ student.id }}" class="btn-green-solid">✅ Wyniki i Profil</a>
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button onclick="copy('https://{{ request.host }}/student/{{ student.url_slug }}')" class="btn-link">🔗 Kopiuj Panel</button>
-                                <button onclick="copy('https://{{ request.host }}/exam/{{ student.url_slug }}')" class="btn-exam">🚨 Kopiuj Egzamin</button>
-                                <a href="/admin/student/{{ student.id }}" style="background: #28a745; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; text-decoration:none;">📝 Oceny i Profil</a>
-                            </div>
-                        </div>
-                    {% endfor %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if not qa_students and not gbs_students %}
+                        <p class="empty-note">Brak studentów przypisanych do Twojego konta.</p>
+                    {% endif %}
+
                 </div>
-                {% endif %}
-
-                {% if gbs_students %}
-                <h2 style="color: #c8102e; border-bottom: 2px solid #c8102e; padding-bottom: 10px; margin-top: 0;">Procesy GBS</h2>
-                <div>
-                    {% for student in gbs_students %}
-                        <div class="gbs-card">
-                            <div>
-                                <div style="display: flex; align-items: center;">
-                                    <span class="uni-badge-gbs">GBS</span>
-                                    <a href="/admin/student/{{ student.id }}" class="student-name">{{ student.name }}</a>
-                                    
-                                    {% if student.gbs_attempts %}
-                                        <span class="pending-badge">NOWE ZADANIE!</span>
-                                    {% endif %}
-                                </div>
-                                <div style="font-size: 13px; color: #666; margin-top: 8px; margin-left: 5px;">
-                                    Nabór: <strong>{{ student.intake.name if student.intake else 'Brak' }}</strong> | 
-                                    Dodano: <strong>{{ student.created_at.strftime('%Y-%m-%d') if student.created_at else 'Brak' }}</strong> |
-                                    Liczba podejść: <strong>{{ student.gbs_attempts|length }}</strong>
-                                </div>
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button onclick="copy('https://{{ request.host }}/student/{{ student.url_slug }}')" class="btn-link">🔗 Kopiuj Panel</button>
-                                <button onclick="copy('https://{{ request.host }}/gbs/task/{{ student.url_slug }}?exam=true')" class="btn-exam">🚨 Kopiuj Egzamin</button>
-                                <a href="/admin/student/{{ student.id }}" class="btn-exam" style="background: #28a745;">📝 Wyniki i Profil</a>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                {% if not qa_students and not gbs_students %}
-                    <p style="color: #666; font-style: italic;">Brak studentów przypisanych do Twojego konta.</p>
-                {% endif %}
-
             </div>
-        </div>
 
-        <div style="flex: 1;">
-            <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 20px;">
-                <h3 style="margin-top: 0; border-bottom: 2px solid #ffc107; padding-bottom: 10px;">Powiadomienia od studentów</h3>
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    {% for notif in notifications %}
-                        <div style="background: #fff3cd; padding: 12px; border-left: 4px solid #ffc107; border-radius: 5px; font-size: 13px;">
-                            <p style="margin: 0; margin-bottom: 5px;">{{ notif.message | safe }}</p>
-                            
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 12px; color: #666;">{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
-                                <form action="/admin/notif/delete/{{ notif.id }}" method="POST" style="margin: 0;">
-                                    <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 13px; text-decoration: underline; font-weight: bold;">Usuń</button>
-                                </form>
+            <div class="col-side">
+                <div class="card side-card">
+                    <h3>Powiadomienia od studentów</h3>
+                    <div class="notif-list">
+                        {% for notif in notifications %}
+                            <div class="notif-item">
+                                <p>{{ notif.message | safe }}</p>
+                                <div class="notif-foot">
+                                    <span>{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                    <form action="/admin/notif/delete/{{ notif.id }}" method="POST" style="margin: 0;">
+                                        <button type="submit" class="notif-delete">Usuń</button>
+                                    </form>
+                                </div>
                             </div>
-                        </div>
-                    {% else %}
-                        <p style="color: #666; font-style: italic; font-size: 13px;">Nie masz nowych powiadomień.</p>
-                    {% endfor %}
+                        {% else %}
+                            <p class="empty-note" style="font-size: 13px;">Nie masz nowych powiadomień.</p>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -208,6 +630,31 @@
                 alert('Skopiowano unikalny link studenta:\n' + url);
             });
         }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
     </script>
 </body>
 </html>

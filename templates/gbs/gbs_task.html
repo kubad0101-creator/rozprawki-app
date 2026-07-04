@@ -1,53 +1,144 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>GBS Task</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if is_exam %}GBS Egzamin{% else %}GBS Zadanie Domowe{% endif %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #f4f6f9; --box-bg: #fff; --text: #333; --border: #ccc; }
-        .dark-mode { --bg: #1e1e1e; --box-bg: #2d2d2d; --text: #f0f0f0; --border: #555; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 30px; max-width: 900px; margin: auto; transition: 0.3s; }
-        .question-box { background: var(--box-bg); padding: 20px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 25px; }
-        textarea { width: 100%; height: 150px; background: var(--box-bg); color: var(--text); border: 1px solid var(--border); padding: 10px; box-sizing: border-box; font-family: inherit; font-size: 15px; margin-top: 10px; resize: vertical; }
-        .word-counter { text-align: right; font-size: 13px; color: #888; font-weight: bold; margin-top: 5px; }
-        .error { color: #dc3545; } .success { color: #28a745; }
-        .btn-submit { background: #c8102e; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
-        .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
-        .theme-toggle { position: absolute; top: 20px; right: 20px; background: none; border: 1px solid var(--border); color: var(--text); padding: 8px; cursor: pointer; border-radius: 4px; }
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --gbs-red: #e0294f;
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+            --input-bg: rgba(255,255,255,0.05);
+            --ok: #3ecf8e;
+            --bad: #ef4759;
+        }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+            --input-bg: rgba(32,28,48,0.03);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 48px 20px 70px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 15% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        .wrap { max-width: 820px; margin: auto; position: relative; }
+
+        .theme-toggle { position: absolute; top: -14px; right: 0; display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+        .switch { position: relative; width: 56px; height: 30px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(26px); }
+
+        .header { text-align: center; margin-bottom: 40px; padding-top: 46px; }
+        .header img { height: 88px; width: auto; border-radius: 14px; margin-bottom: 18px; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.3px; color: #ff8b9e; }
+        html[data-theme="light"] .header h1 { color: var(--gbs-red); }
+
+        .question-box {
+            background: var(--card-bg); border: 1px solid var(--border-soft); padding: 24px 26px;
+            border-radius: 16px; margin-bottom: 22px; backdrop-filter: blur(10px);
+        }
+        .question-box strong { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .question-box .q-text { font-size: 15px; line-height: 1.5; margin-bottom: 4px; }
+
+        textarea {
+            width: 100%; height: 150px; background: var(--input-bg); color: var(--text-main);
+            border: 1px solid var(--border-strong); padding: 14px; box-sizing: border-box; font-family: inherit;
+            font-size: 15px; margin-top: 14px; border-radius: 10px; resize: vertical; outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        textarea:focus { border-color: #7c5cff; box-shadow: 0 0 0 3px rgba(124,92,255,0.25); }
+
+        .word-counter { text-align: right; font-size: 13px; color: var(--text-muted); font-weight: 700; margin-top: 8px; }
+        .word-counter.ok { color: var(--ok); }
+        .word-counter.bad { color: var(--bad); }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #d63451, #ef4759); color: white; border: none;
+            padding: 16px 30px; font-size: 17px; border-radius: 999px; cursor: pointer; width: 100%;
+            font-weight: 800; margin-top: 6px; box-shadow: 0 8px 22px rgba(224,41,79,0.3);
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+        .btn-submit:hover:not(:disabled) { transform: translateY(-2px); }
+        .btn-submit:disabled { background: var(--border-strong); color: var(--text-muted); cursor: not-allowed; box-shadow: none; }
     </style>
 </head>
 <body>
-    <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')">🌓 Zmień motyw</button>
-    
-    <div style="text-align: center; margin-bottom: 30px;">
-        <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="Logo" style="height: 50px;">
-        <h1 style="color: #c8102e;">{% if is_exam %}GBS Egzamin{% else %}GBS Zadanie Domowe{% endif %}</h1>
-    </div>
+    <div class="wrap">
 
-    <div class="question-box">
-        <strong>Question 1:</strong><br> {{ questions[0] }}
-        <textarea id="q1" oninput="checkWords()"></textarea>
-        <div class="word-counter" id="w1">Words: 0 {% if student.major and student.major.is_cccu %}(Min: 100){% endif %}</div>
-    </div>
+        <div class="theme-toggle">
+            <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+            <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                <div class="knob" id="themeKnob">🌙</div>
+            </div>
+        </div>
 
-    <div class="question-box">
-        <strong>Question 2:</strong><br> {{ questions[1] }}
-        <textarea id="q2" oninput="checkWords()"></textarea>
-        <div class="word-counter" id="w2">Words: 0 {% if student.major and student.major.is_cccu %}(Min: 70){% endif %}</div>
-    </div>
+        <div class="header">
+            <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="OpenUK Study Logo">
+            <h1>{% if is_exam %}GBS Egzamin{% else %}GBS Zadanie Domowe{% endif %}</h1>
+        </div>
 
-    <div class="question-box">
-        <strong>Question 3:</strong><br> {{ questions[2] }}
-        <textarea id="q3" oninput="checkWords()"></textarea>
-        <div class="word-counter" id="w3">Words: 0 {% if student.major and student.major.is_cccu %}(Min: 70){% endif %}</div>
-    </div>
+        <div class="question-box">
+            <strong>Question 1</strong>
+            <div class="q-text">{{ questions[0] }}</div>
+            <textarea id="q1" oninput="checkWords()"></textarea>
+            <div class="word-counter" id="w1">Words: 0 {% if student.major and student.major.is_cccu %}(Min: 100){% endif %}</div>
+        </div>
 
-    <button class="btn-submit" id="submitBtn" onclick="submitTask()">Wyślij odpowiedzi</button>
+        <div class="question-box">
+            <strong>Question 2</strong>
+            <div class="q-text">{{ questions[1] }}</div>
+            <textarea id="q2" oninput="checkWords()"></textarea>
+            <div class="word-counter" id="w2">Words: 0 {% if student.major and student.major.is_cccu %}(Min: 70){% endif %}</div>
+        </div>
+
+        <div class="question-box">
+            <strong>Question 3</strong>
+            <div class="q-text">{{ questions[2] }}</div>
+            <textarea id="q3" oninput="checkWords()"></textarea>
+            <div class="word-counter" id="w3">Words: 0 {% if student.major and student.major.is_cccu %}(Min: 70){% endif %}</div>
+        </div>
+
+        <button class="btn-submit" id="submitBtn" onclick="submitTask()">Wyślij odpowiedzi</button>
+    </div>
 
     <script>
         // Zabezpieczenie zmiennej dla logiki JavaScript
         const isCccu = {{ 'true' if student.major and student.major.is_cccu else 'false' }};
-        
+
         function getWords(id) {
             let val = document.getElementById(id).value.trim();
             return val === "" ? 0 : val.split(/\s+/).length;
@@ -55,12 +146,22 @@
 
         function checkWords() {
             let w1 = getWords('q1'); let w2 = getWords('q2'); let w3 = getWords('q3');
-            document.getElementById('w1').innerText = "Words: " + w1 + (isCccu ? " (Min: 100)" : "");
-            document.getElementById('w2').innerText = "Words: " + w2 + (isCccu ? " (Min: 70)" : "");
-            document.getElementById('w3').innerText = "Words: " + w3 + (isCccu ? " (Min: 70)" : "");
-            
+            const w1el = document.getElementById('w1');
+            const w2el = document.getElementById('w2');
+            const w3el = document.getElementById('w3');
+
+            w1el.innerText = "Words: " + w1 + (isCccu ? " (Min: 100)" : "");
+            w2el.innerText = "Words: " + w2 + (isCccu ? " (Min: 70)" : "");
+            w3el.innerText = "Words: " + w3 + (isCccu ? " (Min: 70)" : "");
+
+            if (isCccu) {
+                w1el.className = "word-counter " + (w1 >= 100 ? "ok" : "bad");
+                w2el.className = "word-counter " + (w2 >= 70 ? "ok" : "bad");
+                w3el.className = "word-counter " + (w3 >= 70 ? "ok" : "bad");
+            }
+
             let btn = document.getElementById('submitBtn');
-            if(isCccu) {
+            if (isCccu) {
                 btn.disabled = (w1 < 100 || w2 < 70 || w3 < 70);
             } else {
                 btn.disabled = (w1 === 0 && w2 === 0 && w3 === 0);
@@ -84,6 +185,31 @@
             });
         }
         checkWords();
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
     </script>
 </body>
 </html>

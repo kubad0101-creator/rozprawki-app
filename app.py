@@ -164,7 +164,7 @@ MATH_QUESTIONS = [
 def setup_database():
     db.create_all()
     
-    # KROK NAPRAWCZY: Dodawanie nowych kolumn pojedynczo
+    # Dodawanie nowych kolumn pojedynczo
     queries = [
         'ALTER TABLE student_v5 ADD COLUMN university_id INTEGER REFERENCES universities(id)',
         'ALTER TABLE student_v5 ADD COLUMN creator_id INTEGER REFERENCES users(id)',
@@ -325,7 +325,6 @@ def panel_dashboard():
         
     students = sort_students(students_query.all(), sort_by)
     
-    # Rozdzielenie studentów
     qa_students = [s for s in students if s.university and 'QA' in s.university.name]
     gbs_students = [s for s in students if s.university and 'GBS' in s.university.name]
     
@@ -358,11 +357,14 @@ def panel_add_student():
     
     new_student = Student(name=name, url_slug=slug, university_id=uni.id, creator_id=user.id)
     
-    # ROZGAŁĘZIENIE LOGIKI: QA czy GBS
+    # ROZGAŁĘZIENIE LOGIKI: QA czy GBS. Bezpieczne parsowanie formularza!
     if "GBS" in uni.name:
         new_student.email = request.form.get('email')
-        new_student.gbs_major_id = request.form.get('major_id')
-        new_student.gbs_intake_id = request.form.get('intake_id')
+        major_id = request.form.get('major_id')
+        intake_id = request.form.get('intake_id')
+        
+        new_student.gbs_major_id = int(major_id) if major_id else None
+        new_student.gbs_intake_id = int(intake_id) if intake_id else None
         new_student.has_math_test = 'has_math_test' in request.form
         db.session.add(new_student)
     else:
@@ -463,14 +465,11 @@ def panel_gbs_intake(intake_id):
 
 @app.route('/student/<url_slug>')
 def student_dashboard(url_slug):
-    # Pobieramy studenta lub zwracamy błąd 404
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
-    
-    # Bezpieczne sprawdzanie czy student ma uczelnię
     if student.university and "GBS" in student.university.name:
         return render_template('student_gbs_dashboard.html', student=student)
     
-    # Stary panel QA - z zabezpieczeniem, jeśli university jest None
+    # Stary panel QA
     materials = student.university.materials if student.university else []
     return render_template('student.html', student=student, exam_topics=EXAM_TOPICS, materials=materials)
 
@@ -589,7 +588,6 @@ def panel_master():
 @app.route('/admin', methods=['GET', 'POST'])
 @login_required
 def admin():
-    # Stary plik jest teraz zintegrowany z /panel. Tu zostawiam przekierowanie, aby zapobiec starym nawykom
     return redirect(url_for('panel_dashboard'))
 
 @app.route('/admin/archive')
@@ -629,7 +627,7 @@ def admin_student_detail(student_id):
     if user.role != 'admin':
         uni_ids = [u.id for u in user.universities]
         if student.university_id not in uni_ids:
-            flash("Odmowa dostępu.", "error")
+            flash("Odmowa dostępu: Ten uczeń nie należy do przypisanej Ci uczelni.", "error")
             return redirect(url_for('panel_dashboard'))
 
     essays_sorted = sorted(student.essays, key=lambda x: x.last_edited_at or datetime.min, reverse=True)

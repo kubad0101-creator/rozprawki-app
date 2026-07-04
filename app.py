@@ -357,7 +357,6 @@ def panel_add_student():
     
     new_student = Student(name=name, url_slug=slug, university_id=uni.id, creator_id=user.id)
     
-    # ROZGAŁĘZIENIE LOGIKI: QA czy GBS. Bezpieczne parsowanie formularza!
     if "GBS" in uni.name:
         new_student.email = request.form.get('email')
         major_id = request.form.get('major_id')
@@ -437,7 +436,7 @@ def panel_gbs():
         return redirect(url_for('panel_gbs'))
 
     intakes = GbsIntake.query.all()
-    return render_template('panel_gbs.html', intakes=intakes)
+    return render_template('gbs/panel_gbs.html', intakes=intakes)
 
 @app.route('/panel/gbs/intake/<int:intake_id>', methods=['GET', 'POST'])
 @login_required
@@ -459,7 +458,7 @@ def panel_gbs_intake(intake_id):
 
     majors = GbsMajor.query.all()
     question_sets = {qs.major_id: qs for qs in intake.question_sets}
-    return render_template('panel_gbs_intake.html', intake=intake, majors=majors, question_sets=question_sets)
+    return render_template('gbs/panel_gbs_intake.html', intake=intake, majors=majors, question_sets=question_sets)
 
 # ----------------- WIDOKI I AKCJE STUDENTA GBS -----------------
 
@@ -467,11 +466,10 @@ def panel_gbs_intake(intake_id):
 def student_dashboard(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     if student.university and "GBS" in student.university.name:
-        return render_template('student_gbs_dashboard.html', student=student)
+        return render_template('gbs/student_gbs_dashboard.html', student=student)
     
-    # Stary panel QA
     materials = student.university.materials if student.university else []
-    return render_template('student.html', student=student, exam_topics=EXAM_TOPICS, materials=materials)
+    return render_template('qa/student.html', student=student, exam_topics=EXAM_TOPICS, materials=materials)
 
 @app.route('/gbs/task/<url_slug>')
 def gbs_task(url_slug):
@@ -481,7 +479,7 @@ def gbs_task(url_slug):
     qset = GbsQuestionSet.query.filter_by(intake_id=student.gbs_intake_id, major_id=student.gbs_major_id).first()
     questions = [qset.q1, qset.q2, qset.q3] if qset else ["Pytanie 1 (Brak pytań w naborze)", "Pytanie 2 (Brak)", "Pytanie 3 (Brak)"]
     
-    return render_template('gbs_task.html', student=student, questions=questions, is_exam=is_exam)
+    return render_template('gbs/gbs_task.html', student=student, questions=questions, is_exam=is_exam)
 
 @app.route('/api/gbs/submit/<int:student_id>', methods=['POST'])
 def gbs_submit(student_id):
@@ -505,7 +503,7 @@ def math_test(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     if not student.has_math_test: 
         return "Brak dostępu do testu z matematyki", 403
-    return render_template('math_test.html', student=student, questions=MATH_QUESTIONS)
+    return render_template('gbs/math_test.html', student=student, questions=MATH_QUESTIONS)
 
 @app.route('/api/math/submit/<int:student_id>', methods=['POST'])
 def math_submit(student_id):
@@ -599,7 +597,7 @@ def admin_archive():
         uni_ids = [u.id for u in user.universities]
         query = query.filter(Student.university_id.in_(uni_ids))
     archived_students = query.order_by(Student.name.asc()).all()
-    return render_template('admin_archive.html', archived_students=archived_students)
+    return render_template('qa/admin_archive.html', archived_students=archived_students)
 
 @app.route('/admin/student/<int:student_id>/restore', methods=['POST'])
 @login_required
@@ -634,7 +632,7 @@ def admin_student_detail(student_id):
     gbs_attempts = sorted(student.gbs_attempts, key=lambda x: x.submitted_at, reverse=True)
     math_results = sorted(student.math_results, key=lambda x: x.submitted_at, reverse=True)
     
-    return render_template('student_detail.html', student=student, essays_sorted=essays_sorted, gbs_attempts=gbs_attempts, math_results=math_results)
+    return render_template('qa/student_detail.html', student=student, essays_sorted=essays_sorted, gbs_attempts=gbs_attempts, math_results=math_results)
 
 @app.route('/admin/student/<int:student_id>/archive', methods=['POST'])
 @login_required
@@ -701,7 +699,7 @@ def delete_notif(notif_id):
 def exam_direct_link(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     exam_essay = Essay.query.filter_by(student_id=student.id, title="Egzamin").first_or_404()
-    return render_template('write.html', essay=exam_essay, exam_topics=EXAM_TOPICS)
+    return render_template('qa/write.html', essay=exam_essay, exam_topics=EXAM_TOPICS)
 
 @app.route('/exam_extra/<url_slug>')
 def exam_extra_direct_link(url_slug):
@@ -712,7 +710,7 @@ def exam_extra_direct_link(url_slug):
     custom_topics = ["Brak tematu 1", "Brak tematu 2"]
     if exam_essay.topic_full and '|||' in exam_essay.topic_full:
         custom_topics = exam_essay.topic_full.split('|||')
-    return render_template('write.html', essay=exam_essay, exam_topics=custom_topics)
+    return render_template('qa/write.html', essay=exam_essay, exam_topics=custom_topics)
 
 @app.route('/write/<int:essay_id>')
 def write_essay(essay_id):
@@ -720,7 +718,7 @@ def write_essay(essay_id):
     topics = EXAM_TOPICS
     if essay.title == "Egzamin Dodatkowy":
         topics = essay.topic_full.split('|||') if essay.topic_full and '|||' in essay.topic_full else ["Brak tematu 1", "Brak tematu 2"]
-    return render_template('write.html', essay=essay, exam_topics=topics)
+    return render_template('qa/write.html', essay=essay, exam_topics=topics)
 
 @app.route('/api/save/<int:essay_id>', methods=['POST'])
 def auto_save(essay_id):

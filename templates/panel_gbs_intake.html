@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Pytania Naboru - {{ intake.name }}</title>
+    <style>
+        .major-card { background: white; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; }
+        .flash-messages { margin-bottom: 20px; }
+        .alert { padding: 15px; margin-bottom: 15px; border-radius: 6px; font-weight: bold; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; resize: vertical;}
+    </style>
+</head>
+<body style="font-family: sans-serif; padding: 25px; background: #f4f6f9; max-width: 1000px; margin: auto;">
+    
+    <a href="/panel/gbs" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć do Naborów</a>
+    
+    <h1 style="color: #333; margin-top: 15px;">Zarządzanie Pytaniami: <span style="color: {{ intake.color }};">{{ intake.name }}</span></h1>
+    <p style="color: #666; margin-bottom: 30px;">Zapisz unikalne 3 pytania dla każdego kierunku w tym naborze.</p>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+    </div>
+
+    {% for major in majors %}
+        {% set qs = question_sets.get(major.id) %}
+        <div class="major-card" style="border-top: 4px solid {% if qs %}#28a745{% else %}#dc3545{% endif %};">
+            <h3 style="margin-top: 0; color: #333;">{{ major.name }}</h3>
+            <p style="font-size: 12px; color: #666; margin-top: -10px;">
+                Status: {% if qs %}<strong style="color: #28a745;">Pytania dodane</strong>{% else %}<strong style="color: #dc3545;">Brak pytań</strong>{% endif %}
+            </p>
+
+            <form method="POST">
+                <input type="hidden" name="major_id" value="{{ major.id }}">
+                <label style="font-size: 14px; font-weight: bold;">Pytanie 1 {% if major.is_cccu %}(Wymaga 100 słów){% endif %}</label>
+                <textarea name="q1" rows="2" placeholder="Treść pytania...">{{ qs.q1 if qs else '' }}</textarea>
+                
+                <label style="font-size: 14px; font-weight: bold;">Pytanie 2 {% if major.is_cccu %}(Wymaga 70 słów){% endif %}</label>
+                <textarea name="q2" rows="2" placeholder="Treść pytania...">{{ qs.q2 if qs else '' }}</textarea>
+                
+                <label style="font-size: 14px; font-weight: bold;">Pytanie 3 {% if major.is_cccu %}(Wymaga 70 słów){% endif %}</label>
+                <textarea name="q3" rows="2" placeholder="Treść pytania...">{{ qs.q3 if qs else '' }}</textarea>
+                
+                <button type="submit" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px;">Zapisz Zestaw</button>
+            </form>
+        </div>
+    {% endfor %}
+
+</body>
+</html>

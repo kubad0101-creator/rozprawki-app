@@ -108,7 +108,6 @@ class Student(db.Model):
     university_id = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=True)
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
-    # POLA GBS
     email = db.Column(db.String(120), nullable=True)
     gbs_major_id = db.Column(db.Integer, db.ForeignKey('gbs_majors.id'), nullable=True)
     gbs_intake_id = db.Column(db.Integer, db.ForeignKey('gbs_intakes.id'), nullable=True)
@@ -317,7 +316,6 @@ def panel_dashboard():
     
     if user.role != 'admin':
         students_query = students_query.filter(Student.university_id.in_(uni_ids))
-        # Nauczyciel widzi powiadomienia tylko od studentów ze swoich uczelni
         notifications = Notification.query.join(Student, Notification.student_id == Student.id).filter(
             Student.university_id.in_(uni_ids)
         ).order_by(Notification.created_at.desc()).limit(15).all()
@@ -418,11 +416,12 @@ def panel_delete_material(material_id):
 
 @app.route('/gbs/materials/writing_guide')
 def gbs_writing_guide():
-    return render_template('gbs/Jak pisać własne odpowiedzi.html')
+    return render_template('gbs/writing_guide.html')
 
 @app.route('/gbs/materials/exam_info')
 def gbs_exam_info():
-    return render_template('gbs/Informacje o egzaminie.html')
+    return render_template('gbs/exam_info.html')
+
 
 # ----------------- PANEL GBS (KONFIGURACJA NABORÓW I PYTAŃ) -----------------
 

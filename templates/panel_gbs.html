@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head><title>Konfiguracja GBS</title></head>
+<body style="font-family: sans-serif; padding: 25px; background: #f4f6f9; max-width: 1000px; margin: auto;">
+    <h1>⚙️ Konfiguracja Naborów GBS</h1>
+    <a href="/panel" style="color: #c8102e; font-weight: bold;">⬅ Wróć do panelu</a>
+    <hr>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h3>1. Utwórz nowy Nabór</h3>
+        <form method="POST">
+            <input type="hidden" name="action" value="add_intake">
+            <input type="text" name="name" placeholder="Nazwa Naboru (np. Wiosna 2027)" required style="padding: 10px;">
+            <input type="color" name="color" value="#c8102e" style="padding: 5px;">
+            <button type="submit" style="padding: 10px; background: #c8102e; color: white; border: none;">Utwórz Nabór</button>
+        </form>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 8px;">
+        <h3>2. Przypisz pytania do kierunków w naborze</h3>
+        <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <input type="hidden" name="action" value="save_questions">
+            <select name="intake_id" required style="padding: 10px;">
+                <option disabled selected>Wybierz Nabór...</option>
+                {% for i in intakes %}<option value="{{ i.id }}">{{ i.name }}</option>{% endfor %}
+            </select>
+            <select name="major_id" required style="padding: 10px;">
+                <option disabled selected>Wybierz Kierunek...</option>
+                {% for m in majors %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
+            </select>
+            <textarea name="q1" placeholder="Pytanie 1 (min. 100 słów dla CCCU)" rows="3" style="padding: 10px;"></textarea>
+            <textarea name="q2" placeholder="Pytanie 2 (min. 70 słów dla CCCU)" rows="3" style="padding: 10px;"></textarea>
+            <textarea name="q3" placeholder="Pytanie 3 (min. 70 słów dla CCCU)" rows="3" style="padding: 10px;"></textarea>
+            <button type="submit" style="padding: 10px; background: #28a745; color: white; border: none;">Zapisz Zestaw Pytań</button>
+        </form>
+    </div>
+</body>
+</html>

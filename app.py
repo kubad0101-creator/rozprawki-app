@@ -297,13 +297,14 @@ def logout():
 
 # ----------------- NOWY PANEL KOORDYNACJI SYSTEMU PŁATFORMY (/panel) -----------------
 
-@app.route('/panel')
+@app.route('/panel', methods=['GET'])
 @login_required
 def panel_dashboard():
     user = User.query.get(session['user_id'])
-    universities = University.query.all() if user.role == 'admin' else user.universities
-    uni_ids = [u.id for u in universities]
+    # Pobranie imienia z sesji lub username
+    teacher_name = user.username 
     
+    universities = University.query.all() if user.role == 'admin' else user.universities
     majors = GbsMajor.query.all()
     intakes = GbsIntake.query.all()
     
@@ -311,16 +312,10 @@ def panel_dashboard():
     sort_by = request.args.get('sort', 'alpha')
     
     students_query = Student.query.filter_by(is_archived=False)
+    if user.role != 'admin': 
+        students_query = students_query.filter(Student.university_id.in_([u.id for u in universities]))
     
-    if user.role != 'admin':
-        students_query = students_query.filter(Student.university_id.in_(uni_ids))
-        notifications = Notification.query.filter(
-            (Notification.recipient_id == user.id) | (Notification.recipient_id == None)
-        ).order_by(Notification.created_at.desc()).limit(15).all()
-    else:
-        notifications = Notification.query.order_by(Notification.created_at.desc()).limit(15).all()
-        
-    if search_query:
+    if search_query: 
         students_query = students_query.filter(db.func.lower(Student.name).contains(search_query))
         
     students = sort_students(students_query.all(), sort_by)
@@ -334,7 +329,8 @@ def panel_dashboard():
                            universities=universities, 
                            majors=majors, 
                            intakes=intakes, 
-                           notifications=notifications, 
+                           teacher_name=teacher_name,
+                           notifications=Notification.query.filter((Notification.recipient_id == user.id) | (Notification.recipient_id == None)).order_by(Notification.created_at.desc()).limit(15).all(), 
                            user=user, 
                            sort_by=sort_by, 
                            search_query=search_query)

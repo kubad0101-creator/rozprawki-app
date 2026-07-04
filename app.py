@@ -164,7 +164,6 @@ MATH_QUESTIONS = [
 def setup_database():
     db.create_all()
     
-    # Dodawanie nowych kolumn pojedynczo
     queries = [
         'ALTER TABLE student_v5 ADD COLUMN university_id INTEGER REFERENCES universities(id)',
         'ALTER TABLE student_v5 ADD COLUMN creator_id INTEGER REFERENCES users(id)',
@@ -297,14 +296,13 @@ def logout():
 
 # ----------------- NOWY PANEL KOORDYNACJI SYSTEMU PŁATFORMY (/panel) -----------------
 
-@app.route('/panel', methods=['GET'])
+@app.route('/panel')
 @login_required
 def panel_dashboard():
     user = User.query.get(session['user_id'])
-    # Pobranie imienia z sesji lub username
-    teacher_name = user.username 
-    
     universities = University.query.all() if user.role == 'admin' else user.universities
+    uni_ids = [u.id for u in universities]
+    
     majors = GbsMajor.query.all()
     intakes = GbsIntake.query.all()
     
@@ -312,10 +310,16 @@ def panel_dashboard():
     sort_by = request.args.get('sort', 'alpha')
     
     students_query = Student.query.filter_by(is_archived=False)
-    if user.role != 'admin': 
-        students_query = students_query.filter(Student.university_id.in_([u.id for u in universities]))
     
-    if search_query: 
+    if user.role != 'admin':
+        students_query = students_query.filter(Student.university_id.in_(uni_ids))
+        notifications = Notification.query.filter(
+            (Notification.recipient_id == user.id) | (Notification.recipient_id == None)
+        ).order_by(Notification.created_at.desc()).limit(15).all()
+    else:
+        notifications = Notification.query.order_by(Notification.created_at.desc()).limit(15).all()
+        
+    if search_query:
         students_query = students_query.filter(db.func.lower(Student.name).contains(search_query))
         
     students = sort_students(students_query.all(), sort_by)
@@ -329,8 +333,7 @@ def panel_dashboard():
                            universities=universities, 
                            majors=majors, 
                            intakes=intakes, 
-                           teacher_name=teacher_name,
-                           notifications=Notification.query.filter((Notification.recipient_id == user.id) | (Notification.recipient_id == None)).order_by(Notification.created_at.desc()).limit(15).all(), 
+                           notifications=notifications, 
                            user=user, 
                            sort_by=sort_by, 
                            search_query=search_query)

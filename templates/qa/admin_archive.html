@@ -1,34 +1,156 @@
+
 <!DOCTYPE html>
 <html lang="pl">
-<head><meta charset="UTF-8"><title>Archiwum Uczniów</title></head>
-<body style="font-family: sans-serif; padding: 25px; max-width: 900px; margin: auto; background: #f4f6f9;">
-    
-    <a href="/admin" style="display: inline-block; margin-bottom: 20px; color: #007bff; text-decoration: none; font-weight: bold; font-size: 16px;">⬅ Wróć do panelu głównego</a>
-    
-    <h1 style="margin-top: 0; color: #343a40;">📁 Archiwum Uczniów</h1>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archiwum Uczniów</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+            --row-bg: rgba(255,255,255,0.03);
+        }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+            --row-bg: rgba(32,28,48,0.025);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 32px clamp(16px, 4vw, 40px) 60px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 12% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        a { color: inherit; }
+        .wrap { max-width: 900px; margin: auto; }
 
-    <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <p style="color: #6c757d; margin-bottom: 20px;">Uczniowie w archiwum nie są widoczni na liście głównej. Możesz ich tutaj przywrócić lub usunąć na stałe.</p>
+        .switch { position: relative; width: 52px; height: 28px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 11px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(24px); }
+        .theme-toggle { display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
 
-        <div style="display: flex; flex-direction: column; gap: 15px;">
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .back-link { text-decoration: none; color: var(--text-muted); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+        .back-link:hover { color: var(--text-main); }
+
+        h1 { margin: 0 0 22px; font-size: 24px; font-weight: 800; }
+
+        .card { background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 20px; padding: 28px; backdrop-filter: blur(10px); }
+        .card > p { color: var(--text-muted); margin-bottom: 22px; font-size: 14px; }
+
+        .archive-row {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+            padding: 16px 18px; background: var(--row-bg); border: 1px solid var(--border-soft); border-radius: 12px;
+            margin-bottom: 14px;
+        }
+        .archive-row .name { font-weight: 800; font-size: 16px; }
+        .archive-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .archive-actions form { margin: 0; }
+
+        .btn { border: none; border-radius: 10px; padding: 10px 20px; font-weight: 800; font-size: 13px; cursor: pointer; transition: transform 0.15s ease; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-green { background: linear-gradient(135deg, #22a878, #3ecf8e); color: #04241f; }
+        .btn-danger { background: linear-gradient(135deg, #d63451, #ef4759); color: #fff; }
+
+        .empty-box { background: var(--row-bg); padding: 22px; text-align: center; border-radius: 12px; border: 1px solid var(--border-soft); }
+        .empty-box p { color: var(--text-muted); margin: 0; font-size: 15px; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+
+        <div class="topbar">
+            <a href="/admin" class="back-link">⬅ Wróć do panelu głównego</a>
+            <div class="theme-toggle">
+                <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+                <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                    <div class="knob" id="themeKnob">🌙</div>
+                </div>
+            </div>
+        </div>
+
+        <h1>📁 Archiwum Uczniów</h1>
+
+        <div class="card">
+            <p>Uczniowie w archiwum nie są widoczni na liście głównej. Możesz ich tutaj przywrócić lub usunąć na stałe.</p>
+
             {% for student in archived_students %}
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px;">
-                    <span style="font-weight: bold; color: #495057; font-size: 18px;">{{ student.name }}</span>
-                    <div style="display: flex; gap: 10px;">
-                        <form action="/admin/student/{{ student.id }}/restore" method="POST" style="margin:0;">
-                            <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Odarchiwizuj (Przywróć)</button>
+                <div class="archive-row">
+                    <span class="name">{{ student.name }}</span>
+                    <div class="archive-actions">
+                        <form action="/admin/student/{{ student.id }}/restore" method="POST">
+                            <button type="submit" class="btn btn-green">Odarchiwizuj (Przywróć)</button>
                         </form>
-                        <form action="/admin/student/{{ student.id }}/delete_forever" method="POST" style="margin:0;" onsubmit="return confirm('UWAGA: Czy na pewno chcesz całkowicie USUNĄĆ tego studenta i wszystkie jego rozprawki? Tej akcji NIE DA SIĘ COFNĄĆ.');">
-                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Usuń bezpowrotnie</button>
+                        <form action="/admin/student/{{ student.id }}/delete_forever" method="POST" onsubmit="return confirm('UWAGA: Czy na pewno chcesz całkowicie USUNĄĆ tego studenta i wszystkie jego rozprawki? Tej akcji NIE DA SIĘ COFNĄĆ.');">
+                            <button type="submit" class="btn btn-danger">Usuń bezpowrotnie</button>
                         </form>
                     </div>
                 </div>
             {% else %}
-                <div style="background: #e9ecef; padding: 20px; text-align: center; border-radius: 5px;">
-                    <p style="color: #666; margin: 0; font-size: 16px;">Archiwum jest puste.</p>
+                <div class="empty-box">
+                    <p>Archiwum jest puste.</p>
                 </div>
             {% endfor %}
         </div>
     </div>
+
+    <script>
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

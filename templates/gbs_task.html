@@ -27,25 +27,26 @@
     <div class="question-box">
         <strong>Question 1:</strong><br> {{ questions[0] }}
         <textarea id="q1" oninput="checkWords()"></textarea>
-        <div class="word-counter" id="w1">Words: 0 {% if student.major.is_cccu %}(Min: 100){% endif %}</div>
+        <div class="word-counter" id="w1">Words: 0 {% if student.major and student.major.is_cccu %}(Min: 100){% endif %}</div>
     </div>
 
     <div class="question-box">
         <strong>Question 2:</strong><br> {{ questions[1] }}
         <textarea id="q2" oninput="checkWords()"></textarea>
-        <div class="word-counter" id="w2">Words: 0 {% if student.major.is_cccu %}(Min: 70){% endif %}</div>
+        <div class="word-counter" id="w2">Words: 0 {% if student.major and student.major.is_cccu %}(Min: 70){% endif %}</div>
     </div>
 
     <div class="question-box">
         <strong>Question 3:</strong><br> {{ questions[2] }}
         <textarea id="q3" oninput="checkWords()"></textarea>
-        <div class="word-counter" id="w3">Words: 0 {% if student.major.is_cccu %}(Min: 70){% endif %}</div>
+        <div class="word-counter" id="w3">Words: 0 {% if student.major and student.major.is_cccu %}(Min: 70){% endif %}</div>
     </div>
 
     <button class="btn-submit" id="submitBtn" onclick="submitTask()">Wyślij odpowiedzi</button>
 
     <script>
-        const isCccu = {{ 'true' if student.major.is_cccu else 'false' }};
+        // Zabezpieczenie zmiennej dla logiki JavaScript
+        const isCccu = {{ 'true' if student.major and student.major.is_cccu else 'false' }};
         
         function getWords(id) {
             let val = document.getElementById(id).value.trim();

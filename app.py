@@ -143,6 +143,8 @@ class Notification(db.Model):
     message = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
     recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student_v5.id'), nullable=True)
+    student = db.relationship('Student')
 
 # ----------------- DANE TESTU Z MATEMATYKI GBS -----------------
 MATH_QUESTIONS = [
@@ -172,7 +174,8 @@ def setup_database():
         'ALTER TABLE student_v5 ADD COLUMN gbs_intake_id INTEGER REFERENCES gbs_intakes(id)',
         'ALTER TABLE student_v5 ADD COLUMN has_math_test BOOLEAN DEFAULT FALSE',
         'ALTER TABLE student_v5 ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'ALTER TABLE notification_v5 ADD COLUMN recipient_id INTEGER REFERENCES users(id)'
+        'ALTER TABLE notification_v5 ADD COLUMN recipient_id INTEGER REFERENCES users(id)',
+        'ALTER TABLE notification_v5 ADD COLUMN student_id INTEGER REFERENCES student_v5(id)'
     ]
 
     for q in queries:
@@ -300,6 +303,7 @@ def logout():
 @login_required
 def panel_dashboard():
     user = User.query.get(session['user_id'])
+    teacher_name = user.username
     universities = University.query.all() if user.role == 'admin' else user.universities
     uni_ids = [u.id for u in universities]
     
@@ -313,8 +317,9 @@ def panel_dashboard():
     
     if user.role != 'admin':
         students_query = students_query.filter(Student.university_id.in_(uni_ids))
-        notifications = Notification.query.filter(
-            (Notification.recipient_id == user.id) | (Notification.recipient_id == None)
+        # Nauczyciel widzi powiadomienia tylko od studentów ze swoich uczelni
+        notifications = Notification.query.join(Student, Notification.student_id == Student.id).filter(
+            Student.university_id.in_(uni_ids)
         ).order_by(Notification.created_at.desc()).limit(15).all()
     else:
         notifications = Notification.query.order_by(Notification.created_at.desc()).limit(15).all()
@@ -333,6 +338,7 @@ def panel_dashboard():
                            universities=universities, 
                            majors=majors, 
                            intakes=intakes, 
+                           teacher_name=teacher_name,
                            notifications=notifications, 
                            user=user, 
                            sort_by=sort_by, 
@@ -407,6 +413,16 @@ def panel_delete_material(material_id):
         db.session.delete(material)
         db.session.commit()
     return redirect(url_for('panel_materials'))
+
+# ----------------- TRASY DLA MATERIAŁÓW HTML (GBS) -----------------
+
+@app.route('/gbs/materials/writing_guide')
+def gbs_writing_guide():
+    return render_template('gbs/Jak pisać własne odpowiedzi.html')
+
+@app.route('/gbs/materials/exam_info')
+def gbs_exam_info():
+    return render_template('gbs/Informacje o egzaminie.html')
 
 # ----------------- PANEL GBS (KONFIGURACJA NABORÓW I PYTAŃ) -----------------
 
@@ -493,7 +509,7 @@ def gbs_submit(student_id):
     )
     db.session.add(attempt)
     msg = f"<a href='/admin/student/{student.id}' class='notif-link'><b>{student.name}</b> oddał/a zadanie GBS.</a>"
-    db.session.add(Notification(message=msg, recipient_id=student.creator_id))
+    db.session.add(Notification(message=msg, recipient_id=student.creator_id, student_id=student.id))
     db.session.commit()
     return jsonify({"status": "success"})
 
@@ -518,7 +534,7 @@ def math_submit(student_id):
     result = MathTestResult(student_id=student.id, score=score, total=len(MATH_QUESTIONS), answers_json=json.dumps(data))
     db.session.add(result)
     msg = f"<a href='/admin/student/{student.id}' class='notif-link'><b>{student.name}</b> ukończył/a test z matmy ({score}/{len(MATH_QUESTIONS)}).</a>"
-    db.session.add(Notification(message=msg, recipient_id=student.creator_id))
+    db.session.add(Notification(message=msg, recipient_id=student.creator_id, student_id=student.id))
     db.session.commit()
     return jsonify({"status": "success", "score": score})
 
@@ -740,7 +756,7 @@ def auto_save(essay_id):
 
     if became_completed:
         msg = f"<a href='/admin/student/{essay.student_id}' class='notif-link'><b>{essay.student.name}</b> ukończył/a: '{essay.title[:30]}'</a>"
-        notif = Notification(message=msg, recipient_id=essay.student.creator_id)
+        notif = Notification(message=msg, recipient_id=essay.student.creator_id, student_id=essay.student_id)
         db.session.add(notif)
         db.session.commit()
         

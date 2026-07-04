@@ -103,6 +103,7 @@ class Student(db.Model):
     url_slug = db.Column(db.String(150), unique=True, nullable=False)
     exam_unlocked = db.Column(db.Boolean, default=False)
     is_archived = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     university_id = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=True)
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
@@ -158,12 +159,12 @@ MATH_QUESTIONS = [
     {"id": 11, "text": "Evaluate 5/15 as percentage:", "options": {"a": "0.33", "b": "33.33", "c": "66.66", "d": "3.33"}, "answer": "b", "exp": "5/15 = 1/3, which is approximately 33.33%"}
 ]
 
-# ----------------- INICJALIZACJA BAZY DANYCH (ZMODYFIKOWANA) -----------------
+# ----------------- INICJALIZACJA BAZY DANYCH -----------------
 
 def setup_database():
     db.create_all()
     
-    # KROK NAPRAWCZY: Dodawanie nowych kolumn pojedynczo, aby uniknąć przerwania całego bloku, gdy jedna już istnieje.
+    # KROK NAPRAWCZY: Dodawanie nowych kolumn pojedynczo
     queries = [
         'ALTER TABLE student_v5 ADD COLUMN university_id INTEGER REFERENCES universities(id)',
         'ALTER TABLE student_v5 ADD COLUMN creator_id INTEGER REFERENCES users(id)',
@@ -171,6 +172,7 @@ def setup_database():
         'ALTER TABLE student_v5 ADD COLUMN gbs_major_id INTEGER REFERENCES gbs_majors(id)',
         'ALTER TABLE student_v5 ADD COLUMN gbs_intake_id INTEGER REFERENCES gbs_intakes(id)',
         'ALTER TABLE student_v5 ADD COLUMN has_math_test BOOLEAN DEFAULT FALSE',
+        'ALTER TABLE student_v5 ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
         'ALTER TABLE notification_v5 ADD COLUMN recipient_id INTEGER REFERENCES users(id)'
     ]
 
@@ -181,7 +183,6 @@ def setup_database():
         except Exception:
             db.session.rollback()
 
-    # Zapewnienie istnienia uniwersytetów
     qa_uni = University.query.filter_by(name="QA Higher Education").first()
     if not qa_uni:
         qa_uni = University(name="QA Higher Education")
@@ -193,7 +194,6 @@ def setup_database():
         db.session.add(gbs_uni)
     db.session.commit()
 
-    # Inicjalizacja kierunków GBS
     gbs_majors_data = [
         ("Business and Tourism Management with FY", True),
         ("Accounting and Financial Management with FY", True),
@@ -209,14 +209,12 @@ def setup_database():
             db.session.add(GbsMajor(name=m_name, is_cccu=is_cccu))
     db.session.commit()
 
-    # Przypisanie "sierot" do QA Higher Education
     unassigned_students = Student.query.filter_by(university_id=None).all()
     if unassigned_students:
         for student in unassigned_students:
             student.university_id = qa_uni.id
         db.session.commit()
 
-    # Główne konta adminów
     if not User.query.filter_by(username="Julia").first():
         db.session.add(User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin"))
     if not User.query.filter_by(username="Kuba").first():
@@ -304,21 +302,43 @@ def logout():
 def panel_dashboard():
     user = User.query.get(session['user_id'])
     universities = University.query.all() if user.role == 'admin' else user.universities
+    uni_ids = [u.id for u in universities]
     
     majors = GbsMajor.query.all()
     intakes = GbsIntake.query.all()
     
-    query = Student.query.filter_by(is_archived=False)
-    if user.role != 'admin': 
-        query = query.filter(Student.university_id.in_([u.id for u in universities]))
+    search_query = request.args.get('q', '').lower()
+    sort_by = request.args.get('sort', 'alpha')
     
-    if request.args.get('q'): 
-        query = query.filter(db.func.lower(Student.name).contains(request.args.get('q').lower()))
+    students_query = Student.query.filter_by(is_archived=False)
+    
+    if user.role != 'admin':
+        students_query = students_query.filter(Student.university_id.in_(uni_ids))
+        notifications = Notification.query.filter(
+            (Notification.recipient_id == user.id) | (Notification.recipient_id == None)
+        ).order_by(Notification.created_at.desc()).limit(15).all()
+    else:
+        notifications = Notification.query.order_by(Notification.created_at.desc()).limit(15).all()
         
-    students = sort_students(query.all(), request.args.get('sort', 'alpha'))
-    notifs = Notification.query.filter((Notification.recipient_id == user.id) | (Notification.recipient_id == None)).order_by(Notification.created_at.desc()).limit(10).all()
+    if search_query:
+        students_query = students_query.filter(db.func.lower(Student.name).contains(search_query))
+        
+    students = sort_students(students_query.all(), sort_by)
     
-    return render_template('panel_dashboard.html', students=students, universities=universities, majors=majors, intakes=intakes, notifications=notifs, user=user, sort_by=request.args.get('sort', 'alpha'), search_query=request.args.get('q', ''))
+    # Rozdzielenie studentów
+    qa_students = [s for s in students if s.university and 'QA' in s.university.name]
+    gbs_students = [s for s in students if s.university and 'GBS' in s.university.name]
+    
+    return render_template('panel_dashboard.html', 
+                           qa_students=qa_students, 
+                           gbs_students=gbs_students, 
+                           universities=universities, 
+                           majors=majors, 
+                           intakes=intakes, 
+                           notifications=notifications, 
+                           user=user, 
+                           sort_by=sort_by, 
+                           search_query=search_query)
 
 @app.route('/panel/student/add', methods=['POST'])
 @login_required
@@ -388,7 +408,7 @@ def panel_delete_material(material_id):
         db.session.commit()
     return redirect(url_for('panel_materials'))
 
-# ----------------- PANEL GBS (KONFIGURACJA NABORÓW) -----------------
+# ----------------- PANEL GBS (KONFIGURACJA NABORÓW I PYTAŃ) -----------------
 
 @app.route('/panel/gbs', methods=['GET', 'POST'])
 @login_required
@@ -399,25 +419,45 @@ def panel_gbs():
             db.session.add(GbsIntake(name=request.form.get('name'), color=request.form.get('color')))
             db.session.commit()
             flash("Nabór dodany!", "success")
-        elif action == 'save_questions':
-            intake_id = request.form.get('intake_id')
-            major_id = request.form.get('major_id')
-            qset = GbsQuestionSet.query.filter_by(intake_id=intake_id, major_id=major_id).first()
-            if not qset:
-                qset = GbsQuestionSet(intake_id=intake_id, major_id=major_id)
-                db.session.add(qset)
-            qset.q1 = request.form.get('q1', '')
-            qset.q2 = request.form.get('q2', '')
-            qset.q3 = request.form.get('q3', '')
-            db.session.commit()
-            flash("Pytania zapisane!", "success")
+        elif action == 'edit_intake':
+            intake = GbsIntake.query.get(request.form.get('intake_id'))
+            if intake:
+                intake.name = request.form.get('name')
+                intake.color = request.form.get('color')
+                db.session.commit()
+                flash("Zaktualizowano nabór!", "success")
+        elif action == 'delete_intake':
+            intake = GbsIntake.query.get(request.form.get('intake_id'))
+            if intake:
+                db.session.delete(intake)
+                db.session.commit()
+                flash("Usunięto nabór i wszystkie jego pytania.", "success")
         return redirect(url_for('panel_gbs'))
 
     intakes = GbsIntake.query.all()
-    majors = GbsMajor.query.all()
-    question_sets = GbsQuestionSet.query.all()
-    return render_template('panel_gbs.html', intakes=intakes, majors=majors, question_sets=question_sets)
+    return render_template('panel_gbs.html', intakes=intakes)
 
+@app.route('/panel/gbs/intake/<int:intake_id>', methods=['GET', 'POST'])
+@login_required
+def panel_gbs_intake(intake_id):
+    intake = GbsIntake.query.get_or_404(intake_id)
+    
+    if request.method == 'POST':
+        major_id = request.form.get('major_id')
+        qset = GbsQuestionSet.query.filter_by(intake_id=intake.id, major_id=major_id).first()
+        if not qset:
+            qset = GbsQuestionSet(intake_id=intake.id, major_id=major_id)
+            db.session.add(qset)
+        qset.q1 = request.form.get('q1', '')
+        qset.q2 = request.form.get('q2', '')
+        qset.q3 = request.form.get('q3', '')
+        db.session.commit()
+        flash("Pytania zapisane!", "success")
+        return redirect(url_for('panel_gbs_intake', intake_id=intake.id))
+
+    majors = GbsMajor.query.all()
+    question_sets = {qs.major_id: qs for qs in intake.question_sets}
+    return render_template('panel_gbs_intake.html', intake=intake, majors=majors, question_sets=question_sets)
 
 # ----------------- WIDOKI I AKCJE STUDENTA GBS -----------------
 
@@ -436,9 +476,8 @@ def gbs_task(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     is_exam = request.args.get('exam') == 'true'
     
-    # Pobieranie pytań z naboru
     qset = GbsQuestionSet.query.filter_by(intake_id=student.gbs_intake_id, major_id=student.gbs_major_id).first()
-    questions = [qset.q1, qset.q2, qset.q3] if qset else ["Pytanie 1 (Brak)", "Pytanie 2 (Brak)", "Pytanie 3 (Brak)"]
+    questions = [qset.q1, qset.q2, qset.q3] if qset else ["Pytanie 1 (Brak pytań w naborze)", "Pytanie 2 (Brak)", "Pytanie 3 (Brak)"]
     
     return render_template('gbs_task.html', student=student, questions=questions, is_exam=is_exam)
 
@@ -543,48 +582,12 @@ def panel_master():
 
 
 # ----------------- STARE FUNKCJE ROZPRAWEK I ADMINA (QA) -----------------
-# Poniżej znajduje się Twoje KOMPLETNE, w 100% zrekonstruowane zaplecze oceniania.
 
 @app.route('/admin', methods=['GET', 'POST'])
 @login_required
 def admin():
-    user = User.query.get(session['user_id'])
-    uni_ids = [u.id for u in user.universities]
-    
-    if request.method == 'POST':
-        student_name = request.form.get('name')
-        slug = f"{uuid.uuid4().hex[:4]}-{slugify(student_name)}"
-        uni_id = uni_ids[0] if uni_ids else None 
-        new_student = Student(name=student_name, url_slug=slug, creator_id=user.id, university_id=uni_id)
-        db.session.add(new_student)
-        
-        for title, full_topic in PRACTICE_TOPICS:
-            db.session.add(Essay(title=title, topic_full=full_topic, is_exam=False, student=new_student))
-        db.session.add(Essay(title="Egzamin", topic_full="[EGZAMIN] Tematy będą dostępne po wejściu.", is_exam=True, student=new_student))
-        db.session.add(Essay(title="Egzamin Dodatkowy", topic_full="Wpisz temat nr 1...|||Wpisz temat nr 2...", is_exam=True, student=new_student))
-        db.session.commit()
-        return redirect(url_for('admin'))
-        
-    search_query = request.args.get('q', '').lower()
-    sort_by = request.args.get('sort', 'alpha')
-    
-    active_students_query = Student.query.filter_by(is_archived=False)
-    
-    if user.role != 'admin':
-        active_students_query = active_students_query.filter(Student.university_id.in_(uni_ids))
-        notifications = Notification.query.filter(
-            (Notification.recipient_id == user.id) | (Notification.recipient_id == None)
-        ).order_by(Notification.created_at.desc()).limit(15).all()
-    else:
-        notifications = Notification.query.order_by(Notification.created_at.desc()).limit(15).all()
-
-    if search_query:
-        active_students_query = active_students_query.filter(db.func.lower(Student.name).contains(search_query))
-    
-    active_students = active_students_query.all()
-    active_students = sort_students(active_students, sort_by)
-
-    return render_template('admin.html', active_students=active_students, notifications=notifications, search_query=search_query, sort_by=sort_by)
+    # Stary plik jest teraz zintegrowany z /panel. Tu zostawiam przekierowanie, aby zapobiec starym nawykom
+    return redirect(url_for('panel_dashboard'))
 
 @app.route('/admin/archive')
 @login_required
@@ -623,7 +626,7 @@ def admin_student_detail(student_id):
     if user.role != 'admin':
         uni_ids = [u.id for u in user.universities]
         if student.university_id not in uni_ids:
-            flash("Odmowa dostępu: Ten uczeń nie należy do przypisanej Ci uczelni.", "error")
+            flash("Odmowa dostępu.", "error")
             return redirect(url_for('panel_dashboard'))
 
     essays_sorted = sorted(student.essays, key=lambda x: x.last_edited_at or datetime.min, reverse=True)
@@ -638,7 +641,7 @@ def toggle_archive(student_id):
     student = Student.query.get_or_404(student_id)
     student.is_archived = True
     db.session.commit()
-    return redirect(url_for('admin'))
+    return redirect(url_for('panel_dashboard'))
 
 @app.route('/admin/student/<int:student_id>/extra_exam', methods=['POST'])
 @login_required
@@ -691,7 +694,7 @@ def delete_notif(notif_id):
     notif = Notification.query.get_or_404(notif_id)
     db.session.delete(notif)
     db.session.commit()
-    return redirect(url_for('admin'))
+    return redirect(url_for('panel_dashboard'))
 
 @app.route('/exam/<url_slug>')
 def exam_direct_link(url_slug):

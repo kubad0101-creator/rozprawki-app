@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head><title>GBS Dashboard - {{ student.name }}</title></head>
+<body style="font-family: sans-serif; padding: 40px; background: #fdfdfd; max-width: 800px; margin: auto;">
+    
+    <div style="text-align: center; margin-bottom: 40px;">
+        <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="Logo" style="height: 60px;">
+        <h2>Witaj, {{ student.name }}</h2>
+        <p style="color: #666;">Kierunek: <strong>{{ student.major.name }}</strong></p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="background: white; border: 2px solid #c8102e; padding: 25px; border-radius: 8px; text-align: center;">
+            <h3 style="margin-top: 0; color: #c8102e;">Zadanie Domowe (3 pytania)</h3>
+            <p style="color: #555;">Odpowiedz na przypisane pytania kierunkowe.</p>
+            <a href="/gbs/task/{{ student.url_slug }}" style="display: inline-block; background: #c8102e; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">Przejdź do Homework</a>
+        </div>
+
+        {% if student.has_math_test %}
+        <div style="background: white; border: 2px solid #001f5b; padding: 25px; border-radius: 8px; text-align: center;">
+            <h3 style="margin-top: 0; color: #001f5b;">Test z Matematyki</h3>
+            <p style="color: #555;">Krótki test wielokrotnego wyboru.</p>
+            <a href="/gbs/math/{{ student.url_slug }}" style="display: inline-block; background: #001f5b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">Rozpocznij Test</a>
+        </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>

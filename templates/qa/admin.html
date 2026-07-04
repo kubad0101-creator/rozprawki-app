@@ -2,67 +2,290 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administratora</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --text-faint: #766f8c;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+            --input-bg: rgba(255,255,255,0.05);
+            --row-bg-a: rgba(255,255,255,0.03);
+            --row-bg-b: rgba(255,255,255,0.015);
+            --green: #3ecf8e;
+            --danger: #ef4759;
+            --amber: #ffc857;
+            --radius: 18px;
         }
-        .notif-link { color: inherit; text-decoration: none; }
-        .notif-link:hover { text-decoration: underline; color: #0056b3; }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --text-faint: #948dab;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+            --input-bg: rgba(32,28,48,0.03);
+            --row-bg-a: rgba(32,28,48,0.025);
+            --row-bg-b: rgba(32,28,48,0.01);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 28px clamp(16px, 4vw, 40px) 60px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 12% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        a { color: inherit; }
+        .wrap { max-width: 1200px; margin: auto; }
+
+        .switch { position: relative; width: 52px; height: 28px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 11px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(24px); }
+        .theme-toggle { display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+        .topbar {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid var(--border-soft); padding: 16px 26px; border-radius: var(--radius);
+            margin-bottom: 26px; backdrop-filter: blur(10px);
+        }
+        html[data-theme="light"] .topbar { background: linear-gradient(180deg, #fff, #fbfaff); }
+        .topbar h1 { margin: 0; font-size: 21px; font-weight: 800; }
+        .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+        .btn { display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 10px; padding: 10px 18px; font-weight: 800; font-size: 13px; text-decoration: none; cursor: pointer; transition: transform 0.15s ease; white-space: nowrap; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-gradient { background: var(--gradient); color: #fff; box-shadow: 0 6px 18px rgba(124,92,255,0.35); }
+        .btn-danger-ghost { background: rgba(239,71,89,0.12); color: #ff8b96; border: 1px solid rgba(239,71,89,0.35); }
+        .btn-grey { background: rgba(255,255,255,0.08); border: 1px solid var(--border-strong); color: var(--text-main); }
+        .btn-green { background: linear-gradient(135deg, #22a878, #3ecf8e); color: #04241f; }
+        .btn-teal { background: linear-gradient(135deg, #1291a5, #17a2b8); color: #fff; }
+        .btn-danger { background: linear-gradient(135deg, #d63451, #ef4759); color: #fff; }
+        .btn-sm { padding: 8px 12px; font-size: 12px; }
+
+        .layout { display: flex; gap: 24px; align-items: flex-start; }
+        .col-main { flex: 2; min-width: 0; }
+        .col-side { flex: 1; min-width: 280px; }
+
+        .card { background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 26px; margin-bottom: 24px; backdrop-filter: blur(10px); }
+        .card h3 { margin: 0 0 16px; font-size: 17px; font-weight: 800; }
+
+        input[type=text] {
+            background: var(--input-bg); border: 1px solid var(--border-strong); color: var(--text-main);
+            padding: 12px 14px; border-radius: 10px; font-size: 14px; font-family: inherit; outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        input[type=text]::placeholder { color: var(--text-faint); }
+        input[type=text]:focus { border-color: #7c5cff; box-shadow: 0 0 0 3px rgba(124,92,255,0.25); }
+        select {
+            background: var(--input-bg); border: 1px solid var(--border-strong); color: var(--text-main);
+            padding: 12px 14px; border-radius: 10px; font-size: 14px; font-family: inherit; outline: none;
+        }
+        select option { background: #1c1830; color: var(--text-main); }
+        html[data-theme="light"] select option { background: #ffffff; }
+
+        .add-form { display: flex; gap: 14px; flex-wrap: wrap; }
+        .add-form input[type=text] { flex: 1; min-width: 200px; }
+
+        .students-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+        .filter-form { display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
+        .filter-form input[name=q] { flex: 2; min-width: 200px; }
+        .filter-form select { flex: 1; min-width: 160px; }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239,71,89,0.6); } 70% { box-shadow: 0 0 0 8px rgba(239,71,89,0); } 100% { box-shadow: 0 0 0 0 rgba(239,71,89,0); } }
+
+        .student-row {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+            padding: 16px 18px; border: 1px solid var(--border-soft); border-radius: 14px; margin-bottom: 10px;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .student-row:nth-child(odd) { background: var(--row-bg-a); }
+        .student-row:nth-child(even) { background: var(--row-bg-b); }
+        .student-row:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+        .name-link { text-decoration: none; color: var(--text-main); font-weight: 800; font-size: 15px; display: flex; align-items: center; margin-bottom: 5px; }
+        .pending-pill { background: var(--danger); color: #fff; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; margin-left: 10px; animation: pulse 1.5s infinite; }
+        .row-meta { font-size: 13px; color: var(--text-muted); }
+        .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .empty-note { color: var(--text-muted); font-style: italic; font-size: 14px; }
+
+        .side-card { position: sticky; top: 20px; }
+        .side-card h3 { border-bottom: 2px solid rgba(255,200,87,0.4); padding-bottom: 12px; color: #ffd77d; }
+        .notif-list { display: flex; flex-direction: column; gap: 10px; }
+        .notif-item { padding: 13px 14px; border-radius: 0 10px 10px 0; font-size: 13px; }
+        .notif-item.accepted { background: rgba(62,207,142,0.1); border-left: 3px solid var(--green); }
+        .notif-item.pending { background: rgba(255,200,87,0.08); border-left: 3px solid var(--amber); }
+        .notif-item p { margin: 0 0 8px; color: var(--text-main); line-height: 1.5; }
+        .notif-foot { display: flex; justify-content: space-between; align-items: center; }
+        .notif-foot span { font-size: 11px; color: var(--text-faint); }
+        .notif-delete { background: none; border: none; color: #ff8b96; cursor: pointer; font-size: 12px; font-weight: 700; text-decoration: underline; }
+
+        @media (max-width: 900px) { .layout { flex-direction: column; } .side-card { position: static; } }
     </style>
 </head>
-<body style="font-family: sans-serif; padding: 25px; max-width: 1200px; margin: auto; background: #f4f6f9;">
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-        <h1 style="margin: 0;">Panel Nauczyciela</h1>
-        <div style="display: flex; gap: 10px;">
-            <a href="/panel" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">⬅ Wróć do Panelu Głównego</a>
-            <a href="/logout" style="background: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Wyloguj się</a>
+<body>
+    <div class="wrap">
+
+        <div class="topbar">
+            <h1>Panel Nauczyciela</h1>
+            <div class="header-actions">
+                <a href="/panel" class="btn btn-gradient">⬅ Wróć do Panelu Głównego</a>
+                <a href="/logout" class="btn btn-danger-ghost">Wyloguj się</a>
+                <div class="theme-toggle">
+                    <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+                    <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                        <div class="knob" id="themeKnob">🌙</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="layout">
+            <div class="col-main">
+
+                <div class="card">
+                    <h3>Dodaj nowego ucznia</h3>
+                    <form method="POST" action="/admin" class="add-form">
+                        <input type="text" name="name" placeholder="Imię i nazwisko" required>
+                        <button type="submit" class="btn btn-green">Dodaj ucznia</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="students-head">
+                        <h3 style="margin:0;">Lista Uczniów (Aktywni)</h3>
+                        <a href="/admin/archive" class="btn btn-grey btn-sm">📁 Otwórz Archiwum</a>
+                    </div>
+
+                    <form method="GET" action="/admin" class="filter-form">
+                        <input type="text" name="q" value="{{ search_query }}" placeholder="Wyszukaj po imieniu/nazwisku...">
+                        <select name="sort" onchange="this.form.submit()">
+                            <option value="alpha" {% if sort_by == 'alpha' %}selected{% endif %}>Sortuj: Alfabetycznie (A-Z)</option>
+                            <option value="pending" {% if sort_by == 'pending' %}selected{% endif %}>Sortuj: Do sprawdzenia (Malejąco)</option>
+                        </select>
+                        <button type="submit" class="btn btn-gradient">Szukaj</button>
+                        {% if search_query %}
+                            <a href="/admin" class="btn btn-grey">Wyczyść</a>
+                        {% endif %}
+                    </form>
+
+                    {% for student in active_students %}
+                        {% set counts = namespace(completed=0, pending=0) %}
+                        {% for essay in student.essays %}
+                            {% if essay.is_completed %}
+                                {% set counts.completed = counts.completed + 1 %}
+                                {% if not essay.feedback %}{% set counts.pending = counts.pending + 1 %}{% endif %}
+                            {% endif %}
+                        {% endfor %}
+
+                        <div class="student-row">
+                            <div style="flex: 1; min-width: 220px;">
+                                <a href="/admin/student/{{ student.id }}" class="name-link">
+                                    👤 {{ student.name }}
+                                    {% if counts.pending > 0 %}
+                                        <span class="pending-pill">{{ counts.pending }} DO SPRAWDZENIA</span>
+                                    {% endif %}
+                                </a>
+                                <div class="row-meta">
+                                    Napisane: <strong style="color:var(--text-main);">{{ counts.completed }}</strong> | Niesprawdzone: <strong style="color: {% if counts.pending > 0 %}#ff8b96{% else %}#7be8b6{% endif %};">{{ counts.pending }}</strong>
+                                </div>
+                            </div>
+                            <div class="row-actions">
+                                <button onclick="copyLink('https://{{ request.host }}/student/{{ student.url_slug }}')" class="btn btn-teal">🔗 Link do ucznia</button>
+                                <button onclick="copyLink('https://{{ request.host }}/exam/{{ student.url_slug }}')" class="btn btn-danger">🚨 Egzamin</button>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="empty-note">Brak aktywnych uczniów pasujących do kryteriów.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="col-side">
+                <div class="card side-card">
+                    <h3>Powiadomienia</h3>
+                    <div class="notif-list">
+                        {% for notif in notifications %}
+                            <div class="notif-item {% if 'DO ZAAKCEPTOWANIA' in notif.message %}accepted{% else %}pending{% endif %}">
+                                <p>{{ notif.message | safe }}</p>
+                                <div class="notif-foot">
+                                    <span>{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                    <form action="/admin/notif/delete/{{ notif.id }}" method="POST" style="margin: 0;">
+                                        <button type="submit" class="notif-delete">Usuń</button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="empty-note" style="font-size: 13px;">Brak nowych powiadomień.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div style="display: flex; gap: 25px;">
-        <div style="flex: 2;">
-            
-            <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <h3 style="margin-top: 0;">Dodaj nowego ucznia</h3>
-                <form method="POST" action="/admin" style="display: flex; gap: 15px;">
-                    <input type="text" name="name" placeholder="Imię i nazwisko" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
-                    <button type="submit" style="background: #28a745; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Dodaj ucznia</button>
-                </form>
-            </div>
+    <script>
+        function copyLink(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Pomyślnie skopiowano link:\n' + url);
+            }).catch(err => {
+                alert('Nie udało się skopiować linku.');
+            });
+        }
 
-            <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0;">Lista Uczniów (Aktywni)</h3>
-                    <a href="/admin/archive" style="background: #6c757d; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">📁 Otwórz Archiwum</a>
-                </div>
-                
-                <form method="GET" action="/admin" style="margin-bottom: 20px; display: flex; gap: 10px;">
-                    <input type="text" name="q" value="{{ search_query }}" placeholder="Wyszukaj po imieniu/nazwisku..." style="flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                    
-                    <select name="sort" onchange="this.form.submit()" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                        <option value="alpha" {% if sort_by == 'alpha' %}selected{% endif %}>Sortuj: Alfabetycznie (A-Z)</option>
-                        <option value="pending" {% if sort_by == 'pending' %}selected{% endif %}>Sortuj: Do sprawdzenia (Malejąco)</option>
-                    </select>
-                    
-                    <button type="submit" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Szukaj</button>
-                    {% if search_query %}
-                        <a href="/admin" style="padding: 10px 20px; background: #e2e3e5; color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">Wyczyść</a>
-                    {% endif %}
-                </form>
-
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    {% for student in active_students %}
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: {% if loop.index % 2 == 0 %}#f8f9fa{% else %}#ffffff{% endif %}; border: 1px solid #dee2e6; border-radius: 5px;">
-                            <div style="flex: 1;">
-                                
-                                {% set counts = namespace(completed=0, pending=0) %}
-                                {% for essay in student.essays %}
-                                    {% if essay.is_completed %}
-                                        {% set counts.completed = counts.completed + 1 %}
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
                                         {% if not essay.feedback %}
                                             {% set counts.pending = counts.pending + 1 %}
                                         {% endif %}

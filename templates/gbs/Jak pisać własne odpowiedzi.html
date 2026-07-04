@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GBS Writing — instrukcja pisania odpowiedzi</title>
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --ink:#172033;
+      --muted:#667085;
+      --line:#e5e7ef;
+      --blue:#3867ff;
+      --blue-soft:#e9efff;
+      --green:#11a36a;
+      --green-soft:#e8f8f0;
+      --yellow:#f2a900;
+      --yellow-soft:#fff4d8;
+      --pink:#d946ef;
+      --pink-soft:#fbe7ff;
+      --shadow:0 18px 50px rgba(21, 32, 64, .10);
+      --radius:26px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(56,103,255,.15), transparent 30%),
+        radial-gradient(circle at 88% 0%, rgba(217,70,239,.13), transparent 28%),
+        var(--bg);
+      color:var(--ink);
+      line-height:1.65;
+    }
+    a{color:inherit}
+    .page{max-width:1160px;margin:0 auto;padding:34px 20px 64px}
+    .hero{
+      position:relative;
+      overflow:hidden;
+      border-radius:34px;
+      padding:42px;
+      background:linear-gradient(135deg,#172033 0%,#253b7c 55%,#56308f 100%);
+      color:white;
+      box-shadow:var(--shadow);
+    }
+    .hero:after{
+      content:"";
+      position:absolute;
+      width:380px;height:380px;
+      right:-120px;top:-130px;
+      border-radius:50%;
+      background:rgba(255,255,255,.12);
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 13px;border-radius:999px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.22);
+      font-size:13px;font-weight:700;letter-spacing:.02em;
+    }
+    h1{font-size:clamp(34px,5vw,62px);line-height:1.02;margin:22px 0 14px;letter-spacing:-.045em;max-width:850px}
+    .lead{max-width:780px;margin:0;color:rgba(255,255,255,.86);font-size:19px}
+    .hero-note{
+      margin-top:26px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;
+    }
+    .pill{
+      padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);font-size:14px;font-weight:700;
+    }
+    .section{margin-top:28px}
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;align-items:start}
+    .card{
+      background:rgba(255,255,255,.88);
+      backdrop-filter: blur(8px);
+      border:1px solid rgba(229,231,239,.9);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:28px;
+    }
+    .card h2{margin:0 0 12px;font-size:28px;letter-spacing:-.03em;line-height:1.15}
+    .card h3{margin:0 0 12px;font-size:20px;letter-spacing:-.02em}
+    .muted{color:var(--muted)}
+    .steps{display:grid;gap:14px;margin-top:18px}
+    .step{
+      display:grid;grid-template-columns:42px 1fr;gap:14px;
+      padding:16px;border:1px solid var(--line);border-radius:20px;background:white;
+    }
+    .num{width:42px;height:42px;display:grid;place-items:center;border-radius:15px;background:var(--blue-soft);color:var(--blue);font-weight:900}
+    .step strong{display:block;margin-bottom:4px}
+    .mini{font-size:14px;color:var(--muted);margin:0}
+    .instruction{
+      display:flex;gap:12px;align-items:flex-start;
+      padding:16px 18px;border-radius:22px;background:#fff;border:1px dashed rgba(56,103,255,.35);
+      margin-top:18px;
+    }
+    .instruction b{color:var(--blue)}
+    .question-box{
+      margin-top:16px;padding:18px 20px;border-radius:22px;background:#f8faff;border:1px solid #dce6ff;
+      font-size:17px;font-weight:700;
+    }
+    .should{
+      display:grid;gap:10px;margin:18px 0 0;padding:0;list-style:none;
+    }
+    .should li{padding:12px 14px;border-radius:16px;background:white;border:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+    .check{font-weight:900;color:var(--green)}
+    .structure{display:grid;gap:14px;margin-top:18px}
+    .structure-item{padding:16px;border-radius:20px;background:white;border:1px solid var(--line)}
+    .structure-item .label{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px}
+    .label.blue{background:var(--blue-soft);color:var(--blue)}
+    .label.green{background:var(--green-soft);color:var(--green)}
+    .label.yellow{background:var(--yellow-soft);color:#9a6500}
+    .example{
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size:19px;line-height:1.9;
+      background:white;border:1px solid var(--line);border-radius:24px;padding:24px;
+    }
+    .anno{
+      position:relative;display:inline;
+      padding:2px 4px;margin:0 1px;border-radius:8px;
+      cursor:help;
+      transition:.18s ease;
+      box-decoration-break:clone;-webkit-box-decoration-break:clone;
+      border-bottom:3px solid currentColor;
+    }
+    .anno:hover{filter:brightness(.97);transform:translateY(-1px)}
+    .anno.blue{background:var(--blue-soft);color:#244fd6}
+    .anno.green{background:var(--green-soft);color:#08784a}
+    .anno.yellow{background:var(--yellow-soft);color:#996600}
+    .anno.pink{background:var(--pink-soft);color:#a421b7}
+    .anno[data-tip]:hover:after,
+    .anno[data-tip]:focus:after{
+      content:attr(data-tip);
+      position:absolute;z-index:20;left:0;bottom:calc(100% + 10px);
+      width:min(320px,78vw);
+      padding:12px 14px;border-radius:16px;
+      background:#172033;color:#fff;font-family:Inter,ui-sans-serif,system-ui,sans-serif;
+      font-size:13px;line-height:1.45;font-weight:600;
+      box-shadow:0 18px 40px rgba(23,32,51,.22);
+    }
+    .phrase-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+    .phrase-card{padding:16px;border-radius:20px;background:white;border:1px solid var(--line)}
+    .phrase-card h4{margin:0 0 8px;font-size:15px}
+    .phrase-card ul{margin:0;padding-left:18px;color:#334155}
+    .phrase-card li{margin:5px 0}
+    .final-list{display:grid;gap:12px;margin:18px 0 0;padding:0;list-style:none}
+    .final-list li{display:flex;gap:12px;padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:white}
+    .footer{margin-top:26px;text-align:center;color:var(--muted);font-size:14px}
+    @media (max-width:880px){
+      .hero{padding:30px 24px;border-radius:26px}
+      .grid{grid-template-columns:1fr}
+      .phrase-grid{grid-template-columns:1fr}
+      .card{padding:22px}
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <span class="badge">GBS Writing</span>
+      <h1>Jak pisać własne odpowiedzi na pytania pisemne</h1>
+      <p class="lead">Instrukcja pisania odpowiedzi do aplikacji na kurs. Najważniejsze jest poprawne odpowiedzenie na pytanie, logiczna struktura oraz jasny i zrozumiały język angielski.</p>
+      <div class="hero-note">
+        <span class="pill">Czytaj pytanie uważnie</span>
+        <span class="pill">Trzymaj się tematu</span>
+        <span class="pill">Pisz prosto</span>
+      </div>
+    </section>
+
+    <section class="section grid">
+      <article class="card">
+        <h2>1. Zacznij od pytania</h2>
+        <p class="muted">Zanim zaczniesz pisać, upewnij się, że dokładnie rozumiesz, o co pyta dane polecenie. Wiele pytań zawiera dwie lub trzy części.</p>
+        <div class="instruction">💡 <div><b>Najedź na zakreślone części</b>, żeby zobaczyć krótkie wyjaśnienia. Na telefonie dotknij zaznaczonego fragmentu.</div></div>
+        <div class="question-box">
+          "Opowiedz nam o pracy, którą wykonywałeś. Jakie zadania realizowałeś i w jaki sposób to doświadczenie może pomóc Ci na tym kursie?"
+        </div>
+        <ul class="should">
+          <li><span class="check">✓</span><span>opisać pracę,</span></li>
+          <li><span class="check">✓</span><span>wyjaśnić, jakie wykonywałeś zadania,</span></li>
+          <li><span class="check">✓</span><span>wyjaśnić, w jaki sposób to doświadczenie pomoże Ci na kursie.</span></li>
+        </ul>
+      </article>
+
+      <aside class="card">
+        <h2>2. Skup się na temacie</h2>
+        <p>Twoja odpowiedź powinna być zgodna z tematem. Nie dodawaj niepotrzebnych informacji. Każde zdanie powinno pomagać w odpowiedzi na pytanie.</p>
+        <div class="question-box">„Czy to zdanie odpowiada na pytanie?”</div>
+        <p class="muted">Jeśli odpowiedź brzmi „nie”, usuń je.</p>
+      </aside>
+    </section>
+
+    <section class="section grid">
+      <article class="card">
+        <h2>3. Zachowaj logiczną strukturę wypowiedzi</h2>
+        <div class="structure">
+          <div class="structure-item">
+            <span class="label blue">Wstęp</span>
+            <div>odpowiedz bezpośrednio na pytanie.</div>
+          </div>
+          <div class="structure-item">
+            <span class="label green">Rozwinięcie</span>
+            <div>podaj szczegóły, przykłady lub wyjaśnienia.</div>
+          </div>
+          <div class="structure-item">
+            <span class="label yellow">Zakończenie</span>
+            <div>wyjaśnij rezultat, korzyść, wpływ na przyszłość itp.</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Przykład odpowiedzi</h2>
+        <div class="example">
+          <span tabindex="0" class="anno blue" data-tip="Wstęp — odpowiedz bezpośrednio na pytanie.">I worked as a sales assistant in a retail store.</span><br><br>
+          <span tabindex="0" class="anno green" data-tip="Rozwinięcie — podaj szczegóły, przykłady lub wyjaśnienia.">My duties included serving customers and operating the cash register.</span><br><br>
+          <span tabindex="0" class="anno yellow" data-tip="Zakończenie — wyjaśnij rezultat, korzyść, wpływ na przyszłość itp.">This experience helped me develop communication and organizational skills, which will be useful during the course.</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="section card">
+      <h2>4. Używaj prostego języka angielskiego</h2>
+      <p>Nie potrzebujesz zaawansowanego słownictwa. Prosty i poprawny język jest lepszy niż skomplikowany język zawierający błędy :-) Staraj się pisać na poziomie około B1.</p>
+      <div class="steps">
+        <div class="step"><div class="num">1</div><div><strong>Jasne i proste zdania</strong><p class="mini">Używaj jasnych i prostych zdań.</p></div></div>
+        <div class="step"><div class="num">2</div><div><strong>Znane słownictwo</strong><p class="mini">Używaj znanego słownictwa.</p></div></div>
+        <div class="step"><div class="num">3</div><div><strong>Poprawna gramatyka</strong><p class="mini">Używaj poprawnej gramatyki.</p></div></div>
+      </div>
+    </section>
+
+    <section class="section card">
+      <h2>5. Używaj wyrażeń łączących</h2>
+      <p class="muted">Używaj wyrażeń łączących, aby Twoja wypowiedź była bardziej naturalna i spójna.</p>
+      <div class="phrase-grid">
+        <div class="phrase-card"><h4>Dodawanie</h4><ul><li>also</li><li>in addition</li><li>furthermore</li><li>moreover</li></ul></div>
+        <div class="phrase-card"><h4>Podawanie powodów</h4><ul><li>because</li><li>since</li><li>as</li></ul></div>
+        <div class="phrase-card"><h4>Pokazywanie skutków</h4><ul><li>therefore</li><li>as a result</li><li>this helps me to</li><li>this allows me to</li></ul></div>
+        <div class="phrase-card"><h4>Podawanie przykładów</h4><ul><li>for example</li><li>for instance</li><li>such as</li></ul></div>
+        <div class="phrase-card"><h4>Mówienie o przyszłości</h4><ul><li>in the future</li><li>my goal is to</li><li>I would like to</li><li>I plan to</li><li>I hope to</li></ul></div>
+      </div>
+    </section>
+
+    <section class="section card">
+      <h2>6. Przydatne zwroty</h2>
+      <div class="phrase-grid">
+        <div class="phrase-card">
+          <h4>Opisywanie doświadczenia zawodowego</h4>
+          <ul>
+            <li>I worked as a…</li>
+            <li>My main responsibilities included…</li>
+            <li>My duties involved…</li>
+            <li>I was responsible for…</li>
+            <li>During this job, I learned…</li>
+          </ul>
+        </div>
+        <div class="phrase-card">
+          <h4>Opisywanie umiejętności</h4>
+          <ul>
+            <li>This experience helped me develop…</li>
+            <li>I improved my skills in…</li>
+            <li>I learned how to…</li>
+            <li>This taught me the importance of…</li>
+          </ul>
+        </div>
+        <div class="phrase-card">
+          <h4>Wyjaśnienie znaczenia czegoś</h4>
+          <ul>
+            <li>I believe that ... is important because…</li>
+            <li>It helps people/businesses to…</li>
+            <li>It plays an important role in…</li>
+            <li>I believe these skills will help me in…</li>
+          </ul>
+        </div>
+        <div class="phrase-card">
+          <h4>Discussing future plans</h4>
+          <ul>
+            <li>After completing the course…</li>
+            <li>My goal is to…</li>
+            <li>I would like to become…</li>
+            <li>In the future, I plan to…</li>
+            <li>This course will help me achieve…</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section card">
+      <h2>7. Ostateczne sprawdzenie przed wysłaniem</h2>
+      <ul class="final-list">
+        <li><span class="check">✓</span><span>Czy odpowiedziałem(-am) na każdą część pytania?</span></li>
+        <li><span class="check">✓</span><span>Czy moja odpowiedź jest zgodna z tematem?</span></li>
+        <li><span class="check">✓</span><span>Czy informacje są logiczne i łatwe do zrozumienia?</span></li>
+      </ul>
+    </section>
+
+    <p class="footer">GBS - Writing · Guidelines for Writing Course Application Answers</p>
+  </main>
+
+  <script>
+    document.querySelectorAll('.anno').forEach(el => {
+      el.addEventListener('touchstart', () => {
+        el.focus();
+      }, {passive:true});
+    });
+  </script>
+</body>
+</html>

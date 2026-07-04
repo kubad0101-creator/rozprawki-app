@@ -1,72 +1,604 @@
+<!-- ============================================================ -->
+<!-- PLIK: templates/panel_gbs.html                                -->
+<!-- ============================================================ -->
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baza Pytań i Nabory GBS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .flash-messages { margin-bottom: 20px; }
-        .alert { padding: 15px; margin-bottom: 15px; border-radius: 6px; font-weight: bold; }
-        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .intake-card { background: white; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --text-faint: #766f8c;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --gbs-red: #e0294f;
+            --teal: #23c1b3;
+            --green: #3ecf8e;
+            --danger: #ef4759;
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+            --input-bg: rgba(255,255,255,0.05);
+            --radius: 18px;
+        }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --text-faint: #948dab;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+            --input-bg: rgba(32,28,48,0.03);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 32px clamp(16px, 4vw, 40px) 60px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 12% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        a { color: inherit; }
+        .wrap { max-width: 1000px; margin: 0 auto; }
+
+        /* Switch */
+        .switch { position: relative; width: 56px; height: 30px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(26px); }
+        .theme-toggle { display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+        .topbar {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid var(--border-soft);
+            padding: 18px 26px; border-radius: var(--radius); margin-bottom: 28px; backdrop-filter: blur(10px);
+        }
+        html[data-theme="light"] .topbar { background: linear-gradient(180deg, #fff, #fbfaff); }
+        .topbar h1 { margin: 0; font-size: 21px; font-weight: 800; color: #ff5f7e; display: flex; align-items: center; gap: 10px; }
+        html[data-theme="light"] .topbar h1 { color: var(--gbs-red); }
+        .back-link { font-weight: 700; font-size: 13px; text-decoration: none; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+        .back-link:hover { color: var(--text-main); }
+        .header-actions { display: flex; align-items: center; gap: 18px; }
+
+        .flash-messages { margin-bottom: 22px; }
+        .alert { padding: 14px 18px; margin-bottom: 12px; border-radius: 12px; font-weight: 600; font-size: 14px; border: 1px solid transparent; }
+        .alert-success { background: rgba(62,207,142,0.12); color: #7be8b6; border-color: rgba(62,207,142,0.3); }
+        .alert-danger { background: rgba(239,71,89,0.12); color: #ff8b96; border-color: rgba(239,71,89,0.3); }
+        .alert-warning { background: rgba(255,200,87,0.12); color: #ffd77d; border-color: rgba(255,200,87,0.3); }
+        .alert-info { background: rgba(124,92,255,0.12); color: #c6b6ff; border-color: rgba(124,92,255,0.3); }
+
+        .card { background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 26px; margin-bottom: 30px; backdrop-filter: blur(10px); }
+        .card h3 { margin: 0 0 16px; font-size: 17px; font-weight: 800; }
+        .eyebrow { text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px; font-weight: 700; color: #ec4899; margin-bottom: 6px; }
+
+        input[type=text] {
+            background: var(--input-bg); border: 1px solid var(--border-strong); color: var(--text-main);
+            padding: 12px 14px; border-radius: 10px; font-size: 14px; font-family: inherit; outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        input[type=text]::placeholder { color: var(--text-faint); }
+        input[type=text]:focus { border-color: #7c5cff; box-shadow: 0 0 0 3px rgba(124,92,255,0.25); }
+        input[type=color] { height: 42px; width: 54px; border: 1px solid var(--border-strong); border-radius: 8px; cursor: pointer; background: none; padding: 2px; }
+
+        .form-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+        .form-row input[type=text] { flex: 2; min-width: 200px; }
+
+        .btn { display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 10px; padding: 11px 18px; font-weight: 800; font-size: 13px; text-decoration: none; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; white-space: nowrap; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-gradient { background: var(--gradient); color: #fff; box-shadow: 0 6px 18px rgba(124,92,255,0.35); }
+        .btn-green { background: linear-gradient(135deg, #22a878, #3ecf8e); color: #04241f; }
+        .btn-teal { background: linear-gradient(135deg, #1fb5a8, #23c1b3); color: #04241f; }
+        .btn-grey { background: rgba(255,255,255,0.08); border: 1px solid var(--border-strong); color: var(--text-main); }
+        .btn-danger { background: linear-gradient(135deg, #d63451, #ef4759); color: #fff; }
+
+        .section-title { font-size: 18px; font-weight: 800; margin: 0 0 18px; }
+
+        .intake-card {
+            background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 14px;
+            padding: 20px 22px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 14px; transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .intake-card:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+        .intake-card h3 { margin: 0 0 5px; font-size: 17px; font-weight: 800; }
+        .intake-card .meta { font-size: 13px; color: var(--text-muted); }
+        .intake-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .intake-actions form { margin: 0; }
+
+        .edit-panel {
+            display: none; background: rgba(124,92,255,0.07); border: 1px solid rgba(124,92,255,0.25);
+            padding: 18px; margin: -4px 0 20px; border-radius: 0 0 14px 14px;
+        }
+        .edit-panel form { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+        .edit-panel input[type=text] { flex: 2; min-width: 180px; }
+        .edit-panel button { border: none; border-radius: 8px; padding: 10px 16px; font-weight: 800; cursor: pointer; }
+
+        .empty-note { color: var(--text-muted); font-style: italic; font-size: 14px; }
     </style>
 </head>
-<body style="font-family: sans-serif; padding: 25px; background: #f4f6f9; max-width: 1000px; margin: auto;">
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h1 style="color: #c8102e; margin: 0;">⚙️ Baza Pytań i Nabory GBS</h1>
-        <a href="/panel" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć do panelu głównego</a>
-    </div>
+<body>
+    <div class="wrap">
 
-    <div class="flash-messages">
-        {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
-    </div>
-    
-    <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-        <h3 style="margin-top: 0; color: #333;">1. Utwórz nowy Nabór</h3>
-        <form method="POST" style="display: flex; gap: 15px; align-items: center;">
-            <input type="hidden" name="action" value="add_intake">
-            <input type="text" name="name" placeholder="Nazwa Naboru (np. Wiosna 2027)" required style="flex: 2; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
-            <input type="color" name="color" value="#c8102e" style="height: 40px; border: none; cursor: pointer;">
-            <button type="submit" style="padding: 12px 25px; background: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Dodaj Nabór</button>
-        </form>
-    </div>
-
-    <h2 style="color: #333;">2. Lista Naborów (Zarządzanie pytaniami)</h2>
-    
-    {% for intake in intakes %}
-        <div class="intake-card" style="border-left: 5px solid {{ intake.color }};">
-            <div>
-                <h3 style="margin: 0 0 5px 0;">{{ intake.name }}</h3>
-                <span style="font-size: 13px; color: #666;">Zdefiniowane zestawy pytań: {{ intake.question_sets|length }}</span>
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <a href="/panel/gbs/intake/{{ intake.id }}" style="background: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">Zarządzaj pytaniami</a>
-                
-                <button onclick="document.getElementById('edit-{{ intake.id }}').style.display='block'" style="background: #6c757d; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Edytuj</button>
-                
-                <form method="POST" style="margin: 0;" onsubmit="return confirm('Czy na pewno chcesz usunąć ten nabór? Usunie to przypisane pytania.');">
-                    <input type="hidden" name="action" value="delete_intake">
-                    <input type="hidden" name="intake_id" value="{{ intake.id }}">
-                    <button type="submit" style="background: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Usuń</button>
-                </form>
+        <div class="topbar">
+            <h1>⚙️ Baza Pytań i Nabory GBS</h1>
+            <div class="header-actions">
+                <a href="/panel" class="back-link">⬅ Wróć do panelu głównego</a>
+                <div class="theme-toggle">
+                    <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+                    <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                        <div class="knob" id="themeKnob">🌙</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div id="edit-{{ intake.id }}" style="display: none; background: #eef2f5; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
-            <form method="POST" style="display: flex; gap: 15px;">
-                <input type="hidden" name="action" value="edit_intake">
-                <input type="hidden" name="intake_id" value="{{ intake.id }}">
-                <input type="text" name="name" value="{{ intake.name }}" required style="flex: 2; padding: 10px; border: 1px solid #ccc;">
-                <input type="color" name="color" value="{{ intake.color }}">
-                <button type="submit" style="padding: 10px; background: #28a745; color: white; border: none;">Zapisz</button>
-                <button type="button" onclick="document.getElementById('edit-{{ intake.id }}').style.display='none'" style="padding: 10px; background: #666; color: white; border: none;">Anuluj</button>
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+        </div>
+
+        <div class="card">
+            <div class="eyebrow">Zarządzanie naborami</div>
+            <h3>1. Utwórz nowy Nabór</h3>
+            <form method="POST" class="form-row">
+                <input type="hidden" name="action" value="add_intake">
+                <input type="text" name="name" placeholder="Nazwa Naboru (np. Wiosna 2027)" required>
+                <input type="color" name="color" value="#c8102e">
+                <button type="submit" class="btn btn-green">Dodaj Nabór</button>
             </form>
         </div>
 
-    {% else %}
-        <p style="color: #666; font-style: italic;">Brak dodanych naborów. Stwórz pierwszy powyżej.</p>
-    {% endfor %}
+        <h2 class="section-title">2. Lista Naborów (Zarządzanie pytaniami)</h2>
 
+        {% for intake in intakes %}
+            <div class="intake-card" style="border-left: 5px solid {{ intake.color }};">
+                <div>
+                    <h3>{{ intake.name }}</h3>
+                    <span class="meta">Zdefiniowane zestawy pytań: {{ intake.question_sets|length }}</span>
+                </div>
+
+                <div class="intake-actions">
+                    <a href="/panel/gbs/intake/{{ intake.id }}" class="btn btn-teal">Zarządzaj pytaniami</a>
+                    <button onclick="document.getElementById('edit-{{ intake.id }}').style.display='block'" class="btn btn-grey">Edytuj</button>
+                    <form method="POST" onsubmit="return confirm('Czy na pewno chcesz usunąć ten nabór? Usunie to przypisane pytania.');">
+                        <input type="hidden" name="action" value="delete_intake">
+                        <input type="hidden" name="intake_id" value="{{ intake.id }}">
+                        <button type="submit" class="btn btn-danger">Usuń</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="edit-{{ intake.id }}" class="edit-panel">
+                <form method="POST">
+                    <input type="hidden" name="action" value="edit_intake">
+                    <input type="hidden" name="intake_id" value="{{ intake.id }}">
+                    <input type="text" name="name" value="{{ intake.name }}" required>
+                    <input type="color" name="color" value="{{ intake.color }}">
+                    <button type="submit" class="btn btn-green">Zapisz</button>
+                    <button type="button" onclick="document.getElementById('edit-{{ intake.id }}').style.display='none'" class="btn btn-grey">Anuluj</button>
+                </form>
+            </div>
+
+        {% else %}
+            <p class="empty-note">Brak dodanych naborów. Stwórz pierwszy powyżej.</p>
+        {% endfor %}
+
+    </div>
+
+    <script>
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
+-e 
+
+
+<!-- ============================================================ -->
+<!-- PLIK: templates/panel_gbs_intake.html                         -->
+<!-- ============================================================ -->
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pytania Naboru - {{ intake.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --text-faint: #766f8c;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --green: #3ecf8e;
+            --danger: #ef4759;
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+            --input-bg: rgba(255,255,255,0.05);
+            --radius: 18px;
+        }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --text-faint: #948dab;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+            --input-bg: rgba(32,28,48,0.03);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 32px clamp(16px, 4vw, 40px) 60px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 12% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        a { color: inherit; }
+        .wrap { max-width: 1000px; margin: 0 auto; }
+
+        .switch { position: relative; width: 56px; height: 30px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(26px); }
+        .theme-toggle { display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+        .topbar {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid var(--border-soft);
+            padding: 16px 26px; border-radius: var(--radius); margin-bottom: 22px; backdrop-filter: blur(10px);
+        }
+        html[data-theme="light"] .topbar { background: linear-gradient(180deg, #fff, #fbfaff); }
+        .back-link { font-weight: 700; font-size: 13px; text-decoration: none; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+        .back-link:hover { color: var(--text-main); }
+
+        h1.page-title { font-size: 24px; font-weight: 800; margin: 6px 0 6px; }
+        p.subtitle { color: var(--text-muted); margin-bottom: 30px; font-size: 14px; }
+
+        .flash-messages { margin-bottom: 22px; }
+        .alert { padding: 14px 18px; margin-bottom: 12px; border-radius: 12px; font-weight: 600; font-size: 14px; border: 1px solid transparent; }
+        .alert-success { background: rgba(62,207,142,0.12); color: #7be8b6; border-color: rgba(62,207,142,0.3); }
+        .alert-danger { background: rgba(239,71,89,0.12); color: #ff8b96; border-color: rgba(239,71,89,0.3); }
+
+        .major-card {
+            background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: var(--radius);
+            padding: 24px 26px; margin-bottom: 22px; backdrop-filter: blur(10px); position: relative; overflow: hidden;
+        }
+        .major-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .major-card.has-qs::before { background: linear-gradient(90deg, #22a878, #3ecf8e); }
+        .major-card.no-qs::before { background: linear-gradient(90deg, #d63451, #ef4759); }
+        .major-card h3 { margin: 4px 0 4px; font-size: 18px; font-weight: 800; }
+        .status-line { font-size: 12px; color: var(--text-muted); margin: 0 0 18px; }
+        .status-ok { color: #3ecf8e; font-weight: 800; }
+        .status-bad { color: #ff8b96; font-weight: 800; }
+
+        label.field-label { font-size: 13px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px; }
+        textarea {
+            width: 100%; padding: 12px 14px; margin-bottom: 14px; border: 1px solid var(--border-strong);
+            border-radius: 10px; box-sizing: border-box; resize: vertical; background: var(--input-bg);
+            color: var(--text-main); font-family: inherit; font-size: 14px; outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        textarea::placeholder { color: var(--text-faint); }
+        textarea:focus { border-color: #7c5cff; box-shadow: 0 0 0 3px rgba(124,92,255,0.25); }
+
+        .submit-btn {
+            padding: 12px 24px; background: var(--gradient); color: #fff; border: none; border-radius: 999px;
+            font-weight: 800; cursor: pointer; font-size: 14px; box-shadow: 0 8px 20px rgba(124,92,255,0.3);
+            transition: transform 0.15s ease;
+        }
+        .submit-btn:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+
+        <div class="topbar">
+            <a href="/panel/gbs" class="back-link">⬅ Wróć do Naborów</a>
+            <div class="theme-toggle">
+                <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+                <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                    <div class="knob" id="themeKnob">🌙</div>
+                </div>
+            </div>
+        </div>
+
+        <h1 class="page-title">Zarządzanie Pytaniami: <span style="color: {{ intake.color }};">{{ intake.name }}</span></h1>
+        <p class="subtitle">Zapisz unikalne 3 pytania dla każdego kierunku w tym naborze.</p>
+
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+        </div>
+
+        {% for major in majors %}
+            {% set qs = question_sets.get(major.id) %}
+            <div class="major-card {% if qs %}has-qs{% else %}no-qs{% endif %}">
+                <h3>{{ major.name }}</h3>
+                <p class="status-line">
+                    Status: {% if qs %}<span class="status-ok">Pytania dodane</span>{% else %}<span class="status-bad">Brak pytań</span>{% endif %}
+                </p>
+
+                <form method="POST">
+                    <input type="hidden" name="major_id" value="{{ major.id }}">
+                    <label class="field-label">Pytanie 1 {% if major.is_cccu %}(Wymaga 100 słów){% endif %}</label>
+                    <textarea name="q1" rows="2" placeholder="Treść pytania...">{{ qs.q1 if qs else '' }}</textarea>
+
+                    <label class="field-label">Pytanie 2 {% if major.is_cccu %}(Wymaga 70 słów){% endif %}</label>
+                    <textarea name="q2" rows="2" placeholder="Treść pytania...">{{ qs.q2 if qs else '' }}</textarea>
+
+                    <label class="field-label">Pytanie 3 {% if major.is_cccu %}(Wymaga 70 słów){% endif %}</label>
+                    <textarea name="q3" rows="2" placeholder="Treść pytania...">{{ qs.q3 if qs else '' }}</textarea>
+
+                    <button type="submit" class="submit-btn">Zapisz Zestaw</button>
+                </form>
+            </div>
+        {% endfor %}
+
+    </div>
+
+    <script>
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
+-e 
+
+
+<!-- ============================================================ -->
+<!-- PLIK: templates/math_test.html                                -->
+<!-- ============================================================ -->
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --navy: #2d3fb0;
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+            --option-bg: rgba(255,255,255,0.04);
+            --option-bg-hover: rgba(124,92,255,0.14);
+        }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+            --option-bg: rgba(32,28,48,0.03);
+            --option-bg-hover: rgba(124,92,255,0.10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 48px 20px 70px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 15% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        .wrap { max-width: 760px; margin: auto; position: relative; }
+
+        .theme-toggle { position: absolute; top: -14px; right: 0; display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+        .switch { position: relative; width: 56px; height: 30px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(26px); }
+
+        .header { text-align: center; margin-bottom: 40px; padding-top: 46px; }
+        .header img { height: 88px; width: auto; border-radius: 14px; margin-bottom: 18px; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.3px; color: #9db3ff; }
+        html[data-theme="light"] .header h1 { color: var(--navy); }
+
+        .question-box {
+            background: var(--card-bg); border: 1px solid var(--border-soft); padding: 22px 24px;
+            border-radius: 16px; margin-bottom: 18px; backdrop-filter: blur(10px);
+        }
+        .question-box strong { display: block; margin-bottom: 14px; font-size: 15px; font-weight: 700; }
+
+        .options label {
+            display: block; margin: 8px 0; cursor: pointer; padding: 12px 14px;
+            background: var(--option-bg); border: 1px solid var(--border-soft); border-radius: 10px;
+            font-size: 14px; transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .options label:hover { background: var(--option-bg-hover); border-color: rgba(124,92,255,0.35); }
+        .options input[type=radio] { margin-right: 8px; accent-color: #7c5cff; }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #2d3fb0, #7c5cff); color: #fff; border: none;
+            padding: 16px 30px; font-size: 17px; border-radius: 999px; cursor: pointer; width: 100%;
+            font-weight: 800; margin-top: 10px; box-shadow: 0 8px 22px rgba(124,92,255,0.35);
+            transition: transform 0.15s ease;
+        }
+        .btn-submit:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+
+        <div class="theme-toggle">
+            <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+            <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                <div class="knob" id="themeKnob">🌙</div>
+            </div>
+        </div>
+
+        <div class="header">
+            <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="OpenUK Study Logo">
+            <h1>Math Test</h1>
+        </div>
+
+        <form id="mathForm">
+            {% for q in questions %}
+            <div class="question-box">
+                <strong>{{ loop.index }}. {{ q.text }}</strong>
+                <div class="options">
+                    <label><input type="radio" name="{{ q.id }}" value="a"> a) {{ q.options.a }}</label>
+                    <label><input type="radio" name="{{ q.id }}" value="b"> b) {{ q.options.b }}</label>
+                    <label><input type="radio" name="{{ q.id }}" value="c"> c) {{ q.options.c }}</label>
+                    <label><input type="radio" name="{{ q.id }}" value="d"> d) {{ q.options.d }}</label>
+                </div>
+            </div>
+            {% endfor %}
+            <button type="button" class="btn-submit" onclick="submitMath()">Zakończ Test</button>
+        </form>
+    </div>
+
+    <script>
+        function submitMath() {
+            let data = {};
+            let formData = new FormData(document.getElementById('mathForm'));
+            for (let [key, val] of formData.entries()) { data[key] = val; }
+
+            fetch('/api/math/submit/{{ student.id }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => {
+                alert("Twój wynik to: " + res.score + " / {{ questions|length }}");
+                window.location.href = "/student/{{ student.url_slug }}";
+            });
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

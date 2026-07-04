@@ -4,16 +4,13 @@
     <meta charset="UTF-8">
     <title>Panel Koordynacji - CRM</title>
     <style>
-        /* Styl wspólny */
         .flash-messages { margin-bottom: 20px; }
         .alert { padding: 15px; margin-bottom: 15px; border-radius: 6px; font-weight: bold; }
         .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
         
-        /* Stare style QA (Z Twojego oryginalnego admin.html) */
         .qa-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #dee2e6; border-radius: 5px; margin-bottom: 12px; }
         
-        /* Nowoczesne style GBS */
         .gbs-card { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; transition: transform 0.2s; }
         .gbs-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.08); }
         .uni-badge-gbs { background-color: #c8102e; color: white; border-radius: 6px; padding: 4px 10px; font-weight: 800; font-size: 14px; }
@@ -24,13 +21,13 @@
         .gbs-fields { display: none; background: #fdfdfd; border-left: 4px solid #c8102e; padding: 15px; margin-top: 15px; border-radius: 4px; }
     </style>
 </head>
-<body style="font-family: sans-serif; padding: 25px; max-width: 1200px; margin: auto; background: #f4f6f9;">
+<body style="font-family: sans-serif; padding: 25px; max-width: 1200px; margin: auto; background: #f4f6f9;" onload="toggleGbs()">
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
         <div>
             <h1 style="margin: 0; display: flex; align-items: center; gap: 15px;">
                 <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="Logo" style="height: 40px;"> 
-                Panel Koordynacji
+                Panel nauczyciela: {{ user.username }}
             </h1>
         </div>
         <div style="display: flex; gap: 10px;">
@@ -57,9 +54,11 @@
                         <input type="text" name="name" placeholder="Imię i nazwisko" required style="flex: 2; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
                         
                         <select name="university_id" id="uniSelect" onchange="toggleGbs()" required style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px;">
-                            <option value="" disabled selected>Wybierz uczelnię...</option>
+                            {% if universities|length != 1 %}
+                                <option value="" disabled selected>Wybierz uczelnię...</option>
+                            {% endif %}
                             {% for uni in universities %}
-                                <option value="{{ uni.id }}" data-name="{{ uni.name }}">{{ uni.name }}</option>
+                                <option value="{{ uni.id }}" data-name="{{ uni.name }}" {% if universities|length == 1 %}selected{% endif %}>{{ uni.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -126,9 +125,9 @@
                                 </div>
                             </div>
                             <div style="display: flex; gap: 8px;">
-                                <a href="/student/{{ student.url_slug }}" target="_blank" style="background: #17a2b8; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; text-decoration:none;">🔗 Otwórz pulpit</a>
-                                <button onclick="copy('https://{{ request.host }}/student/{{ student.url_slug }}')" style="background: #e2e3e5; border: 1px solid #ccc; padding: 8px; border-radius: 4px; cursor: pointer;">📋</button>
-                                <a href="/exam/{{ student.url_slug }}" target="_blank" style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; text-decoration:none;">🚨 Egzamin</a>
+                                <button onclick="copy('https://{{ request.host }}/student/{{ student.url_slug }}')" class="btn-link">🔗 Kopiuj Panel</button>
+                                <button onclick="copy('https://{{ request.host }}/exam/{{ student.url_slug }}')" class="btn-exam">🚨 Kopiuj Egzamin</button>
+                                <a href="/admin/student/{{ student.id }}" style="background: #28a745; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; text-decoration:none;">📝 Oceny i Profil</a>
                             </div>
                         </div>
                     {% endfor %}
@@ -156,9 +155,9 @@
                                 </div>
                             </div>
                             <div style="display: flex; gap: 8px;">
-                                <a href="/student/{{ student.url_slug }}" target="_blank" class="btn-link">🔗 Otwórz pulpit</a>
-                                <button onclick="copy('https://{{ request.host }}/student/{{ student.url_slug }}')" style="background: #e2e3e5; border: 1px solid #ccc; padding: 8px; border-radius: 4px; cursor: pointer;">📋</button>
-                                <a href="/admin/student/{{ student.id }}" class="btn-exam">📝 Wyniki i Profil</a>
+                                <button onclick="copy('https://{{ request.host }}/student/{{ student.url_slug }}')" class="btn-link">🔗 Kopiuj Panel</button>
+                                <button onclick="copy('https://{{ request.host }}/gbs/task/{{ student.url_slug }}?exam=true')" class="btn-exam">🚨 Kopiuj Egzamin</button>
+                                <a href="/admin/student/{{ student.id }}" class="btn-exam" style="background: #28a745;">📝 Wyniki i Profil</a>
                             </div>
                         </div>
                     {% endfor %}
@@ -206,7 +205,7 @@
         }
         function copy(url) {
             navigator.clipboard.writeText(url).then(() => {
-                alert('Skopiowano unikalny link studenta:\n' + url);
+                alert('Skopiowano unikalny link studenta:\\n' + url);
             });
         }
     </script>

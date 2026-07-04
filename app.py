@@ -2,6 +2,7 @@ import os
 import re
 import unicodedata
 import uuid
+import json
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash
@@ -20,7 +21,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# ----------------- MODELE BAZY DANYCH -----------------
+# ----------------- STARE I WSPÓLNE MODELE -----------------
 
 teacher_university = db.Table('teacher_university',
     db.Column('teacher_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE')),
@@ -49,6 +50,52 @@ class Material(db.Model):
     content_url = db.Column(db.String(500), nullable=False)
     university_id = db.Column(db.Integer, db.ForeignKey('universities.id', ondelete='CASCADE'), nullable=False)
 
+# ----------------- NOWE MODELE GBS -----------------
+
+class GbsMajor(db.Model):
+    __tablename__ = 'gbs_majors'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    is_cccu = db.Column(db.Boolean, default=False)
+
+class GbsIntake(db.Model):
+    __tablename__ = 'gbs_intakes'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    color = db.Column(db.String(20), default='#007bff')
+
+class GbsQuestionSet(db.Model):
+    __tablename__ = 'gbs_question_sets'
+    id = db.Column(db.Integer, primary_key=True)
+    intake_id = db.Column(db.Integer, db.ForeignKey('gbs_intakes.id', ondelete='CASCADE'))
+    major_id = db.Column(db.Integer, db.ForeignKey('gbs_majors.id', ondelete='CASCADE'))
+    q1 = db.Column(db.Text, default="")
+    q2 = db.Column(db.Text, default="")
+    q3 = db.Column(db.Text, default="")
+    intake = db.relationship('GbsIntake', backref='question_sets')
+    major = db.relationship('GbsMajor', backref='question_sets')
+
+class GbsAttempt(db.Model):
+    __tablename__ = 'gbs_attempts'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student_v5.id', ondelete='CASCADE'))
+    q1_ans = db.Column(db.Text, default="")
+    q2_ans = db.Column(db.Text, default="")
+    q3_ans = db.Column(db.Text, default="")
+    is_exam = db.Column(db.Boolean, default=False)
+    submitted_at = db.Column(db.DateTime, default=datetime.now)
+
+class MathTestResult(db.Model):
+    __tablename__ = 'math_test_results'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student_v5.id', ondelete='CASCADE'))
+    score = db.Column(db.Integer, default=0)
+    total = db.Column(db.Integer, default=11)
+    answers_json = db.Column(db.Text, default="{}")
+    submitted_at = db.Column(db.DateTime, default=datetime.now)
+
+# ----------------- STUDENT I WYPRACOWANIA (QA) -----------------
+
 class Student(db.Model):
     __tablename__ = 'student_v5'
     id = db.Column(db.Integer, primary_key=True)
@@ -60,7 +107,17 @@ class Student(db.Model):
     university_id = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=True)
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
+    # POLA GBS
+    email = db.Column(db.String(120), nullable=True)
+    gbs_major_id = db.Column(db.Integer, db.ForeignKey('gbs_majors.id'), nullable=True)
+    gbs_intake_id = db.Column(db.Integer, db.ForeignKey('gbs_intakes.id'), nullable=True)
+    has_math_test = db.Column(db.Boolean, default=False)
+    
     essays = db.relationship('Essay', backref='student', lazy=True, cascade="all, delete-orphan")
+    gbs_attempts = db.relationship('GbsAttempt', backref='student', lazy=True, cascade="all, delete-orphan")
+    math_results = db.relationship('MathTestResult', backref='student', lazy=True, cascade="all, delete-orphan")
+    major = db.relationship('GbsMajor')
+    intake = db.relationship('GbsIntake')
 
 class Essay(db.Model):
     __tablename__ = 'essay_v5'
@@ -86,6 +143,21 @@ class Notification(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
+# ----------------- DANE TESTU Z MATEMATYKI GBS -----------------
+MATH_QUESTIONS = [
+    {"id": 1, "text": "Evaluate 3 to the power of 2:", "options": {"a": "8", "b": "15", "c": "20", "d": "9"}, "answer": "d", "exp": "3 * 3 = 9"},
+    {"id": 2, "text": "A shop made £100,000 profit last year and expects a 10% decline this year. Calculate the expected profit for this year.", "options": {"a": "£105,000", "b": "£90,000", "c": "£101,000", "d": "£95,000"}, "answer": "b", "exp": "10% of 100,000 is 10,000. 100,000 - 10,000 = 90,000"},
+    {"id": 3, "text": "The cost has increased from £80 to £100. What is the percentage increase in this cost?", "options": {"a": "15%", "b": "17%", "c": "20%", "d": "25%"}, "answer": "d", "exp": "Increase is 20. 20 / 80 = 0.25 = 25%"},
+    {"id": 4, "text": "Add the two fractions together: 1/2 + 1/4 = ?", "options": {"a": "3/4", "b": "1", "c": "5%", "d": "3/8"}, "answer": "a", "exp": "1/2 is 2/4. 2/4 + 1/4 = 3/4"},
+    {"id": 5, "text": "Evaluate 100,000 multiplied by 0.6", "options": {"a": "60,000", "b": "106,000", "c": "600,000", "d": "-160,000"}, "answer": "a", "exp": "100,000 * 0.6 = 60,000"},
+    {"id": 6, "text": "Determine x in the sequence of numbers 3, 8, 13, 18, x", "options": {"a": "24", "b": "23", "c": "25", "d": "-26"}, "answer": "b", "exp": "The sequence increases by 5 each time. 18 + 5 = 23"},
+    {"id": 7, "text": "Calculate 37,500 divided by 50:", "options": {"a": "750", "b": "800", "c": "850", "d": "900"}, "answer": "a", "exp": "37500 / 50 = 750"},
+    {"id": 8, "text": "Multiply 650 by 9. (650 x 9 = ?)", "options": {"a": "6500", "b": "5850", "c": "6250", "d": "6000"}, "answer": "b", "exp": "650 * 10 = 6500, minus 650 = 5850"},
+    {"id": 9, "text": "Calculate the average number from 15, 25, 20", "options": {"a": "20", "b": "18", "c": "19", "d": "22"}, "answer": "a", "exp": "(15 + 25 + 20) / 3 = 60 / 3 = 20"},
+    {"id": 10, "text": "Calculate (1 + r) * 5 when r = 5", "options": {"a": "40", "b": "30", "c": "35", "d": "36"}, "answer": "b", "exp": "(1 + 5) = 6. 6 * 5 = 30"},
+    {"id": 11, "text": "Evaluate 5/15 as percentage:", "options": {"a": "0.33", "b": "33.33", "c": "66.66", "d": "3.33"}, "answer": "b", "exp": "5/15 = 1/3, which is approximately 33.33%"}
+]
+
 # ----------------- INICJALIZACJA BAZY DANYCH -----------------
 
 def setup_database():
@@ -93,6 +165,10 @@ def setup_database():
     try:
         db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN university_id INTEGER REFERENCES universities(id)'))
         db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN creator_id INTEGER REFERENCES users(id)'))
+        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN email VARCHAR(120)'))
+        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN gbs_major_id INTEGER REFERENCES gbs_majors(id)'))
+        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN gbs_intake_id INTEGER REFERENCES gbs_intakes(id)'))
+        db.session.execute(text('ALTER TABLE student_v5 ADD COLUMN has_math_test BOOLEAN DEFAULT FALSE'))
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -103,6 +179,7 @@ def setup_database():
     except Exception:
         db.session.rollback()
 
+    # Zapewnienie istnienia uniwersytetów
     qa_uni = University.query.filter_by(name="QA Higher Education").first()
     if not qa_uni:
         qa_uni = University(name="QA Higher Education")
@@ -114,12 +191,30 @@ def setup_database():
         db.session.add(gbs_uni)
     db.session.commit()
 
+    # Inicjalizacja kierunków GBS
+    gbs_majors_data = [
+        ("Business and Tourism Management with FY", True),
+        ("Accounting and Financial Management with FY", True),
+        ("Psychology with Councelling with FY", False),
+        ("Construction Management with FY", False),
+        ("Project Management with FY", False),
+        ("Computing with FY", False),
+        ("Health, Wellbeing and Social Care with FY", False),
+        ("Global Business and Entrepreneurship with FY", False)
+    ]
+    for m_name, is_cccu in gbs_majors_data:
+        if not GbsMajor.query.filter_by(name=m_name).first():
+            db.session.add(GbsMajor(name=m_name, is_cccu=is_cccu))
+    db.session.commit()
+
+    # Przypisanie "sierot" do QA Higher Education
     unassigned_students = Student.query.filter_by(university_id=None).all()
     if unassigned_students:
         for student in unassigned_students:
             student.university_id = qa_uni.id
         db.session.commit()
 
+    # Główne konta adminów
     if not User.query.filter_by(username="Julia").first():
         db.session.add(User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin"))
     if not User.query.filter_by(username="Kuba").first():
@@ -129,7 +224,7 @@ def setup_database():
 with app.app_context():
     setup_database()
 
-# ----------------- DEKORATORY ZABEZPIECZEŃ -----------------
+# ----------------- DEKORATORY I POMOCNICZE -----------------
 
 def login_required(f):
     @wraps(f)
@@ -151,6 +246,15 @@ def slugify(value):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub(r'[^\w\s-]', '', value.lower())
     return re.sub(r'[-\s]+', '-', value).strip('-_')
+
+def sort_students(students, sort_by):
+    if sort_by == 'pending':
+        students.sort(key=lambda s: sum(1 for e in s.essays if e.is_completed and not e.feedback), reverse=True)
+    elif sort_by == 'alpha_desc':
+        students.sort(key=lambda s: s.name.lower(), reverse=True)
+    else: 
+        students.sort(key=lambda s: s.name.lower())
+    return students
 
 PRACTICE_TOPICS = [
     ("Teachers Computers", "As computers are being used more and more in education, there will be no role for teachers in the classroom. Give reasons for your answer and include any relevant examples from your own knowledge and experience."),
@@ -191,64 +295,60 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# ----------------- NOWY PANEL KOORDYNACJI SYSTEMU PŁATFORMY (/panel) -----------------
+# ----------------- PANEL GŁÓWNY I DODAWANIE (CRM) -----------------
 
-@app.route('/panel')
+@app.route('/panel', methods=['GET'])
 @login_required
 def panel_dashboard():
     user = User.query.get(session['user_id'])
     universities = University.query.all() if user.role == 'admin' else user.universities
-    uni_ids = [u.id for u in universities]
     
-    search_query = request.args.get('q', '').lower()
-    sort_by = request.args.get('sort', 'alpha') # Domyślnie alfabetycznie
+    majors = GbsMajor.query.all()
+    intakes = GbsIntake.query.all()
     
-    students_query = Student.query.filter_by(is_archived=False)
+    query = Student.query.filter_by(is_archived=False)
+    if user.role != 'admin': 
+        query = query.filter(Student.university_id.in_([u.id for u in universities]))
     
-    if user.role != 'admin':
-        students_query = students_query.filter(Student.university_id.in_(uni_ids))
-        notifications = Notification.query.filter(
-            (Notification.recipient_id == user.id) | (Notification.recipient_id == None)
-        ).order_by(Notification.created_at.desc()).limit(10).all()
-    else:
-        notifications = Notification.query.order_by(Notification.created_at.desc()).limit(10).all()
+    if request.args.get('q'): 
+        query = query.filter(db.func.lower(Student.name).contains(request.args.get('q').lower()))
         
-    if search_query:
-        students_query = students_query.filter(db.func.lower(Student.name).contains(search_query))
-        
-    students = students_query.all()
+    students = sort_students(query.all(), request.args.get('sort', 'alpha'))
+    notifs = Notification.query.filter((Notification.recipient_id == user.id) | (Notification.recipient_id == None)).order_by(Notification.created_at.desc()).limit(10).all()
     
-    # SYSTEM SORTOWANIA Z PYTHONA
-    if sort_by == 'pending':
-        # Sortuj po liczbie niesprawdzonych prac (Malejąco)
-        students.sort(key=lambda s: sum(1 for e in s.essays if e.is_completed and not e.feedback), reverse=True)
-    else:
-        # Sortuj alfabetycznie (A-Z)
-        students.sort(key=lambda s: s.name.lower())
-    
-    return render_template('panel_dashboard.html', students=students, universities=universities, notifications=notifications, search_query=search_query, user=user, sort_by=sort_by)
+    return render_template('panel_dashboard.html', students=students, universities=universities, majors=majors, intakes=intakes, notifications=notifs, user=user, sort_by=request.args.get('sort', 'alpha'), search_query=request.args.get('q', ''))
 
 @app.route('/panel/student/add', methods=['POST'])
 @login_required
 def panel_add_student():
+    user = User.query.get(session['user_id'])
     name = request.form.get('name')
     university_id = request.form.get('university_id')
-    user = User.query.get(session['user_id'])
     
-    if not university_id and len(user.universities) == 1:
+    if not university_id and len(user.universities) == 1: 
         university_id = user.universities[0].id
         
-    if not name or not university_id:
+    if not name or not university_id: 
         return redirect(url_for('panel_dashboard'))
         
     slug = f"{uuid.uuid4().hex[:4]}-{slugify(name)}"
-    new_student = Student(name=name, url_slug=slug, university_id=int(university_id), creator_id=user.id)
-    db.session.add(new_student)
+    uni = University.query.get(int(university_id))
     
-    for title, full_topic in PRACTICE_TOPICS:
-        db.session.add(Essay(title=title, topic_full=full_topic, is_exam=False, student=new_student))
-    db.session.add(Essay(title="Egzamin", topic_full="[EGZAMIN] Tematy będą dostępne po wejściu.", is_exam=True, student=new_student))
-    db.session.add(Essay(title="Egzamin Dodatkowy", topic_full="Wpisz temat nr 1...|||Wpisz temat nr 2...", is_exam=True, student=new_student))
+    new_student = Student(name=name, url_slug=slug, university_id=uni.id, creator_id=user.id)
+    
+    # ROZGAŁĘZIENIE LOGIKI: QA czy GBS
+    if "GBS" in uni.name:
+        new_student.email = request.form.get('email')
+        new_student.gbs_major_id = request.form.get('major_id')
+        new_student.gbs_intake_id = request.form.get('intake_id')
+        new_student.has_math_test = 'has_math_test' in request.form
+        db.session.add(new_student)
+    else:
+        db.session.add(new_student)
+        for title, full_topic in PRACTICE_TOPICS:
+            db.session.add(Essay(title=title, topic_full=full_topic, is_exam=False, student=new_student))
+        db.session.add(Essay(title="Egzamin", topic_full="[EGZAMIN] Tematy będą dostępne po wejściu.", is_exam=True, student=new_student))
+        db.session.add(Essay(title="Egzamin Dodatkowy", topic_full="Wpisz temat nr 1...|||Wpisz temat nr 2...", is_exam=True, student=new_student))
     
     db.session.commit()
     flash(f"Student {name} dodany pomyślnie!", "success")
@@ -286,6 +386,102 @@ def panel_delete_material(material_id):
         db.session.commit()
     return redirect(url_for('panel_materials'))
 
+# ----------------- PANEL GBS (KONFIGURACJA NABORÓW) -----------------
+
+@app.route('/panel/gbs', methods=['GET', 'POST'])
+@login_required
+def panel_gbs():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'add_intake':
+            db.session.add(GbsIntake(name=request.form.get('name'), color=request.form.get('color')))
+            db.session.commit()
+            flash("Nabór dodany!", "success")
+        elif action == 'save_questions':
+            intake_id = request.form.get('intake_id')
+            major_id = request.form.get('major_id')
+            qset = GbsQuestionSet.query.filter_by(intake_id=intake_id, major_id=major_id).first()
+            if not qset:
+                qset = GbsQuestionSet(intake_id=intake_id, major_id=major_id)
+                db.session.add(qset)
+            qset.q1 = request.form.get('q1', '')
+            qset.q2 = request.form.get('q2', '')
+            qset.q3 = request.form.get('q3', '')
+            db.session.commit()
+            flash("Pytania zapisane!", "success")
+        return redirect(url_for('panel_gbs'))
+
+    intakes = GbsIntake.query.all()
+    majors = GbsMajor.query.all()
+    question_sets = GbsQuestionSet.query.all()
+    return render_template('panel_gbs.html', intakes=intakes, majors=majors, question_sets=question_sets)
+
+
+# ----------------- WIDOKI I AKCJE STUDENTA GBS -----------------
+
+@app.route('/student/<url_slug>')
+def student_dashboard(url_slug):
+    student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    if student.university and "GBS" in student.university.name:
+        return render_template('student_gbs_dashboard.html', student=student)
+    
+    # Stary panel QA
+    materials = student.university.materials if student.university else []
+    return render_template('student.html', student=student, exam_topics=EXAM_TOPICS, materials=materials)
+
+@app.route('/gbs/task/<url_slug>')
+def gbs_task(url_slug):
+    student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    is_exam = request.args.get('exam') == 'true'
+    
+    # Pobieranie pytań z naboru
+    qset = GbsQuestionSet.query.filter_by(intake_id=student.gbs_intake_id, major_id=student.gbs_major_id).first()
+    questions = [qset.q1, qset.q2, qset.q3] if qset else ["Pytanie 1 (Brak)", "Pytanie 2 (Brak)", "Pytanie 3 (Brak)"]
+    
+    return render_template('gbs_task.html', student=student, questions=questions, is_exam=is_exam)
+
+@app.route('/api/gbs/submit/<int:student_id>', methods=['POST'])
+def gbs_submit(student_id):
+    student = Student.query.get_or_404(student_id)
+    data = request.get_json()
+    attempt = GbsAttempt(
+        student_id=student.id,
+        q1_ans=data.get('q1', ''),
+        q2_ans=data.get('q2', ''),
+        q3_ans=data.get('q3', ''),
+        is_exam=data.get('is_exam', False)
+    )
+    db.session.add(attempt)
+    msg = f"<a href='/admin/student/{student.id}' class='notif-link'><b>{student.name}</b> oddał/a zadanie GBS.</a>"
+    db.session.add(Notification(message=msg, recipient_id=student.creator_id))
+    db.session.commit()
+    return jsonify({"status": "success"})
+
+@app.route('/gbs/math/<url_slug>')
+def math_test(url_slug):
+    student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    if not student.has_math_test: 
+        return "Brak dostępu do testu z matematyki", 403
+    return render_template('math_test.html', student=student, questions=MATH_QUESTIONS)
+
+@app.route('/api/math/submit/<int:student_id>', methods=['POST'])
+def math_submit(student_id):
+    student = Student.query.get_or_404(student_id)
+    data = request.get_json() 
+    
+    score = 0
+    for q in MATH_QUESTIONS:
+        q_id = str(q['id'])
+        if data.get(q_id) == q['answer']:
+            score += 1
+            
+    result = MathTestResult(student_id=student.id, score=score, total=len(MATH_QUESTIONS), answers_json=json.dumps(data))
+    db.session.add(result)
+    msg = f"<a href='/admin/student/{student.id}' class='notif-link'><b>{student.name}</b> ukończył/a test z matmy ({score}/{len(MATH_QUESTIONS)}).</a>"
+    db.session.add(Notification(message=msg, recipient_id=student.creator_id))
+    db.session.commit()
+    return jsonify({"status": "success", "score": score})
+
 # ----------------- PANEL MASTER DLA ADMINA -----------------
 
 @app.route('/panel/master', methods=['GET', 'POST'])
@@ -293,12 +489,10 @@ def panel_delete_material(material_id):
 def panel_master():
     if request.method == 'POST':
         action = request.form.get('action')
-        
         if action == 'create_teacher':
             username = request.form.get('username')
             password = request.form.get('password')
             uni_ids = request.form.getlist('universities')
-            
             if username and password:
                 if not User.query.filter_by(username=username).first():
                     hashed_pw = generate_password_hash(password)
@@ -311,13 +505,11 @@ def panel_master():
                     db.session.commit()
                     flash(f"Konto dla nauczyciela '{username}' utworzone pomyślnie!", "success")
                 else:
-                    flash(f"BŁĄD: Login '{username}' jest już zajęty. Wybierz inną nazwę.", "error")
-                    
+                    flash(f"BŁĄD: Login '{username}' jest już zajęty.", "error")
         elif action == 'edit_teacher':
             teacher_id = request.form.get('teacher_id')
             new_password = request.form.get('new_password')
             uni_ids = request.form.getlist('universities')
-            
             teacher = User.query.get(teacher_id)
             if teacher:
                 if new_password:
@@ -329,7 +521,6 @@ def panel_master():
                         teacher.universities.append(uni)
                 db.session.commit()
                 flash(f"Zaktualizowano dane nauczyciela '{teacher.username}'.", "success")
-                
         elif action == 'delete_teacher':
             teacher_id = request.form.get('teacher_id')
             teacher = User.query.get(teacher_id)
@@ -337,26 +528,20 @@ def panel_master():
                 db.session.delete(teacher)
                 db.session.commit()
                 flash("Konto usunięte.", "success")
-                
         return redirect(url_for('panel_master'))
 
     teachers = User.query.filter_by(role='teacher').all()
     all_unis = University.query.all()
-    
     teacher_stats = {}
     for t in teachers:
         active_students = Student.query.filter_by(creator_id=t.id, is_archived=False).count()
         archived_students = Student.query.filter_by(creator_id=t.id, is_archived=True).count()
-        teacher_stats[t.id] = {
-            'active': active_students,
-            'archived': archived_students,
-            'total': active_students + archived_students
-        }
-        
+        teacher_stats[t.id] = {'active': active_students, 'archived': archived_students, 'total': active_students + archived_students}
     return render_template('panel_master.html', teachers=teachers, all_unis=all_unis, stats=teacher_stats)
 
 
-# ----------------- MODUŁ SPRAWDZANIA ROZPRAWEK (/admin) -----------------
+# ----------------- STARE FUNKCJE ROZPRAWEK I ADMINA (QA) -----------------
+# Poniżej znajduje się Twoje KOMPLETNE, w 100% zrekonstruowane zaplecze oceniania.
 
 @app.route('/admin', methods=['GET', 'POST'])
 @login_required
@@ -379,7 +564,7 @@ def admin():
         return redirect(url_for('admin'))
         
     search_query = request.args.get('q', '').lower()
-    sort_by = request.args.get('sort', 'alpha') # Domyślnie alfabetycznie
+    sort_by = request.args.get('sort', 'alpha')
     
     active_students_query = Student.query.filter_by(is_archived=False)
     
@@ -395,12 +580,7 @@ def admin():
         active_students_query = active_students_query.filter(db.func.lower(Student.name).contains(search_query))
     
     active_students = active_students_query.all()
-    
-    # SYSTEM SORTOWANIA Z PYTHONA
-    if sort_by == 'pending':
-        active_students.sort(key=lambda s: sum(1 for e in s.essays if e.is_completed and not e.feedback), reverse=True)
-    else:
-        active_students.sort(key=lambda s: s.name.lower())
+    active_students = sort_students(active_students, sort_by)
 
     return render_template('admin.html', active_students=active_students, notifications=notifications, search_query=search_query, sort_by=sort_by)
 
@@ -445,7 +625,10 @@ def admin_student_detail(student_id):
             return redirect(url_for('panel_dashboard'))
 
     essays_sorted = sorted(student.essays, key=lambda x: x.last_edited_at or datetime.min, reverse=True)
-    return render_template('student_detail.html', student=student, essays_sorted=essays_sorted)
+    gbs_attempts = sorted(student.gbs_attempts, key=lambda x: x.submitted_at, reverse=True)
+    math_results = sorted(student.math_results, key=lambda x: x.submitted_at, reverse=True)
+    
+    return render_template('student_detail.html', student=student, essays_sorted=essays_sorted, gbs_attempts=gbs_attempts, math_results=math_results)
 
 @app.route('/admin/student/<int:student_id>/archive', methods=['POST'])
 @login_required
@@ -507,16 +690,6 @@ def delete_notif(notif_id):
     db.session.delete(notif)
     db.session.commit()
     return redirect(url_for('admin'))
-
-# ----------------- WIDOKI STUDENTA -----------------
-
-@app.route('/student/<url_slug>')
-def student_dashboard(url_slug):
-    student = Student.query.filter_by(url_slug=url_slug).first_or_404()
-    materials = []
-    if student.university:
-        materials = student.university.materials
-    return render_template('student.html', student=student, exam_topics=EXAM_TOPICS, materials=materials)
 
 @app.route('/exam/<url_slug>')
 def exam_direct_link(url_slug):

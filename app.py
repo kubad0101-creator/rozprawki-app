@@ -463,11 +463,14 @@ def panel_gbs_intake(intake_id):
 
 @app.route('/student/<url_slug>')
 def student_dashboard(url_slug):
+    # Pobieramy studenta lub zwracamy błąd 404
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    
+    # Bezpieczne sprawdzanie czy student ma uczelnię
     if student.university and "GBS" in student.university.name:
         return render_template('student_gbs_dashboard.html', student=student)
     
-    # Stary panel QA
+    # Stary panel QA - z zabezpieczeniem, jeśli university jest None
     materials = student.university.materials if student.university else []
     return render_template('student.html', student=student, exam_topics=EXAM_TOPICS, materials=materials)
 

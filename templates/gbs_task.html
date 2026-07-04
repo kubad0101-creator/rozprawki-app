@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GBS Task</title>
+    <style>
+        :root { --bg: #f4f6f9; --box-bg: #fff; --text: #333; --border: #ccc; }
+        .dark-mode { --bg: #1e1e1e; --box-bg: #2d2d2d; --text: #f0f0f0; --border: #555; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 30px; max-width: 900px; margin: auto; transition: 0.3s; }
+        .question-box { background: var(--box-bg); padding: 20px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 25px; }
+        textarea { width: 100%; height: 150px; background: var(--box-bg); color: var(--text); border: 1px solid var(--border); padding: 10px; box-sizing: border-box; font-family: inherit; font-size: 15px; margin-top: 10px; resize: vertical; }
+        .word-counter { text-align: right; font-size: 13px; color: #888; font-weight: bold; margin-top: 5px; }
+        .error { color: #dc3545; } .success { color: #28a745; }
+        .btn-submit { background: #c8102e; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
+        .theme-toggle { position: absolute; top: 20px; right: 20px; background: none; border: 1px solid var(--border); color: var(--text); padding: 8px; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')">🌓 Zmień motyw</button>
+    
+    <div style="text-align: center; margin-bottom: 30px;">
+        <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="Logo" style="height: 50px;">
+        <h1 style="color: #c8102e;">{% if is_exam %}GBS Egzamin{% else %}GBS Zadanie Domowe{% endif %}</h1>
+    </div>
+
+    <div class="question-box">
+        <strong>Question 1:</strong><br> {{ questions[0] }}
+        <textarea id="q1" oninput="checkWords()"></textarea>
+        <div class="word-counter" id="w1">Words: 0 {% if student.major.is_cccu %}(Min: 100){% endif %}</div>
+    </div>
+
+    <div class="question-box">
+        <strong>Question 2:</strong><br> {{ questions[1] }}
+        <textarea id="q2" oninput="checkWords()"></textarea>
+        <div class="word-counter" id="w2">Words: 0 {% if student.major.is_cccu %}(Min: 70){% endif %}</div>
+    </div>
+
+    <div class="question-box">
+        <strong>Question 3:</strong><br> {{ questions[2] }}
+        <textarea id="q3" oninput="checkWords()"></textarea>
+        <div class="word-counter" id="w3">Words: 0 {% if student.major.is_cccu %}(Min: 70){% endif %}</div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submitTask()">Wyślij odpowiedzi</button>
+
+    <script>
+        const isCccu = {{ 'true' if student.major.is_cccu else 'false' }};
+        
+        function getWords(id) {
+            let val = document.getElementById(id).value.trim();
+            return val === "" ? 0 : val.split(/\s+/).length;
+        }
+
+        function checkWords() {
+            let w1 = getWords('q1'); let w2 = getWords('q2'); let w3 = getWords('q3');
+            document.getElementById('w1').innerText = "Words: " + w1 + (isCccu ? " (Min: 100)" : "");
+            document.getElementById('w2').innerText = "Words: " + w2 + (isCccu ? " (Min: 70)" : "");
+            document.getElementById('w3').innerText = "Words: " + w3 + (isCccu ? " (Min: 70)" : "");
+            
+            let btn = document.getElementById('submitBtn');
+            if(isCccu) {
+                btn.disabled = (w1 < 100 || w2 < 70 || w3 < 70);
+            } else {
+                btn.disabled = (w1 === 0 && w2 === 0 && w3 === 0);
+            }
+        }
+
+        function submitTask() {
+            document.getElementById('submitBtn').innerText = "Wysyłanie...";
+            fetch('/api/gbs/submit/{{ student.id }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    q1: document.getElementById('q1').value,
+                    q2: document.getElementById('q2').value,
+                    q3: document.getElementById('q3').value,
+                    is_exam: {{ 'true' if is_exam else 'false' }}
+                })
+            }).then(() => {
+                alert("Zapisano pomyślnie!");
+                window.location.href = "/student/{{ student.url_slug }}";
+            });
+        }
+        checkWords();
+    </script>
+</body>
+</html>

@@ -1,106 +1,270 @@
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pulpit Studenta</title>
-</head>
-<body style="font-family: sans-serif; padding: 20px; max-width: 850px; margin: auto; background: #fdfdfd;">
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px;">
-        <h1 style="margin: 0;">Witaj, {{ student.name }}</h1>
-        {% if student.university %}
-            <span style="background: #0d47a1; color: white; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
-                🏛️ Uniwersytet: {{ student.university.name }}
-            </span>
-        {% endif %}
-    </div>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+            --teal: #23c1b3;
+            --green: #3ecf8e;
+            --amber: #ffc857;
+            --navy: #4d7cff;
+            --feedback-bg: rgba(255,200,87,0.08);
+            --content-bg: rgba(255,255,255,0.02);
+        }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+            --feedback-bg: rgba(255,200,87,0.12);
+            --content-bg: rgba(32,28,48,0.02);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 32px clamp(16px, 4vw, 40px) 60px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 12% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        a { color: inherit; }
+        .wrap { max-width: 900px; margin: auto; }
 
-    {% if materials %}
-    <div style="background: #fff; border: 1px solid #b6effb; padding: 20px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-        <h3 style="margin-top: 0; color: #055160; display: flex; align-items: center; gap: 8px;">
-            📚 Twoje materiały przygotowawcze i dydaktyczne:
-        </h3>
-        <p style="font-size: 14px; color: #666; margin-top: 0;">Poniżej znajdują się oficjalne pliki oraz testy udostępnione przez Twojego koordynatora:</p>
-        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+        .switch { position: relative; width: 52px; height: 28px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 11px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(24px); }
+        .theme-toggle { display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+        .header-row {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;
+            border-bottom: 1px solid var(--border-soft); padding-bottom: 18px; margin-bottom: 26px;
+        }
+        .header-row .greeting { display: flex; align-items: center; gap: 14px; }
+        .header-row img { height: 46px; width: auto; border-radius: 10px; }
+        .header-row h1 { margin: 0; font-size: 24px; font-weight: 800; }
+        .uni-badge { background: linear-gradient(135deg, #2d3fb0, #4d7cff); color: #fff; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 800; }
+
+        .card { background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 18px; padding: 24px 26px; margin-bottom: 26px; backdrop-filter: blur(10px); }
+
+        .materials-card h3 { margin: 0 0 4px; color: #4fd1c5; display: flex; align-items: center; gap: 8px; font-size: 17px; }
+        .materials-card > p { font-size: 14px; color: var(--text-muted); margin: 0 0 16px; }
+        .material-item {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+            padding: 12px 18px; background: rgba(35,193,179,0.08); border: 1px solid rgba(35,193,179,0.25);
+            border-radius: 10px; margin-bottom: 10px;
+        }
+        .material-item span { font-weight: 800; color: var(--text-main); }
+        .material-item a { background: linear-gradient(135deg, #1fb5a8, #23c1b3); color: #04241f; padding: 9px 16px; text-decoration: none; border-radius: 8px; font-weight: 800; font-size: 13px; }
+
+        .instructions-card { border-left: 4px solid #4d7cff; }
+        .instructions-card h3 { margin: 0 0 10px; color: #9db3ff; font-size: 17px; }
+        html[data-theme="light"] .instructions-card h3 { color: var(--navy); }
+        .instructions-card ul { margin: 0; padding-left: 20px; line-height: 1.7; font-size: 14px; }
+
+        h2.section-title { font-size: 19px; font-weight: 800; margin: 34px 0 18px; }
+
+        .essay-card {
+            background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 16px;
+            padding: 22px 24px; margin-bottom: 20px; backdrop-filter: blur(10px); transition: opacity 0.2s ease;
+        }
+        .essay-card.locked { opacity: 0.55; }
+        .essay-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .essay-head h3 { margin: 0; font-size: 17px; font-weight: 800; }
+        .status-done { color: #3ecf8e; font-weight: 800; font-size: 13px; }
+
+        .topic-box { font-style: italic; color: var(--text-muted); background: var(--content-bg); padding: 14px 16px; border-radius: 10px; margin-top: 14px; font-size: 14px; line-height: 1.6; }
+        .locked-note { font-style: italic; color: var(--text-muted); background: var(--content-bg); padding: 14px 16px; border-radius: 10px; margin-top: 14px; font-size: 14px; }
+        .locked-warning { color: #ff8b96; font-weight: 800; font-size: 13px; margin-top: 10px; }
+
+        .task-btn {
+            display: inline-block; margin-top: 16px; padding: 11px 22px; border-radius: 999px; text-decoration: none;
+            font-weight: 800; font-size: 14px; color: #fff; transition: transform 0.15s ease;
+        }
+        .task-btn:hover { transform: translateY(-2px); }
+        .task-btn.review { background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--border-strong); }
+        .task-btn.write { background: var(--gradient); box-shadow: 0 6px 18px rgba(124,92,255,0.3); }
+
+        .feedback-box { margin-top: 18px; background: var(--feedback-bg); padding: 18px; border-radius: 12px; border-left: 4px solid var(--amber); }
+        .feedback-box strong { display: block; margin-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #caa233; }
+        html[data-theme="light"] .feedback-box strong { color: #8a6d1a; }
+        .marked-content, .comment-box {
+            white-space: pre-wrap; font-family: 'Source Serif 4', 'Times New Roman', serif; font-size: 15px;
+            margin-top: 8px; background: var(--content-bg); padding: 14px; border-radius: 8px; line-height: 1.7;
+            border: 1px solid var(--border-soft);
+        }
+        .comment-label { margin-top: 14px; color: var(--text-muted); font-size: 13px; font-weight: 700; }
+
+        .exam-block { margin-top: 46px; }
+        .exam-block hr { border: none; border-top: 1px solid var(--border-soft); margin-bottom: 30px; }
+        .exam-block h2 { color: #ff8b9e; font-size: 20px; font-weight: 800; }
+        .exam-card { background: var(--card-bg); border: 2px solid rgba(62,207,142,0.4); border-radius: 16px; padding: 24px; }
+        .exam-status { color: #3ecf8e; font-weight: 800; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+
+        <div class="header-row">
+            <div class="greeting">
+                <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="OpenUK Study Logo">
+                <h1>Witaj, {{ student.name }}</h1>
+            </div>
+            <div style="display:flex; align-items:center; gap: 14px;">
+                {% if student.university %}
+                    <span class="uni-badge">🎓 {{ student.university.name }}</span>
+                {% endif %}
+                <div class="theme-toggle">
+                    <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+                    <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                        <div class="knob" id="themeKnob">🌙</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if materials %}
+        <div class="card materials-card">
+            <h3>📚 Twoje materiały przygotowawcze i dydaktyczne</h3>
+            <p>Poniżej znajdują się oficjalne pliki oraz testy udostępnione przez Twojego koordynatora:</p>
             {% for mat in materials %}
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: #f0fdfa; border: 1px solid #c3fae8; border-radius: 6px;">
-                    <span style="font-weight: bold; color: #0f5132;">📄 {{ mat.title }}</span>
-                    <a href="{{ mat.content_url }}" target="_blank" style="background: #0f5132; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 13px;">Otwórz materiał ↗</a>
+                <div class="material-item">
+                    <span>{{ mat.title }}</span>
+                    <a href="{{ mat.content_url }}" target="_blank">Otwórz materiał ↗</a>
                 </div>
             {% endfor %}
         </div>
-    </div>
-    {% endif %}
-    
-    <div style="background: #e3f2fd; border-left: 5px solid #0d47a1; padding: 20px; margin-bottom: 30px; border-radius: 5px;">
-        <h3 style="margin-top: 0; color: #0d47a1;"> Jak pisać rozprawki (Instrukcja do egzaminu)</h3>
-        <p>Pamiętaj o najważniejszych zasadach pisania rozprawki:</p>
-        <ul style="line-height: 1.6;">
-            <li><strong>Długość:</strong> Ponad 250 słów.</li>
-            <li><strong>Schemat:</strong> Podział tekstu na 5 akapitów (wstęp, 3 argumenty, zakończenie).</li>
-            <li><strong>Słownictwo:</strong> Używaj zwrotów rozpoczynających akapity (np. <em>First of all</em>, <em>Secondly</em>, <em>In conclusion</em>).</li>
-            <li><strong>Wstęp:</strong> 2-3 zdania ogólne wprowadzające oraz jasna teza na końcu wstępu.</li>
-            <li><strong>Rozwinięcie:</strong> Wartościowe argumenty, w tym jeden oparty na przykładzie z własnego doświadczenia.</li>
-            <li><strong>Zakończenie:</strong> Podsumowanie i ponowne podkreślenie tezy ze wstępu.</li>
-        </ul>
-    </div>
+        {% endif %}
 
-    <h2>Twoje zadania (Moduł Pisania):</h2>
-    
-    {% set ns = namespace(locked=false) %}
-    
-    {% for essay in student.essays %}
+        <div class="card instructions-card">
+            <h3>✏️ Jak pisać rozprawki (Instrukcja do egzaminu)</h3>
+            <p style="margin-top:0; font-size:14px; color:var(--text-muted);">Pamiętaj o najważniejszych zasadach pisania rozprawki:</p>
+            <ul>
+                <li><strong>Długość:</strong> Ponad 250 słów.</li>
+                <li><strong>Schemat:</strong> Podział tekstu na 5 akapitów (wstęp, 3 argumenty, zakończenie).</li>
+                <li><strong>Słownictwo:</strong> Używaj zwrotów rozpoczynających akapity (np. <em>First of all</em>, <em>Secondly</em>, <em>In conclusion</em>).</li>
+                <li><strong>Wstęp:</strong> 2-3 zdania ogólne wprowadzające oraz jasna teza na końcu wstępu.</li>
+                <li><strong>Rozwinięcie:</strong> Wartościowe argumenty, w tym jeden oparty na przykładzie z własnego doświadczenia.</li>
+                <li><strong>Zakończenie:</strong> Podsumowanie i ponowne podkreślenie tezy ze wstępu.</li>
+            </ul>
+        </div>
+
+        <h2 class="section-title">Twoje zadania (Moduł Pisania)</h2>
+
+        {% set ns = namespace(locked=false) %}
+        {% for essay in student.essays %}
         {% if not essay.is_exam %}
-            <div style="background: {% if ns.locked %}#f8f9fa{% else %}white{% endif %}; border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; border-radius: 8px; opacity: {% if ns.locked %}0.6{% else %}1{% endif %};">
-                <div style="display: flex; justify-content: space-between;">
-                    <h3 style="margin:0; color: #333;">{{ essay.title }}</h3>
-                    {% if essay.is_completed %}<span style="color: green; font-weight: bold;"> Oddano do sprawdzenia</span>{% endif %}
+            <div class="essay-card {% if ns.locked %}locked{% endif %}">
+                <div class="essay-head">
+                    <h3>{{ essay.title }}</h3>
+                    {% if essay.is_completed %}<span class="status-done">✔ Oddano do sprawdzenia</span>{% endif %}
                 </div>
-                
+
                 {% if ns.locked %}
-                    <p style="font-style: italic; color: #999; background:#f4f4f4; padding:10px; border-radius:4px;">[Polecenie ukryte. Dostępne po ukończeniu poprzednich zadań]</p>
-                    <p style="color: #d32f2f; font-weight: bold; font-size: 0.9em;"> Zablokowane. Ukończ poprzednią rozprawkę, aby pisać dalej.</p>
+                    <p class="locked-note">[Polecenie ukryte. Dostępne po ukończeniu poprzednich zadań]</p>
+                    <p class="locked-warning">🔒 Zablokowane. Ukończ poprzednią rozprawkę, aby pisać dalej.</p>
                 {% else %}
-                    <p style="font-style: italic; color: #555; background:#f4f4f4; padding:10px; border-radius:4px;">{{ essay.topic_full }}</p>
+                    <p class="topic-box">{{ essay.topic_full }}</p>
                     {% if essay.is_completed %}
-                        <a href="/write/{{ essay.id }}" style="display: inline-block; background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;"> Przejrzyj swoją pracę</a>
+                        <a href="/write/{{ essay.id }}" class="task-btn review">Przejrzyj swoją pracę</a>
                     {% else %}
-                        <a href="/write/{{ essay.id }}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;"> Przejdź do pisania</a>
+                        <a href="/write/{{ essay.id }}" class="task-btn write">Przejdź do pisania</a>
                     {% endif %}
                 {% endif %}
 
                 {% if essay.feedback %}
-                <div style="margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
-                    <strong> Feedback Nauczyciela:</strong><br>
-                    <div style="white-space: pre-wrap; font-family: 'Times New Roman', serif; font-size: 16px; margin-top: 10px; background: white; padding: 10px; border: 1px solid #ffeeba;">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
-                    <p style="margin-top: 10px; color: #856404;"><strong>Komentarz nauczyciela:</strong><br><div style="white-space: pre-wrap; background: white; padding: 10px; border: 1px solid #ffeeba; color: black;">{{ essay.feedback | safe }}</div></p>
+                <div class="feedback-box">
+                    <strong>Feedback Nauczyciela</strong>
+                    <div class="marked-content">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
+                    <div class="comment-label">Komentarz nauczyciela:</div>
+                    <div class="comment-box">{{ essay.feedback | safe }}</div>
                 </div>
                 {% endif %}
             </div>
-
             {% if not essay.is_completed %}
                 {% set ns.locked = true %}
             {% endif %}
         {% endif %}
-    {% endfor %}
+        {% endfor %}
 
-    {% set exam_essay = student.essays | selectattr("title", "equalto", "Egzamin") | first %}
-    {% if exam_essay and (exam_essay.is_completed or exam_essay.feedback) %}
-    <hr style="margin: 40px 0;">
-    <h2 style="color: #d32f2f;"> EGZAMIN GŁÓWNY (Napisany)</h2>
-    <div style="background: white; border: 2px solid #4caf50; padding: 20px; border-radius: 8px;">
-        <span style="color: green; font-weight: bold;"> Arkusz egzaminacyjny został pomyślnie oddany i zablokowany.</span><br><br>
-        <a href="/write/{{ exam_essay.id }}" style="display: inline-block; background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;"> Przejrzyj swój arkusz egzaminacyjny</a>
-        
-        {% if exam_essay.feedback %}
-        <div style="margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
-            <strong> Oceniony egzamin:</strong>
-            <div style="white-space: pre-wrap; font-family: 'Times New Roman', serif; margin-top: 10px; background: white; padding: 10px;">{{ exam_essay.marked_content | safe if exam_essay.marked_content else exam_essay.content }}</div>
-            <p style="margin-top: 10px; color: #856404;"><strong>Komentarz końcowy:</strong><br><div style="white-space: pre-wrap; background: white; padding: 10px; color: black;">{{ exam_essay.feedback | safe }}</div></p>
+        {% set exam_essay = student.essays | selectattr("title", "equalto", "Egzamin") | first %}
+        {% if exam_essay and (exam_essay.is_completed or exam_essay.feedback) %}
+        <div class="exam-block">
+            <hr>
+            <h2>🚨 EGZAMIN GŁÓWNY (Napisany)</h2>
+            <div class="exam-card">
+                <span class="exam-status">✔ Arkusz egzaminacyjny został pomyślnie oddany i zablokowany.</span><br><br>
+                <a href="/write/{{ exam_essay.id }}" class="task-btn review">Przejrzyj swój arkusz egzaminacyjny</a>
+
+                {% if exam_essay.feedback %}
+                <div class="feedback-box">
+                    <strong>Oceniony egzamin</strong>
+                    <div class="marked-content">{{ exam_essay.marked_content | safe if exam_essay.marked_content else exam_essay.content }}</div>
+                    <div class="comment-label">Komentarz końcowy:</div>
+                    <div class="comment-box">{{ exam_essay.feedback | safe }}</div>
+                </div>
+                {% endif %}
+            </div>
         </div>
         {% endif %}
     </div>
-    {% endif %}
 
+    <script>
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

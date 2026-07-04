@@ -126,6 +126,7 @@
         }
         .task-card.homework::before { background: linear-gradient(90deg, #e0294f, #ff5f7e); }
         .task-card.math::before { background: linear-gradient(90deg, #2d3fb0, #7c5cff); }
+        .task-card.materials::before { background: linear-gradient(90deg, #1fb5a8, #23c1b3); }
 
         .task-card h3 {
             margin: 6px 0 10px;
@@ -134,8 +135,20 @@
         }
         .task-card.homework h3 { color: #ff8b9e; }
         .task-card.math h3 { color: #9db3ff; }
+        .task-card.materials h3 { color: #4fd1c5; }
         html[data-theme="light"] .task-card.homework h3 { color: #c8102e; }
         html[data-theme="light"] .task-card.math h3 { color: #2d3fb0; }
+        html[data-theme="light"] .task-card.materials h3 { color: #17a2b8; }
+
+        .material-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+        .material-link {
+            display: block; background: rgba(35,193,179,0.1); color: #4fd1c5; padding: 13px;
+            text-decoration: none; border-radius: 8px; font-weight: 800; border: 1px solid rgba(35,193,179,0.3);
+            transition: transform 0.15s ease, background 0.15s ease; font-size: 14px;
+        }
+        .material-link:hover { transform: translateY(-2px); background: rgba(35,193,179,0.16); }
+        html[data-theme="light"] .material-link { color: #0c5460; }
+        .no-materials { color: var(--text-muted); font-style: italic; font-size: 14px; }
 
         .task-card p { color: var(--text-muted); font-size: 14px; margin: 0 0 22px; }
 
@@ -167,10 +180,24 @@
         <div class="header">
             <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="OpenUK Study Logo">
             <h2>Witaj, {{ student.name }}</h2>
-            <p>Kierunek: <strong>{{ student.major.name }}</strong></p>
+            <p>Kierunek: <strong>{{ student.major.name if student.major else 'Brak przypisanego kierunku' }}</strong></p>
         </div>
 
         <div class="tasks">
+            <div class="task-card materials">
+                <h3>📚 Materiały przygotowawcze</h3>
+                <p>Zapoznaj się z poniższymi materiałami przed przystąpieniem do testów.</p>
+                <div class="material-list">
+                    {% if student.university and student.university.materials %}
+                        {% for mat in student.university.materials %}
+                            <a href="{{ mat.content_url }}" target="_blank" class="material-link">📖 {{ mat.title }}</a>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-materials">Brak udostępnionych materiałów.</p>
+                    {% endif %}
+                </div>
+            </div>
+
             <div class="task-card homework">
                 <h3>Zadanie Domowe (3 pytania)</h3>
                 <p>Odpowiedz na przypisane pytania kierunkowe.</p>

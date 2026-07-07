@@ -5,13 +5,19 @@ import uuid
 import json
 from datetime import datetime
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from sqlalchemy import text
 
 app = Flask(__name__)
 app.secret_key = "Open196!_System_Rozprawek_2024"
+
+# Konfiguracja folderu na wgrywane pliki PDF
+UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///local.db')
 if database_url.startswith("postgres://"):
@@ -160,11 +166,25 @@ MATH_QUESTIONS = [
     {"id": 11, "text": "Evaluate 5/15 as percentage:", "options": {"a": "0.33", "b": "33.33", "c": "66.66", "d": "3.33"}, "answer": "b", "exp": "5/15 = 1/3, which is approximately 33.33%"}
 ]
 
+# ----------------- PEŁNE TEMATY ROZPRAWEK QA -----------------
+PRACTICE_TOPICS = [
+    ("Teachers Computers", "As computers are being used more and more in education, there will be no role for teachers in the classroom. Give reasons for your answer and include any relevant examples from your own knowledge and experience."),
+    ("Fluency", "Some people believe that the only way to become fluent in a foreign language is to live and work in a country where it is spoken. Do you agree or disagree with this statement? Give reasons for your answer and include any relevant examples from your own knowledge or experience."),
+    ("Violence", "Violence in the media promotes violence in real life. Do you agree with that statement or disagree ? Give reasons for your answer and include any relevant examples from your own knowledge."),
+    ("Fast food", "Fast food has become increasingly popular in many parts of the world due to its convenience and affordability. However, some people argue that it has negative effects on health and society. Discuss the advantages and disadvantages of eating fast food and give your own opinion."),
+    ("Generations", "Young people should be encouraged to meet their grandparents more often, as this benefits both generations. Do you agree or disagree with this statement? Give reasons for your answer and include any relevant examples from your own knowledge and experience."),
+    ("Boxing", "Some people believe that boxing is a dangerous sport that should be discouraged, while others argue that boxing is a valuable form of self-expression and personal development. What is your opinion? Include relevant examples from your own experience to support your answer.")
+]
+
+EXAM_TOPICS = [
+    "Some people think it is beneficial for old people to learn something new, while others believe that once a person is past 65 years of age it is too late to learn. Do you agree or disagree? Give reasons using your own knowledge and examples from your own experience.",
+    "Some people think that introducing children to team sports is the best way to teach children teamwork. Do you agree or disagree? Give reasons using your own knowledge and examples from your own experience."
+]
+
 # ----------------- INICJALIZACJA BAZY DANYCH -----------------
 
 def setup_database():
     db.create_all()
-    
     queries = [
         'ALTER TABLE student_v5 ADD COLUMN university_id INTEGER REFERENCES universities(id)',
         'ALTER TABLE student_v5 ADD COLUMN creator_id INTEGER REFERENCES users(id)',
@@ -176,7 +196,6 @@ def setup_database():
         'ALTER TABLE notification_v5 ADD COLUMN recipient_id INTEGER REFERENCES users(id)',
         'ALTER TABLE notification_v5 ADD COLUMN student_id INTEGER REFERENCES student_v5(id)'
     ]
-
     for q in queries:
         try:
             db.session.execute(text(q))
@@ -210,12 +229,6 @@ def setup_database():
             db.session.add(GbsMajor(name=m_name, is_cccu=is_cccu))
     db.session.commit()
 
-    unassigned_students = Student.query.filter_by(university_id=None).all()
-    if unassigned_students:
-        for student in unassigned_students:
-            student.university_id = qa_uni.id
-        db.session.commit()
-
     if not User.query.filter_by(username="Julia").first():
         db.session.add(User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin"))
     if not User.query.filter_by(username="Kuba").first():
@@ -230,16 +243,14 @@ with app.app_context():
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('login'))
+        if 'user_id' not in session: return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session or session.get('role') != 'admin':
-            return redirect(url_for('login'))
+        if 'user_id' not in session or session.get('role') != 'admin': return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -257,20 +268,6 @@ def sort_students(students, sort_by):
         students.sort(key=lambda s: s.name.lower())
     return students
 
-PRACTICE_TOPICS = [
-    ("Teachers Computers", "As computers are being used more and more in education, there will be no role for teachers in the classroom. Give reasons for your answer and include any relevant examples from your own knowledge and experience."),
-    ("Fluency", "Some people believe that the only way to become fluent in a foreign language is to live and work in a country where it is spoken. Do you agree or disagree with this statement? Give reasons for your answer and include any relevant examples from your own knowledge or experience."),
-    ("Violence", "Violence in the media promotes violence in real life. Do you agree with that statement or disagree ? Give reasons for your answer and include any relevant examples from your own knowledge."),
-    ("Fast food", "Fast food has become increasingly popular in many parts of the world due to its convenience and affordability. However, some people argue that it has negative effects on health and society. Discuss the advantages and disadvantages of eating fast food and give your own opinion."),
-    ("Generations", "Young people should be encouraged to meet their grandparents more often, as this benefits both generations. Do you agree or disagree with this statement? Give reasons for your answer and include any relevant examples from your own knowledge and experience."),
-    ("Boxing", "Some people believe that boxing is a dangerous sport that should be discouraged, while others argue that boxing is a valuable form of self-expression and personal development. What is your opinion? Include relevant examples from your own experience to support your answer.")
-]
-
-EXAM_TOPICS = [
-    "Some people think it is beneficial for old people to learn something new, while others believe that once a person is past 65 years of age it is too late to learn. Do you agree or disagree? Give reasons using your own knowledge and examples from your own experience.",
-    "Some people think that introducing children to team sports is the best way to teach children teamwork. Do you agree or disagree? Give reasons using your own knowledge and examples from your own experience."
-]
-
 # ----------------- ŚCIEŻKI AUTORYZACJI -----------------
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -283,11 +280,8 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
-            
-            if user.role == 'admin':
-                return redirect(url_for('panel_master'))
+            if user.role == 'admin': return redirect(url_for('panel_master'))
             return redirect(url_for('panel_dashboard'))
-            
         return render_template('login.html', error="Błędny login lub hasło")
     return render_template('login.html')
 
@@ -296,7 +290,7 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# ----------------- NOWY PANEL KOORDYNACJI SYSTEMU PŁATFORMY (/panel) -----------------
+# ----------------- PANEL KOORDYNACJI SYSTEMU PŁATFORMY (/panel) -----------------
 
 @app.route('/panel')
 @login_required
@@ -331,16 +325,10 @@ def panel_dashboard():
     gbs_students = [s for s in students if s.university and 'GBS' in s.university.name]
     
     return render_template('panel_dashboard.html', 
-                           qa_students=qa_students, 
-                           gbs_students=gbs_students, 
-                           universities=universities, 
-                           majors=majors, 
-                           intakes=intakes, 
-                           teacher_name=teacher_name,
-                           notifications=notifications, 
-                           user=user, 
-                           sort_by=sort_by, 
-                           search_query=search_query)
+                           qa_students=qa_students, gbs_students=gbs_students, 
+                           universities=universities, majors=majors, intakes=intakes, 
+                           teacher_name=teacher_name, notifications=notifications, 
+                           user=user, sort_by=sort_by, search_query=search_query)
 
 @app.route('/panel/student/add', methods=['POST'])
 @login_required
@@ -352,19 +340,16 @@ def panel_add_student():
     if not university_id and len(user.universities) == 1: 
         university_id = user.universities[0].id
         
-    if not name or not university_id: 
-        return redirect(url_for('panel_dashboard'))
+    if not name or not university_id: return redirect(url_for('panel_dashboard'))
         
     slug = f"{uuid.uuid4().hex[:4]}-{slugify(name)}"
     uni = University.query.get(int(university_id))
-    
     new_student = Student(name=name, url_slug=slug, university_id=uni.id, creator_id=user.id)
     
     if "GBS" in uni.name:
         new_student.email = request.form.get('email')
         major_id = request.form.get('major_id')
         intake_id = request.form.get('intake_id')
-        
         new_student.gbs_major_id = int(major_id) if major_id else None
         new_student.gbs_intake_id = int(intake_id) if intake_id else None
         new_student.has_math_test = 'has_math_test' in request.form
@@ -380,6 +365,8 @@ def panel_add_student():
     flash(f"Student {name} dodany pomyślnie!", "success")
     return redirect(url_for('panel_dashboard'))
 
+# ----------------- MATERIAŁY (WGRYWANIE PDF I LINKÓW) -----------------
+
 @app.route('/panel/materials', methods=['GET', 'POST'])
 @login_required
 def panel_materials():
@@ -388,16 +375,36 @@ def panel_materials():
     
     if request.method == 'POST':
         title = request.form.get('title')
-        content_url = request.form.get('content_url')
         university_id = request.form.get('university_id')
+        link_url = request.form.get('link_url')
+        file = request.files.get('pdf_file')
         
         if not university_id and len(universities) == 1:
             university_id = universities[0].id
             
+        content_url = ""
+        
+        # Logika: Plik czy Link?
+        if file and file.filename != '':
+            if file.filename.endswith('.pdf'):
+                filename = secure_filename(file.filename)
+                unique_filename = f"{uuid.uuid4().hex[:8]}_{filename}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
+                content_url = url_for('download_file', name=unique_filename)
+            else:
+                flash("Tylko pliki PDF są dozwolone.", "error")
+                return redirect(url_for('panel_materials'))
+        elif link_url:
+            content_url = link_url
+        else:
+            flash("Musisz podać link lub wgrać plik PDF.", "error")
+            return redirect(url_for('panel_materials'))
+            
         if title and content_url and university_id:
             db.session.add(Material(title=title, content_url=content_url, university_id=int(university_id)))
             db.session.commit()
-            flash("Materiał dodany!", "success")
+            flash("Materiał dodany pomyślnie!", "success")
+            
         return redirect(url_for('panel_materials'))
         
     return render_template('panel_materials.html', universities=universities, user=user)
@@ -412,6 +419,10 @@ def panel_delete_material(material_id):
         db.session.commit()
     return redirect(url_for('panel_materials'))
 
+@app.route('/uploads/<name>')
+def download_file(name):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], name, as_attachment=False)
+
 # ----------------- TRASY DLA MATERIAŁÓW HTML (GBS) -----------------
 
 @app.route('/gbs/materials/writing_guide')
@@ -421,7 +432,6 @@ def gbs_writing_guide():
 @app.route('/gbs/materials/exam_info')
 def gbs_exam_info():
     return render_template('gbs/exam_info.html')
-
 
 # ----------------- PANEL GBS (KONFIGURACJA NABORÓW I PYTAŃ) -----------------
 
@@ -448,7 +458,6 @@ def panel_gbs():
                 db.session.commit()
                 flash("Usunięto nabór i wszystkie jego pytania.", "success")
         return redirect(url_for('panel_gbs'))
-
     intakes = GbsIntake.query.all()
     return render_template('gbs/panel_gbs.html', intakes=intakes)
 
@@ -456,7 +465,6 @@ def panel_gbs():
 @login_required
 def panel_gbs_intake(intake_id):
     intake = GbsIntake.query.get_or_404(intake_id)
-    
     if request.method == 'POST':
         major_id = request.form.get('major_id')
         qset = GbsQuestionSet.query.filter_by(intake_id=intake.id, major_id=major_id).first()
@@ -469,7 +477,6 @@ def panel_gbs_intake(intake_id):
         db.session.commit()
         flash("Pytania zapisane!", "success")
         return redirect(url_for('panel_gbs_intake', intake_id=intake.id))
-
     majors = GbsMajor.query.all()
     question_sets = {qs.major_id: qs for qs in intake.question_sets}
     return render_template('gbs/panel_gbs_intake.html', intake=intake, majors=majors, question_sets=question_sets)
@@ -479,36 +486,24 @@ def panel_gbs_intake(intake_id):
 @app.route('/student/<url_slug>')
 def student_dashboard(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
-    
-    # WYMUSZAMY POBRANIE MATERIAŁÓW (Naprawa pustej listy)
     materials = student.university.materials if student.university else []
-    
     if student.university and "GBS" in student.university.name:
         return render_template('gbs/student_gbs_dashboard.html', student=student, materials=materials)
-    
     return render_template('qa/student.html', student=student, exam_topics=EXAM_TOPICS, materials=materials)
 
 @app.route('/gbs/task/<url_slug>')
 def gbs_task(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     is_exam = request.args.get('exam') == 'true'
-    
     qset = GbsQuestionSet.query.filter_by(intake_id=student.gbs_intake_id, major_id=student.gbs_major_id).first()
-    questions = [qset.q1, qset.q2, qset.q3] if qset else ["Pytanie 1 (Brak pytań w naborze)", "Pytanie 2 (Brak)", "Pytanie 3 (Brak)"]
-    
+    questions = [qset.q1, qset.q2, qset.q3] if qset else ["Pytanie 1 (Brak)", "Pytanie 2 (Brak)", "Pytanie 3 (Brak)"]
     return render_template('gbs/gbs_task.html', student=student, questions=questions, is_exam=is_exam)
 
 @app.route('/api/gbs/submit/<int:student_id>', methods=['POST'])
 def gbs_submit(student_id):
     student = Student.query.get_or_404(student_id)
     data = request.get_json()
-    attempt = GbsAttempt(
-        student_id=student.id,
-        q1_ans=data.get('q1', ''),
-        q2_ans=data.get('q2', ''),
-        q3_ans=data.get('q3', ''),
-        is_exam=data.get('is_exam', False)
-    )
+    attempt = GbsAttempt(student_id=student.id, q1_ans=data.get('q1', ''), q2_ans=data.get('q2', ''), q3_ans=data.get('q3', ''), is_exam=data.get('is_exam', False))
     db.session.add(attempt)
     msg = f"<a href='/admin/student/{student.id}' class='notif-link'><b>{student.name}</b> oddał/a zadanie GBS.</a>"
     db.session.add(Notification(message=msg, recipient_id=student.creator_id, student_id=student.id))
@@ -518,21 +513,14 @@ def gbs_submit(student_id):
 @app.route('/gbs/math/<url_slug>')
 def math_test(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
-    if not student.has_math_test: 
-        return "Brak dostępu do testu z matematyki", 403
+    if not student.has_math_test: return "Brak dostępu", 403
     return render_template('gbs/math_test.html', student=student, questions=MATH_QUESTIONS)
 
 @app.route('/api/math/submit/<int:student_id>', methods=['POST'])
 def math_submit(student_id):
     student = Student.query.get_or_404(student_id)
     data = request.get_json() 
-    
-    score = 0
-    for q in MATH_QUESTIONS:
-        q_id = str(q['id'])
-        if data.get(q_id) == q['answer']:
-            score += 1
-            
+    score = sum(1 for q in MATH_QUESTIONS if data.get(str(q['id'])) == q['answer'])
     result = MathTestResult(student_id=student.id, score=score, total=len(MATH_QUESTIONS), answers_json=json.dumps(data))
     db.session.add(result)
     msg = f"<a href='/admin/student/{student.id}' class='notif-link'><b>{student.name}</b> ukończył/a test z matmy ({score}/{len(MATH_QUESTIONS)}).</a>"
@@ -557,64 +545,27 @@ def panel_master():
                     new_teacher = User(username=username, password_hash=hashed_pw, role='teacher')
                     for uid in uni_ids:
                         uni = University.query.get(int(uid))
-                        if uni:
-                            new_teacher.universities.append(uni)
+                        if uni: new_teacher.universities.append(uni)
                     db.session.add(new_teacher)
                     db.session.commit()
                     flash(f"Konto dla nauczyciela '{username}' utworzone pomyślnie!", "success")
-                else:
-                    flash(f"BŁĄD: Login '{username}' jest już zajęty.", "error")
-        elif action == 'edit_teacher':
-            teacher_id = request.form.get('teacher_id')
-            new_password = request.form.get('new_password')
-            uni_ids = request.form.getlist('universities')
-            teacher = User.query.get(teacher_id)
-            if teacher:
-                if new_password:
-                    teacher.password_hash = generate_password_hash(new_password)
-                teacher.universities = []
-                for uid in uni_ids:
-                    uni = University.query.get(int(uid))
-                    if uni:
-                        teacher.universities.append(uni)
-                db.session.commit()
-                flash(f"Zaktualizowano dane nauczyciela '{teacher.username}'.", "success")
-        elif action == 'delete_teacher':
-            teacher_id = request.form.get('teacher_id')
-            teacher = User.query.get(teacher_id)
-            if teacher:
-                db.session.delete(teacher)
-                db.session.commit()
-                flash("Konto usunięte.", "success")
         return redirect(url_for('panel_master'))
-
     teachers = User.query.filter_by(role='teacher').all()
-    all_unis = University.query.all()
-    teacher_stats = {}
-    for t in teachers:
-        active_students = Student.query.filter_by(creator_id=t.id, is_archived=False).count()
-        archived_students = Student.query.filter_by(creator_id=t.id, is_archived=True).count()
-        teacher_stats[t.id] = {'active': active_students, 'archived': archived_students, 'total': active_students + archived_students}
-    return render_template('panel_master.html', teachers=teachers, all_unis=all_unis, stats=teacher_stats)
-
+    return render_template('panel_master.html', teachers=teachers, all_unis=University.query.all(), stats={})
 
 # ----------------- STARE FUNKCJE ROZPRAWEK I ADMINA (QA) -----------------
 
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/admin')
 @login_required
-def admin():
-    return redirect(url_for('panel_dashboard'))
+def admin(): return redirect(url_for('panel_dashboard'))
 
 @app.route('/admin/archive')
 @login_required
 def admin_archive():
     user = User.query.get(session['user_id'])
     query = Student.query.filter_by(is_archived=True)
-    if user.role != 'admin':
-        uni_ids = [u.id for u in user.universities]
-        query = query.filter(Student.university_id.in_(uni_ids))
-    archived_students = query.order_by(Student.name.asc()).all()
-    return render_template('qa/admin_archive.html', archived_students=archived_students)
+    if user.role != 'admin': query = query.filter(Student.university_id.in_([u.id for u in user.universities]))
+    return render_template('qa/admin_archive.html', archived_students=query.order_by(Student.name.asc()).all())
 
 @app.route('/admin/student/<int:student_id>/restore', methods=['POST'])
 @login_required
@@ -637,18 +588,9 @@ def delete_student_forever(student_id):
 @login_required
 def admin_student_detail(student_id):
     student = Student.query.get_or_404(student_id)
-    user = User.query.get(session['user_id'])
-    
-    if user.role != 'admin':
-        uni_ids = [u.id for u in user.universities]
-        if student.university_id not in uni_ids:
-            flash("Odmowa dostępu: Ten uczeń nie należy do przypisanej Ci uczelni.", "error")
-            return redirect(url_for('panel_dashboard'))
-
     essays_sorted = sorted(student.essays, key=lambda x: x.last_edited_at or datetime.min, reverse=True)
     gbs_attempts = sorted(student.gbs_attempts, key=lambda x: x.submitted_at, reverse=True)
     math_results = sorted(student.math_results, key=lambda x: x.submitted_at, reverse=True)
-    
     return render_template('qa/student_detail.html', student=student, essays_sorted=essays_sorted, gbs_attempts=gbs_attempts, math_results=math_results)
 
 @app.route('/admin/student/<int:student_id>/archive', methods=['POST'])
@@ -667,9 +609,7 @@ def update_extra_exam(student_id):
     if not extra_exam:
         extra_exam = Essay(title="Egzamin Dodatkowy", is_exam=True, student_id=student.id)
         db.session.add(extra_exam)
-    t1 = request.form.get('topic1', 'Temat 1')
-    t2 = request.form.get('topic2', 'Temat 2')
-    extra_exam.topic_full = f"{t1}|||{t2}"
+    extra_exam.topic_full = f"{request.form.get('topic1', '')}|||{request.form.get('topic2', '')}"
     db.session.commit()
     return redirect(url_for('admin_student_detail', student_id=student.id))
 
@@ -678,9 +618,7 @@ def update_extra_exam(student_id):
 def return_essay(essay_id):
     essay = Essay.query.get_or_404(essay_id)
     essay.is_completed = False
-    all_notifs = Notification.query.filter(Notification.message.contains(essay.student.name)).all()
-    for n in all_notifs:
-        db.session.delete(n)
+    Notification.query.filter(Notification.message.contains(essay.student.name)).delete()
     db.session.commit()
     return redirect(url_for('admin_student_detail', student_id=essay.student_id))
 
@@ -690,11 +628,7 @@ def save_feedback(essay_id):
     essay = Essay.query.get_or_404(essay_id)
     essay.feedback = request.form.get('feedback')
     essay.marked_content = request.form.get('marked_content')
-    
-    all_notifs = Notification.query.filter(Notification.message.contains(essay.student.name)).all()
-    for n in all_notifs:
-        db.session.delete(n)
-
+    Notification.query.filter(Notification.message.contains(essay.student.name)).delete()
     db.session.commit()
     return redirect(url_for('admin_student_detail', student_id=essay.student_id))
 
@@ -722,19 +656,13 @@ def exam_direct_link(url_slug):
 def exam_extra_direct_link(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     exam_essay = Essay.query.filter_by(student_id=student.id, title="Egzamin Dodatkowy").first()
-    if not exam_essay:
-        return "Egzamin Dodatkowy nie został jeszcze utworzony.", 404
-    custom_topics = ["Brak tematu 1", "Brak tematu 2"]
-    if exam_essay.topic_full and '|||' in exam_essay.topic_full:
-        custom_topics = exam_essay.topic_full.split('|||')
-    return render_template('qa/write.html', essay=exam_essay, exam_topics=custom_topics)
+    topics = exam_essay.topic_full.split('|||') if exam_essay and exam_essay.topic_full else ["Brak tematu 1", "Brak tematu 2"]
+    return render_template('qa/write.html', essay=exam_essay, exam_topics=topics)
 
 @app.route('/write/<int:essay_id>')
 def write_essay(essay_id):
     essay = Essay.query.get_or_404(essay_id)
-    topics = EXAM_TOPICS
-    if essay.title == "Egzamin Dodatkowy":
-        topics = essay.topic_full.split('|||') if essay.topic_full and '|||' in essay.topic_full else ["Brak tematu 1", "Brak tematu 2"]
+    topics = essay.topic_full.split('|||') if essay.title == "Egzamin Dodatkowy" and essay.topic_full else EXAM_TOPICS
     return render_template('qa/write.html', essay=essay, exam_topics=topics)
 
 @app.route('/api/save/<int:essay_id>', methods=['POST'])
@@ -743,25 +671,18 @@ def auto_save(essay_id):
     data = request.get_json()
     essay.content = data.get('content', essay.content)
     essay.time_spent = data.get('time_spent', essay.time_spent)
-    if 'chosen_topic' in data:
-        essay.chosen_topic = data['chosen_topic']
-    
+    if 'chosen_topic' in data: essay.chosen_topic = data['chosen_topic']
     became_completed = False
     if data.get('is_completed') and not essay.is_completed:
         essay.is_completed = True
         became_completed = True
-    
-    now = datetime.now()
-    if not essay.started_at: essay.started_at = now
-    essay.last_edited_at = now
+    essay.last_edited_at = datetime.now()
+    if not essay.started_at: essay.started_at = datetime.now()
     db.session.commit()
-
     if became_completed:
         msg = f"<a href='/admin/student/{essay.student_id}' class='notif-link'><b>{essay.student.name}</b> ukończył/a: '{essay.title[:30]}'</a>"
-        notif = Notification(message=msg, recipient_id=essay.student.creator_id, student_id=essay.student_id)
-        db.session.add(notif)
+        db.session.add(Notification(message=msg, recipient_id=essay.student.creator_id, student_id=essay.student_id))
         db.session.commit()
-        
     return jsonify({"status": "success"})
 
 @app.route('/api/reset/<int:essay_id>', methods=['POST'])

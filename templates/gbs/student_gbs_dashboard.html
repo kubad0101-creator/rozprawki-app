@@ -2,87 +2,252 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GBS Dashboard - {{ student.name }}</title>
-</head>
-<body style="font-family: sans-serif; padding: 40px; background: #fdfdfd; max-width: 1100px; margin: auto;">
-    
-    <div style="text-align: center; margin-bottom: 40px;">
-        <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="Logo" style="height: 60px;">
-        <h2>Witaj, {{ student.name }}</h2>
-        <p style="color: #666;">Kierunek: <strong>{{ student.major.name if student.major else 'Brak przypisanego kierunku' }}</strong></p>
-    </div>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+        }
 
-    <div style="display: flex; gap: 30px; align-items: flex-start;">
-        
-        <div style="flex: 2; display: flex; flex-direction: column; gap: 25px;">
-            
-            <div style="background: linear-gradient(135deg, #001f5b, #1a365d); border-radius: 12px; padding: 30px; text-align: center; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                <h3 style="margin-top: 0; font-size: 22px;">⭐ Najważniejsze materiały GBS</h3>
-                <p style="color: #d1ecf1; margin-bottom: 25px;">Przeczytaj uważnie, zanim przystąpisz do rozwiązywania zadań.</p>
-                
-                <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
-                    <button onclick="openModal('/gbs/materials/writing_guide')" style="flex: 1; min-width: 220px; background: white; color: #333; padding: 25px; border-radius: 10px; border: none; cursor: pointer; border-bottom: 5px solid #c8102e; transition: 0.2s;">
-                        <div style="font-size: 40px; margin-bottom: 15px;">✍️</div>
-                        <h4 style="margin: 0 0 10px 0; font-size: 16px;">Jak pisać odpowiedzi?</h4>
-                    </button>
-                    <button onclick="openModal('/gbs/materials/exam_info')" style="flex: 1; min-width: 220px; background: white; color: #333; padding: 25px; border-radius: 10px; border: none; cursor: pointer; border-bottom: 5px solid #17a2b8; transition: 0.2s;">
-                        <div style="font-size: 40px; margin-bottom: 15px;">🎓</div>
-                        <h4 style="margin: 0 0 10px 0; font-size: 16px;">Informacje o Egzaminie</h4>
-                    </button>
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 48px 20px 70px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 15% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+
+        .wrap { max-width: 720px; margin: auto; position: relative; }
+
+        .theme-toggle {
+            position: absolute;
+            top: -10px;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+        .theme-toggle .toggle-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        .switch {
+            position: relative;
+            width: 56px;
+            height: 30px;
+            border-radius: 999px;
+            background: var(--toggle-bg);
+            border: 1px solid var(--toggle-border);
+            cursor: pointer;
+            transition: background 0.25s ease, border-color 0.25s ease;
+            flex-shrink: 0;
+        }
+        .switch .knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(124,92,255,0.4);
+            transition: transform 0.25s ease;
+        }
+        html[data-theme="light"] .switch .knob { transform: translateX(26px); }
+
+        .header { text-align: center; margin-bottom: 44px; padding-top: 46px; }
+        .header img { height: 92px; width: auto; border-radius: 14px; margin-bottom: 20px; }
+        .header h2 { margin: 0 0 8px; font-size: 26px; font-weight: 800; letter-spacing: -0.3px; }
+        .header p { color: var(--text-muted); font-size: 15px; margin: 0; }
+        .header strong { color: var(--text-main); }
+
+        .tasks { display: flex; flex-direction: column; gap: 22px; }
+
+        .task-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-soft);
+            border-radius: 18px;
+            padding: 32px 28px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease, background 0.25s ease;
+            box-shadow: 0 4px 18px rgba(20,15,40,0.03);
+        }
+        .task-card:hover { transform: translateY(-3px); border-color: var(--border-strong); }
+        .task-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+        .task-card.homework::before { background: linear-gradient(90deg, #e0294f, #ff5f7e); }
+        .task-card.math::before { background: linear-gradient(90deg, #2d3fb0, #7c5cff); }
+        .task-card.materials::before { background: linear-gradient(90deg, #1fb5a8, #23c1b3); }
+
+        .task-card h3 {
+            margin: 6px 0 10px;
+            font-size: 19px;
+            font-weight: 800;
+        }
+        .task-card.homework h3 { color: #ff8b9e; }
+        .task-card.math h3 { color: #9db3ff; }
+        .task-card.materials h3 { color: #4fd1c5; }
+        html[data-theme="light"] .task-card.homework h3 { color: #c8102e; }
+        html[data-theme="light"] .task-card.math h3 { color: #2d3fb0; }
+        html[data-theme="light"] .task-card.materials h3 { color: #17a2b8; }
+
+        .material-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+        .material-link {
+            display: block; background: rgba(35,193,179,0.1); color: #4fd1c5; padding: 13px;
+            text-decoration: none; border-radius: 8px; font-weight: 800; border: 1px solid rgba(35,193,179,0.3);
+            transition: transform 0.15s ease, background 0.15s ease; font-size: 14px;
+        }
+        .material-link:hover { transform: translateY(-2px); background: rgba(35,193,179,0.16); }
+        html[data-theme="light"] .material-link { color: #0c5460; }
+        .no-materials { color: var(--text-muted); font-style: italic; font-size: 14px; }
+
+        .task-card p { color: var(--text-muted); font-size: 14px; margin: 0 0 22px; }
+
+        .task-btn {
+            display: inline-block;
+            padding: 13px 28px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 15px;
+            color: #fff;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .task-btn:hover { transform: translateY(-2px); }
+        .task-btn.homework { background: linear-gradient(135deg, #d63451, #ef4759); box-shadow: 0 8px 20px rgba(224,41,79,0.3); }
+        .task-btn.math { background: linear-gradient(135deg, #2d3fb0, #7c5cff); box-shadow: 0 8px 20px rgba(124,92,255,0.3); }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+
+        <div class="theme-toggle">
+            <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+            <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                <div class="knob" id="themeKnob">🌙</div>
+            </div>
+        </div>
+
+        <div class="header">
+            <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="OpenUK Study Logo">
+            <h2>Witaj, {{ student.name }}</h2>
+            <p>Kierunek: <strong>{{ student.major.name if student.major else 'Brak przypisanego kierunku' }}</strong></p>
+        </div>
+
+        <div class="tasks">
+            <div class="task-card materials">
+                <h3>📚 Materiały przygotowawcze</h3>
+                <p>Zapoznaj się z poniższymi materiałami przed przystąpieniem do testów.</p>
+                <div class="material-list">
+                    {% if student.university and student.university.materials %}
+                        {% for mat in student.university.materials %}
+                            <a href="{{ mat.content_url }}" target="_blank" class="material-link">📖 {{ mat.title }}</a>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-materials">Brak udostępnionych materiałów.</p>
+                    {% endif %}
                 </div>
             </div>
 
-            <div style="background: white; border: 2px solid #c8102e; padding: 25px; border-radius: 8px; text-align: center;">
-                <h3 style="margin-top: 0; color: #c8102e;">Zadanie Domowe (3 pytania)</h3>
-                <p style="color: #555;">Odpowiedz na przypisane pytania kierunkowe.</p>
-                <a href="/gbs/task/{{ student.url_slug }}" style="display: inline-block; background: #c8102e; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">Przejdź do Homework</a>
+            <div class="task-card homework">
+                <h3>Zadanie Domowe (3 pytania)</h3>
+                <p>Odpowiedz na przypisane pytania kierunkowe.</p>
+                <a href="/gbs/task/{{ student.url_slug }}" class="task-btn homework">Przejdź do Homework</a>
             </div>
 
             {% if student.has_math_test %}
-            <div style="background: white; border: 2px solid #001f5b; padding: 25px; border-radius: 8px; text-align: center;">
-                <h3 style="margin-top: 0; color: #001f5b;">Test z Matematyki</h3>
-                <p style="color: #555;">Krótki test wielokrotnego wyboru.</p>
-                <a href="/gbs/math/{{ student.url_slug }}" style="display: inline-block; background: #001f5b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">Rozpocznij Test</a>
+            <div class="task-card math">
+                <h3>Test z Matematyki</h3>
+                <p>Krótki test wielokrotnego wyboru.</p>
+                <a href="/gbs/math/{{ student.url_slug }}" class="task-btn math">Rozpocznij Test</a>
             </div>
             {% endif %}
-
-        </div>
-
-        <div style="flex: 1; background: white; border: 2px solid #e0e0e0; padding: 25px; border-radius: 8px; align-self: flex-start; position: sticky; top: 20px;">
-            <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px;">📁 Dodatkowe materiały do nauki</h3>
-            
-            <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
-                {% if materials %}
-                    {% for mat in materials %}
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #17a2b8;">
-                            <span style="font-weight: bold; color: #495057; display: block; margin-bottom: 10px; font-size: 14px;">📄 {{ mat.title }}</span>
-                            <a href="{{ mat.content_url }}" target="_blank" style="display: block; text-align: center; background: #17a2b8; color: white; padding: 8px 10px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 13px;">Otwórz plik / link</a>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p style="color: #999; font-style: italic; font-size: 13px; margin: 0;">Brak materiałów dodanych przez nauczyciela.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <div id="htmlModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center;">
-        <div style="position:relative; width:90%; max-width: 1000px; height:90%; background:white; border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow:hidden;">
-            <button onclick="closeModal()" style="position:absolute; top:10px; right:15px; background:#dc3545; color:white; border:none; border-radius:50%; width:35px; height:35px; cursor:pointer; font-weight:bold; font-size:18px; line-height:35px; text-align:center; padding:0; z-index:10;">×</button>
-            
-            <iframe id="htmlIframe" src="" style="width:100%; height:100%; border:none; border-radius:12px;"></iframe>
         </div>
     </div>
 
     <script>
-        function openModal(url) {
-            document.getElementById('htmlIframe').src = url;
-            document.getElementById('htmlModal').style.display = 'flex';
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') {
+                knob.textContent = '☀️';
+                label.textContent = 'Tryb jasny';
+            } else {
+                knob.textContent = '🌙';
+                label.textContent = 'Tryb ciemny';
+            }
         }
-        function closeModal() {
-            document.getElementById('htmlModal').style.display = 'none';
-            document.getElementById('htmlIframe').src = '';
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
         }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+
+            // jeśli student nie wybrał ręcznie motywu, śledzimy zmianę ustawień systemowych na żywo
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) {
+                        applyTheme(e.matches ? 'light' : 'dark');
+                    }
+                });
+            }
+        })();
     </script>
 </body>
 </html>

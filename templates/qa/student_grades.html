@@ -2,35 +2,144 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oceny i Feedback</title>
-</head>
-<body style="font-family: sans-serif; background: #f4f6f9; padding: 30px; max-width: 800px; margin: auto;">
-    
-    <a href="/student/{{ student.url_slug }}" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć na stronę główną</a>
-    
-    <div style="text-align: center; margin-bottom: 30px; margin-top: 20px;">
-        <h2>🎓 Oceny i Feedback</h2>
-        <p style="color: #666;">Tutaj pojawią się komentarze nauczyciela po sprawdzeniu Twoich prac.</p>
-    </div>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+            --content-bg: rgba(255,255,255,0.03);
+            --green: #3ecf8e;
+        }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+            --content-bg: rgba(32,28,48,0.02);
+        }
+        * { box-sizing: border-box; }
+        a { color: inherit; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 32px 20px 60px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 12% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        .wrap { max-width: 760px; margin: auto; }
 
-    <div style="display: flex; flex-direction: column; gap: 20px;">
-        {% set graded = student.essays | selectattr("feedback") | list %}
-        
-        {% for essay in graded %}
-            <div style="background: white; padding: 25px; border-radius: 8px; border-left: 5px solid #28a745; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                <h3 style="margin-top: 0; color: #155724;">{{ essay.title }}</h3>
-                <div style="font-size: 13px; color: #666; margin-bottom: 15px;">Sprawdzono: Praca ukończona z sukcesem.</div>
-                
-                <div style="background: #eef2f5; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; font-size: 14px; color: #333;">
-                    {{ essay.feedback | safe }}
+        .switch { position: relative; width: 52px; height: 28px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 11px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(24px); }
+        .theme-toggle { display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .back-link { color: var(--text-muted); font-weight: 700; text-decoration: none; font-size: 13px; }
+        .back-link:hover { color: var(--text-main); }
+
+        .head { text-align: center; margin: 26px 0 34px; }
+        .head h2 { margin: 0 0 8px; font-size: 24px; font-weight: 800; }
+        .head p { color: var(--text-muted); font-size: 14px; margin: 0; }
+
+        .grade-card { background: var(--card-bg); border: 1px solid var(--border-soft); border-left: 4px solid var(--green); border-radius: 14px; padding: 24px; margin-bottom: 20px; backdrop-filter: blur(10px); }
+        .grade-card h3 { margin: 0 0 6px; color: #7be8b6; font-size: 17px; font-weight: 800; }
+        .grade-card .meta { font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; }
+        .grade-card .fb {
+            background: var(--content-bg); padding: 16px; border-radius: 10px; font-family: 'Courier New', monospace;
+            white-space: pre-wrap; font-size: 14px; color: var(--text-main); border: 1px solid var(--border-soft); line-height: 1.6;
+        }
+
+        .empty-state { text-align: center; background: var(--card-bg); border: 1px solid var(--border-soft); padding: 44px 20px; border-radius: 16px; color: var(--text-muted); }
+        .empty-state .icn { font-size: 40px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+
+        <div class="topbar">
+            <a href="/student/{{ student.url_slug }}" class="back-link">⬅ Wróć na stronę główną</a>
+            <div class="theme-toggle">
+                <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+                <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                    <div class="knob" id="themeKnob">🌙</div>
                 </div>
             </div>
+        </div>
+
+        <div class="head">
+            <h2>🎓 Oceny i Feedback</h2>
+            <p>Tutaj pojawią się komentarze nauczyciela po sprawdzeniu Twoich prac.</p>
+        </div>
+
+        {% set graded = student.essays | selectattr("feedback") | list %}
+
+        {% for essay in graded %}
+            <div class="grade-card">
+                <h3>{{ essay.title }}</h3>
+                <div class="meta">Sprawdzono: Praca ukończona z sukcesem.</div>
+                <div class="fb">{{ essay.feedback | safe }}</div>
+            </div>
         {% else %}
-            <div style="text-align: center; background: white; padding: 40px; border-radius: 8px; color: #999;">
-                <div style="font-size: 40px; margin-bottom: 10px;">⏳</div>
-                <p>Nie masz jeszcze żadnych ocenionych prac.</p>
+            <div class="empty-state">
+                <div class="icn">⏳</div>
+                <p style="margin:0;">Nie masz jeszcze żadnych ocenionych prac.</p>
             </div>
         {% endfor %}
     </div>
+
+    <script>
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

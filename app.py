@@ -474,15 +474,18 @@ def panel_gbs_intake(intake_id):
     question_sets = {qs.major_id: qs for qs in intake.question_sets}
     return render_template('gbs/panel_gbs_intake.html', intake=intake, majors=majors, question_sets=question_sets)
 
-# ----------------- WIDOKI I AKCJE STUDENTA GBS -----------------
+# ----------------- WIDOKI I AKCJE STUDENTA -----------------
 
 @app.route('/student/<url_slug>')
 def student_dashboard(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
-    if student.university and "GBS" in student.university.name:
-        return render_template('gbs/student_gbs_dashboard.html', student=student)
     
+    # WYMUSZAMY POBRANIE MATERIAŁÓW (Naprawa pustej listy)
     materials = student.university.materials if student.university else []
+    
+    if student.university and "GBS" in student.university.name:
+        return render_template('gbs/student_gbs_dashboard.html', student=student, materials=materials)
+    
     return render_template('qa/student.html', student=student, exam_topics=EXAM_TOPICS, materials=materials)
 
 @app.route('/gbs/task/<url_slug>')

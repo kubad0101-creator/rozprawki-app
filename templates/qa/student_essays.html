@@ -2,36 +2,148 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ćwicz Rozprawki</title>
-</head>
-<body style="font-family: sans-serif; background: #f4f6f9; padding: 30px; max-width: 800px; margin: auto;">
-    
-    <a href="/student/{{ student.url_slug }}" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć na stronę główną</a>
-    
-    <div style="text-align: center; margin-bottom: 30px; margin-top: 20px;">
-        <h2>✍️ Ćwicz Rozprawki</h2>
-        <p style="color: #666;">Kolejne tematy odblokują się automatycznie po wysłaniu do oceny poprzedniej pracy.</p>
-    </div>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+        }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+        }
+        * { box-sizing: border-box; }
+        a { color: inherit; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 32px 20px 60px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 12% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        .wrap { max-width: 760px; margin: auto; }
 
-    <div style="display: flex; flex-direction: column; gap: 15px;">
+        .switch { position: relative; width: 52px; height: 28px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 11px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(24px); }
+        .theme-toggle { display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .back-link { color: var(--text-muted); font-weight: 700; text-decoration: none; font-size: 13px; }
+        .back-link:hover { color: var(--text-main); }
+
+        .head { text-align: center; margin: 26px 0 34px; }
+        .head h2 { margin: 0 0 8px; font-size: 24px; font-weight: 800; }
+        .head p { color: var(--text-muted); font-size: 14px; margin: 0; }
+
+        .essay-row {
+            background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 14px;
+            padding: 18px 22px; display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 14px; backdrop-filter: blur(10px); gap: 12px; flex-wrap: wrap;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .essay-row:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+        .essay-row .title { font-size: 15.5px; font-weight: 800; }
+
+        .status { padding: 9px 16px; border-radius: 999px; font-weight: 800; font-size: 13px; }
+        .status.locked { background: rgba(255,255,255,0.06); color: var(--text-muted); cursor: not-allowed; border: none; }
+        .status.done { background: rgba(62,207,142,0.14); color: #3ecf8e; }
+        .status.start { background: var(--gradient); color: #fff; text-decoration: none; box-shadow: 0 6px 16px rgba(124,92,255,0.3); transition: transform 0.15s ease; }
+        .status.start:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+
+        <div class="topbar">
+            <a href="/student/{{ student.url_slug }}" class="back-link">⬅ Wróć na stronę główną</a>
+            <div class="theme-toggle">
+                <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+                <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                    <div class="knob" id="themeKnob">🌙</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="head">
+            <h2>✍️ Ćwicz Rozprawki</h2>
+            <p>Kolejne tematy odblokują się automatycznie po wysłaniu do oceny poprzedniej pracy.</p>
+        </div>
+
         {% set ns = namespace(locked=false) %}
-        
         {% for essay in student.essays if not essay.is_exam %}
-            <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                <span style="font-size: 16px; font-weight: bold;">{{ loop.index }}. {{ essay.title }}</span>
-                
+            <div class="essay-row">
+                <span class="title">{{ loop.index }}. {{ essay.title }}</span>
+
                 {% if ns.locked %}
-                    <button disabled style="background: #e2e3e5; color: #6c757d; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: not-allowed;">🔒 Zablokowane</button>
+                    <button class="status locked" disabled>🔒 Zablokowane</button>
                 {% else %}
                     {% if essay.is_completed %}
-                        <span style="color: #28a745; font-weight: bold; background: #d4edda; padding: 8px 15px; border-radius: 5px;">✅ Oddane</span>
+                        <span class="status done">✅ Oddane</span>
                     {% else %}
-                        <a href="/write/{{ essay.id }}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📝 Rozpocznij</a>
+                        <a href="/write/{{ essay.id }}" class="status start">📝 Rozpocznij</a>
                         {% set ns.locked = true %}
                     {% endif %}
                 {% endif %}
             </div>
         {% endfor %}
     </div>
+
+    <script>
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

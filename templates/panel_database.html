@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Baza Materiałów i Pytań</title>
+    <style>
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; border: none; background: #e2e3e5; color: #333; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        .tab-btn.active { background: #17a2b8; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .item-row { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: flex-start; }
+    </style>
+</head>
+<body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1 style="color: #17a2b8; margin: 0;">🗄️ Centralna Baza (Materiały i Pytania)</h1>
+        <a href="/panel" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć do panelu</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div style="padding:15px; background:#d4edda; color:#155724; font-weight:bold; margin-bottom:15px; border-radius:5px;">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('mat')">📁 Pliki (Interview / Materiały)</button>
+        <button class="tab-btn" onclick="showTab('qa')">✍️ Tematy Rozprawek (QA)</button>
+        <button class="tab-btn" onclick="showTab('math')">🔢 Pytania Matematyczne</button>
+    </div>
+
+    <div id="mat" class="tab-content active">
+        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+            <h3>Dodaj materiał (Link zewnętrzny lub wgraj PDF)</h3>
+            <form method="POST" action="{{ url_for('panel_database') }}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="hidden" name="action" value="add_material">
+                <input type="text" name="title" placeholder="Tytuł pliku / materiału" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <select id="typeSelect" onchange="toggleType()" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                    <option value="link">Podaj link zewnętrzny (Drive / YouTube itp.)</option>
+                    <option value="pdf">Wgraj z dysku plik PDF</option>
+                </select>
+                <input type="url" name="link_url" id="linkInput" placeholder="https://..." style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <input type="file" name="pdf_file" id="pdfInput" accept=".pdf" style="padding: 10px; background: #f8f9fa; display: none;">
+                <select name="university_id" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                    {% for u in universities %}<option value="{{ u.id }}">{{ u.name }}</option>{% endfor %}
+                </select>
+                <button type="submit" style="padding: 10px; background: #17a2b8; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz materiał</button>
+            </form>
+        </div>
+        
+        <h3>Twoje dodane materiały:</h3>
+        {% for uni in universities %}
+            {% for mat in uni.materials %}
+            <div class="item-row" style="border-left: 4px solid #17a2b8;">
+                <div><strong>{{ mat.title }}</strong><br><small>Dla: {{ uni.name }} | Typ: {% if '/uploads/' in mat.content_url %}Plik PDF{% else %}Link Zewnętrzny{% endif %}</small></div>
+                <form method="POST" action="{{ url_for('panel_database') }}">
+                    <input type="hidden" name="action" value="del_material">
+                    <input type="hidden" name="material_id" value="{{ mat.id }}">
+                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
+                </form>
+            </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <div id="qa" class="tab-content">
+        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+            <h3>Dodaj nowy temat do Bazy Rozprawek QA</h3>
+            <p style="font-size: 13px; color: #666; margin-top:-10px;">Każdy nowo dodany student QA automatycznie otrzyma wszystkie tematy z tej bazy do napisania w panelu.</p>
+            <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="hidden" name="action" value="add_qa_topic">
+                <input type="text" name="title" placeholder="Krótki tytuł (np. Fast Food)" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <textarea name="topic_full" placeholder="Pełna treść tematu..." rows="4" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;"></textarea>
+                <button type="submit" style="padding: 10px; background: #007bff; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz temat w bazie</button>
+            </form>
+        </div>
+
+        <h3>Baza tematów:</h3>
+        {% for topic in qa_topics %}
+        <div class="item-row" style="border-left: 4px solid #007bff;">
+            <div style="flex:1;"><strong>{{ topic.title }}</strong><br><span style="font-size:14px; color:#555;">{{ topic.topic_full }}</span></div>
+            <form method="POST" action="{{ url_for('panel_database') }}" style="margin-left:20px;">
+                <input type="hidden" name="action" value="del_qa_topic">
+                <input type="hidden" name="topic_id" value="{{ topic.id }}">
+                <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="math" class="tab-content">
+        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+            <h3>Dodaj pytanie do puli Testu z Matematyki</h3>
+            <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 10px;">
+                <input type="hidden" name="action" value="add_math_q">
+                <textarea name="text" placeholder="Treść pytania" rows="2" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;"></textarea>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" name="opt_a" placeholder="Opcja A" required style="flex:1; padding: 10px; border: 1px solid #ccc;">
+                    <input type="text" name="opt_b" placeholder="Opcja B" required style="flex:1; padding: 10px; border: 1px solid #ccc;">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" name="opt_c" placeholder="Opcja C" required style="flex:1; padding: 10px; border: 1px solid #ccc;">
+                    <input type="text" name="opt_d" placeholder="Opcja D" required style="flex:1; padding: 10px; border: 1px solid #ccc;">
+                </div>
+                <select name="answer" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                    <option value="" disabled selected>Zaznacz prawidłową odpowiedź...</option>
+                    <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
+                </select>
+                <button type="submit" style="padding: 10px; background: #6f42c1; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top:10px;">Zapisz pytanie w bazie</button>
+            </form>
+        </div>
+
+        <h3>Baza pytań matematycznych:</h3>
+        {% for q in math_questions %}
+        <div class="item-row" style="border-left: 4px solid #6f42c1;">
+            <div>
+                <strong>{{ loop.index }}. {{ q.text }}</strong><br>
+                <span style="font-size:13px; color:#555;">a) {{ q.opt_a }} | b) {{ q.opt_b }} | c) {{ q.opt_c }} | d) {{ q.opt_d }}</span><br>
+                <span style="font-size:13px; color:#28a745; font-weight:bold;">Prawidłowa odpowiedź: {{ q.answer | upper }}</span>
+            </div>
+            <form method="POST" action="{{ url_for('panel_database') }}">
+                <input type="hidden" name="action" value="del_math_q">
+                <input type="hidden" name="question_id" value="{{ q.id }}">
+                <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function toggleType() {
+            let val = document.getElementById('typeSelect').value;
+            document.getElementById('linkInput').style.display = (val === 'link') ? 'block' : 'none';
+            document.getElementById('pdfInput').style.display = (val === 'pdf') ? 'block' : 'none';
+        }
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>

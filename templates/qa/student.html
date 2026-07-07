@@ -2,63 +2,200 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Studenta - {{ student.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column; justify-content: center; border-bottom: 5px solid transparent; transition: transform 0.2s; }
-        .box:hover { transform: translateY(-5px); }
-        .btn { display: inline-block; padding: 12px 20px; color: white; background: #007bff; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 15px; margin-top: auto; }
-        .btn-green { background: #28a745; }
-        .btn-outline { display: inline-block; padding: 10px 20px; color: #007bff; border: 2px solid #007bff; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 14px; margin-top: 10px; }
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+            --chip-bg: rgba(255,255,255,0.05);
+        }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+            --chip-bg: rgba(32,28,48,0.03);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 48px 20px 70px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 12% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        a { color: inherit; }
+        .wrap { max-width: 1080px; margin: auto; position: relative; }
+
+        .switch { position: relative; width: 56px; height: 30px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(26px); }
+        .theme-toggle { position: absolute; top: 4px; right: 0; display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+        .header { text-align: center; margin-bottom: 44px; padding-top: 42px; }
+        .header img { height: 84px; width: auto; border-radius: 14px; margin-bottom: 18px; }
+        .header h2 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.3px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; }
+
+        .box {
+            background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 18px;
+            padding: 32px 28px; text-align: center; display: flex; flex-direction: column; justify-content: flex-start;
+            position: relative; overflow: hidden; backdrop-filter: blur(10px);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .box:hover { transform: translateY(-4px); border-color: var(--border-strong); }
+        .box::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .box.essays::before { background: var(--gradient); }
+        .box.interview::before { background: linear-gradient(90deg, #1fb5a8, #23c1b3); }
+        .box.math::before { background: linear-gradient(90deg, #6f42c1, #9d6bff); }
+
+        .box .icon { font-size: 38px; margin-bottom: 14px; }
+        .box h3 { margin: 0 0 10px; font-size: 18px; font-weight: 800; }
+        .box.essays h3 { color: #c6b6ff; }
+        .box.interview h3 { color: #4fd1c5; }
+        .box.math h3 { color: #c3a6ff; }
+        html[data-theme="light"] .box.essays h3 { color: #6d3cf0; }
+        html[data-theme="light"] .box.interview h3 { color: #17a2b8; }
+        html[data-theme="light"] .box.math h3 { color: #6f42c1; }
+
+        .box p { color: var(--text-muted); font-size: 13.5px; margin: 0 0 24px; line-height: 1.55; }
+
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 22px; color: #fff; text-decoration: none; border-radius: 999px; font-weight: 800; font-size: 14px; margin-top: auto; transition: transform 0.15s ease; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-gradient { background: var(--gradient); box-shadow: 0 8px 20px rgba(124,92,255,0.32); }
+        .btn-purple { background: linear-gradient(135deg, #6f42c1, #9d6bff); box-shadow: 0 8px 20px rgba(111,66,193,0.32); }
+
+        .btn-outline {
+            display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; color: var(--text-main);
+            border: 1px solid var(--border-strong); text-decoration: none; border-radius: 999px; font-weight: 800;
+            font-size: 13px; margin-top: 12px; transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .btn-outline:hover { transform: translateY(-2px); border-color: #7c5cff; }
+        .badge-new { background: var(--gradient); color: #fff; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 800; margin-left: 6px; }
+
+        .material-stack { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .material-chip {
+            background: var(--chip-bg); color: var(--text-main); padding: 11px 14px; text-decoration: none;
+            border-radius: 8px; font-weight: 700; font-size: 13px; border: 1px solid var(--border-soft);
+            transition: transform 0.15s ease, border-color 0.15s ease; text-align: left;
+        }
+        .material-chip:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+        .no-materials { color: var(--text-muted); font-style: italic; font-size: 13px; }
     </style>
 </head>
-<body style="font-family: sans-serif; background: #f4f6f9; padding: 30px; max-width: 1000px; margin: auto;">
-    
-    <div style="text-align: center; margin-bottom: 40px;">
-        <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="Logo" style="height: 60px;">
-        <h2>Witaj, {{ student.name }}!</h2>
-    </div>
+<body>
+    <div class="wrap">
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-        
-        <div class="box" style="border-bottom-color: #007bff;">
-            <div style="font-size: 40px; margin-bottom: 15px;">✍️</div>
-            <h3 style="margin-top: 0;">Trening Rozprawek</h3>
-            <p style="color: #666; font-size: 14px; margin-bottom: 25px;">Zestaw przygotowujący z automatycznym systemem odblokowywania kolejnych tematów.</p>
-            
-            <a href="/qa/essays/{{ student.url_slug }}" class="btn">Ćwicz Rozprawki</a>
-            
-            {% set graded = student.essays | selectattr("feedback") | list %}
-            <a href="/qa/grades/{{ student.url_slug }}" class="btn-outline">
-                Oceny i Feedback {% if graded|length > 0 %}<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px;">Nowe ({{ graded|length }})</span>{% endif %}
-            </a>
-        </div>
-
-        <div class="box" style="border-bottom-color: #17a2b8;">
-            <div style="font-size: 40px; margin-bottom: 15px;">🎙️</div>
-            <h3 style="margin-top: 0;">Interview</h3>
-            <p style="color: #666; font-size: 14px; margin-bottom: 25px;">Materiały, PDFy i linki wgrane przez Twojego nauczyciela, pomagające w przygotowaniach.</p>
-            
-            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                {% for mat in materials %}
-                    <a href="{{ mat.content_url }}" target="_blank" style="background: #e2e3e5; color: #333; padding: 10px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 13px;">
-                        {% if '/uploads/' in mat.content_url %}⬇ Pobierz{% else %}🔗 Otwórz{% endif %} - {{ mat.title }}
-                    </a>
-                {% else %}
-                    <span style="color:#999; font-style:italic; font-size:13px;">Brak plików w bazie.</span>
-                {% endfor %}
+        <div class="theme-toggle">
+            <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+            <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                <div class="knob" id="themeKnob">🌙</div>
             </div>
         </div>
 
-        {% if student.has_math_test %}
-        <div class="box" style="border-bottom-color: #6f42c1;">
-            <div style="font-size: 40px; margin-bottom: 15px;">🔢</div>
-            <h3 style="margin-top: 0;">Test z Matematyki</h3>
-            <p style="color: #666; font-size: 14px; margin-bottom: 25px;">Pula pytań wielokrotnego wyboru w języku angielskim.</p>
-            
-            <a href="/math/{{ student.url_slug }}" class="btn" style="background: #6f42c1;">Rozpocznij Test</a>
+        <div class="header">
+            <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="OpenUK Study Logo">
+            <h2>Witaj, {{ student.name }}!</h2>
         </div>
-        {% endif %}
 
+        <div class="grid">
+
+            <div class="box essays">
+                <div class="icon">✍️</div>
+                <h3>Trening Rozprawek</h3>
+                <p>Zestaw przygotowujący z automatycznym systemem odblokowywania kolejnych tematów.</p>
+
+                <a href="/qa/essays/{{ student.url_slug }}" class="btn btn-gradient">Ćwicz Rozprawki</a>
+
+                {% set graded = student.essays | selectattr("feedback") | list %}
+                <a href="/qa/grades/{{ student.url_slug }}" class="btn-outline">
+                    Oceny i Feedback {% if graded|length > 0 %}<span class="badge-new">Nowe ({{ graded|length }})</span>{% endif %}
+                </a>
+            </div>
+
+            <div class="box interview">
+                <div class="icon">🎙️</div>
+                <h3>Interview</h3>
+                <p>Materiały, PDFy i linki wgrane przez Twojego nauczyciela, pomagające w przygotowaniach.</p>
+
+                <div class="material-stack">
+                    {% for mat in materials %}
+                        <a href="{{ mat.content_url }}" target="_blank" class="material-chip">
+                            {% if '/uploads/' in mat.content_url %}⬇ Pobierz{% else %}🔗 Otwórz{% endif %} — {{ mat.title }}
+                        </a>
+                    {% else %}
+                        <span class="no-materials">Brak plików w bazie.</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if student.has_math_test %}
+            <div class="box math">
+                <div class="icon">🔢</div>
+                <h3>Test z Matematyki</h3>
+                <p>Pula pytań wielokrotnego wyboru w języku angielskim.</p>
+
+                <a href="/math/{{ student.url_slug }}" class="btn btn-purple">Rozpocznij Test</a>
+            </div>
+            {% endif %}
+
+        </div>
     </div>
+
+    <script>
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Oceny i Feedback</title>
+</head>
+<body style="font-family: sans-serif; background: #f4f6f9; padding: 30px; max-width: 800px; margin: auto;">
+    
+    <a href="/student/{{ student.url_slug }}" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć na stronę główną</a>
+    
+    <div style="text-align: center; margin-bottom: 30px; margin-top: 20px;">
+        <h2>🎓 Oceny i Feedback</h2>
+        <p style="color: #666;">Tutaj pojawią się komentarze nauczyciela po sprawdzeniu Twoich prac.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        {% set graded = student.essays | selectattr("feedback") | list %}
+        
+        {% for essay in graded %}
+            <div style="background: white; padding: 25px; border-radius: 8px; border-left: 5px solid #28a745; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h3 style="margin-top: 0; color: #155724;">{{ essay.title }}</h3>
+                <div style="font-size: 13px; color: #666; margin-bottom: 15px;">Sprawdzono: Praca ukończona z sukcesem.</div>
+                
+                <div style="background: #eef2f5; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; font-size: 14px; color: #333;">
+                    {{ essay.feedback | safe }}
+                </div>
+            </div>
+        {% else %}
+            <div style="text-align: center; background: white; padding: 40px; border-radius: 8px; color: #999;">
+                <div style="font-size: 40px; margin-bottom: 10px;">⏳</div>
+                <p>Nie masz jeszcze żadnych ocenionych prac.</p>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

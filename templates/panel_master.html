@@ -2,292 +2,97 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Master - Open UK Study</title>
+    <title>Master Panel</title>
     <style>
-        :root {
-            --uk-navy: #001f5b;
-            --uk-red: #c8102e;
-            --light-bg: #f4f7f6;
-            --white: #ffffff;
-            --text-dark: #2c3e50;
-            --text-muted: #7f8c8d;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--light-bg);
-            color: var(--text-dark);
-            margin: 0;
-            padding: 0;
-        }
-        .header {
-            background-color: var(--white);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            padding: 15px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 4px solid var(--uk-navy);
-        }
-        .header img {
-            height: 60px;
-        }
-        .nav-links a {
-            text-decoration: none;
-            color: var(--white);
-            background-color: var(--uk-navy);
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: 0.3s;
-            margin-left: 10px;
-        }
-        .nav-links a:hover {
-            background-color: var(--uk-red);
-        }
-        
-        /* Styl dla powiadomień błędów i sukcesów */
-        .flash-messages {
-            max-width: 1200px; margin: 20px auto 0 auto; padding: 0 20px;
-        }
-        .alert {
-            padding: 15px; margin-bottom: 15px; border-radius: 6px; font-weight: bold;
-        }
-        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-
-        .container {
-            max-width: 1200px;
-            margin: 20px auto 40px auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 30px;
-        }
-        .card {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
-            border-top: 4px solid var(--uk-red);
-        }
-        h2 {
-            color: var(--uk-navy);
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 22px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group input[type="text"], .form-group input[type="password"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #dcdcdc;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 15px;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--uk-navy);
-            box-shadow: 0 0 0 2px rgba(0,31,91,0.2);
-        }
-        .checkbox-group {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-        .checkbox-label {
-            background: #eef2f5;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 14px;
-            border: 1px solid transparent;
-            transition: 0.2s;
-        }
-        .checkbox-label:hover {
-            border-color: var(--uk-navy);
-        }
-        .btn {
-            background-color: var(--uk-navy);
-            color: var(--white);
-            border: none;
-            padding: 12px 20px;
-            border-radius: 6px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.3s;
-        }
-        .btn:hover { background-color: var(--uk-red); }
-        .btn-small {
-            width: auto; padding: 8px 15px; font-size: 13px;
-        }
-        
-        .teacher-card {
-            border: 1px solid #eaeaea;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            background: #fafbfc;
-            display: flex;
-            justify-content: space-between;
-        }
-        .teacher-info h3 { margin: 0 0 5px 0; color: var(--uk-navy); }
-        .badge {
-            background: var(--uk-navy); color: var(--white);
-            padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px;
-        }
-        .stats-grid {
-            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px;
-            background: white; padding: 10px; border-radius: 6px; border: 1px dashed #ccc;
-        }
-        .stat-box { text-align: center; }
-        .stat-num { font-size: 20px; font-weight: bold; color: var(--uk-red); }
-        .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
-        
-        .edit-form { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; border: none; background: #e2e3e5; color: #333; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        .tab-btn.active { background: #001f5b; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
-<body>
+<body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto;">
 
-    <div class="header">
-        <!-- Zaktualizowana nazwa pliku bez spacji -->
-        <img src="{{ url_for('static', filename='logo_openuk.jpg') }}" alt="Open UK Study Logo">
-        <div class="nav-links">
-            <a href="{{ url_for('panel_dashboard') }}">Wróć do CRM</a>
-            <a href="{{ url_for('admin') }}">Moduł Rozprawek</a>
-        </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1 style="color: #001f5b; margin: 0;">🔑 Panel Zarządzania Master</h1>
+        <a href="/panel" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć do panelu głównego</a>
     </div>
 
-    <!-- SEKCJA KOMUNIKATÓW FLASH -->
-    <div class="flash-messages">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">
-                        {{ message }}
-                    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div style="padding:15px; background:#d4edda; color:#155724; font-weight:bold; margin-bottom:15px; border-radius:5px;">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('users')">Zarządzanie Nauczycielami</button>
+        <button class="tab-btn" onclick="showTab('files')">Pliki na serwerze ({{ folder_size_mb }} MB)</button>
+    </div>
+
+    <div id="users" class="tab-content active">
+        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+            <h3>Utwórz nowe konto nauczyciela</h3>
+            <form method="POST" action="/panel/master" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="hidden" name="action" value="create_teacher">
+                <input type="text" name="username" placeholder="Login nauczyciela" required style="padding: 10px;">
+                <input type="password" name="password" placeholder="Hasło" required style="padding: 10px;">
+                <label>Przypisz uczelnie do tego konta:</label>
+                {% for uni in all_unis %}
+                    <label><input type="checkbox" name="universities" value="{{ uni.id }}"> {{ uni.name }}</label>
                 {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
+                <button type="submit" style="padding: 10px; background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer;">Utwórz konto</button>
+            </form>
+        </div>
 
-    <div class="container">
-        <!-- Lewa kolumna: Dodawanie nauczyciela -->
-        <div>
-            <div class="card">
-                <h2>Dodaj Nauczyciela</h2>
-                <form method="POST" action="{{ url_for('panel_master') }}">
-                    <input type="hidden" name="action" value="create_teacher">
-                    
-                    <div class="form-group">
-                        <input type="text" name="username" placeholder="Login Nauczyciela" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="password" name="password" placeholder="Hasło początkowe" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label style="font-weight: 600; font-size: 14px; color: var(--text-dark);">Dostęp do uniwersytetów:</label>
-                        <div class="checkbox-group">
-                            {% for uni in all_unis %}
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="universities" value="{{ uni.id }}"> {{ uni.name }}
-                                </label>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn">Utwórz konto</button>
+        <h3>Lista Nauczycieli:</h3>
+        {% for teacher in teachers %}
+            <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #001f5b; display: flex; justify-content: space-between;">
+                <div>
+                    <strong>{{ teacher.username }}</strong><br>
+                    <small>Przypisany do: {% for u in teacher.universities %}{{ u.name }}{% if not loop.last %}, {% endif %}{% endfor %}</small>
+                </div>
+                <form method="POST" action="/panel/master">
+                    <input type="hidden" name="action" value="delete_teacher">
+                    <input type="hidden" name="teacher_id" value="{{ teacher.id }}">
+                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold;">Usuń</button>
                 </form>
             </div>
-        </div>
+        {% endfor %}
+    </div>
 
-        <!-- Prawa kolumna: Lista i Raporty -->
-        <div>
-            <div class="card" style="border-top-color: var(--uk-navy);">
-                <h2>Raporty i Zarządzanie Kontami</h2>
-                
-                {% for teacher in teachers %}
-                    <div class="teacher-card">
-                        <div style="flex: 1;">
-                            <div class="teacher-info">
-                                <h3>{{ teacher.username }}</h3>
-                                <div>
-                                    {% for u in teacher.universities %}
-                                        <span class="badge">{{ u.name }}</span>
-                                    {% else %}
-                                        <span style="color: var(--uk-red); font-size: 12px;">Brak przypisanych uniwersytetów</span>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            
-                            <div class="stats-grid">
-                                <div class="stat-box">
-                                    <div class="stat-num">{{ stats[teacher.id].active }}</div>
-                                    <div class="stat-label">Aktywni studenci</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-num">{{ stats[teacher.id].archived }}</div>
-                                    <div class="stat-label">Zarchiwizowani</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-num">{{ stats[teacher.id].total }}</div>
-                                    <div class="stat-label">Wszyscy dodani</div>
-                                </div>
-                            </div>
-
-                            <div class="edit-form" id="edit-{{ teacher.id }}">
-                                <form method="POST" action="{{ url_for('panel_master') }}" style="display: flex; flex-direction: column; gap: 10px;">
-                                    <input type="hidden" name="action" value="edit_teacher">
-                                    <input type="hidden" name="teacher_id" value="{{ teacher.id }}">
-                                    
-                                    <input type="password" name="new_password" placeholder="Wpisz nowe hasło (opcjonalnie)" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                    
-                                    <div style="font-size: 13px;">Zaktualizuj dostęp do uniwersytetów:</div>
-                                    <div class="checkbox-group">
-                                        {% for uni in all_unis %}
-                                            <label class="checkbox-label" style="padding: 4px 10px; font-size: 12px;">
-                                                <input type="checkbox" name="universities" value="{{ uni.id }}" {% if uni in teacher.universities %}checked{% endif %}> {{ uni.name }}
-                                            </label>
-                                        {% endfor %}
-                                    </div>
-                                    <button type="submit" class="btn btn-small" style="background-color: #27ae60; margin-top: 5px;">Zapisz zmiany</button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end; margin-left: 20px;">
-                            <button onclick="toggleEdit('{{ teacher.id }}')" class="btn btn-small" style="background-color: var(--text-muted);">Edytuj / Zmień hasło</button>
-                            
-                            <form action="{{ url_for('panel_master') }}" method="POST" onsubmit="return confirm('Czy na pewno chcesz usunąć tego nauczyciela?');">
-                                <input type="hidden" name="action" value="delete_teacher">
-                                <input type="hidden" name="teacher_id" value="{{ teacher.id }}">
-                                <button type="submit" class="btn btn-small" style="background-color: var(--uk-red);">Usuń konto</button>
-                            </form>
-                        </div>
-                    </div>
-                {% else %}
-                    <p style="color: var(--text-muted); font-style: italic;">Brak kont nauczycieli w systemie.</p>
-                {% endfor %}
-
+    <div id="files" class="tab-content">
+        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="margin: 0; color: #001f5b;">Całkowity rozmiar wgranych plików</h3>
+                <p style="margin: 5px 0 0 0; color: #666;">Zajmowane miejsce na dysku hostingu.</p>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 24px; font-weight: bold; color: #17a2b8;">{{ folder_size_mb }} MB</span><br>
+                <small style="color: #999;">({{ folder_size_gb }} GB)</small>
             </div>
         </div>
+
+        <h3>Zarządzanie fizycznymi plikami (PDF, HTML, Video):</h3>
+        {% for mat in all_materials %}
+            <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #17a2b8; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>{{ mat.title }}</strong><br>
+                    <small>Używany w: {{ mat.university.name }} | Kat: {{ mat.category }}</small><br>
+                    <a href="{{ mat.content_url }}" target="_blank" style="font-size: 12px; color: #007bff;">[Podgląd pliku]</a>
+                </div>
+                <form method="POST" action="/panel/master" style="margin: 0;" onsubmit="return confirm('To usunie plik definitywnie z serwera. Kontynuować?');">
+                    <input type="hidden" name="action" value="delete_file">
+                    <input type="hidden" name="material_id" value="{{ mat.id }}">
+                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Skasuj z serwera</button>
+                </form>
+            </div>
+        {% else %}
+            <p style="color: #666; font-style: italic;">Brak fizycznych plików (tylko linki zewn.).</p>
+        {% endfor %}
     </div>
 
     <script>
-        function toggleEdit(teacherId) {
-            const form = document.getElementById('edit-' + teacherId);
-            if (form.style.display === 'block') {
-                form.style.display = 'none';
-            } else {
-                form.style.display = 'block';
-            }
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
         }
     </script>
 </body>

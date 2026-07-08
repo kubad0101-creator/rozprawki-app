@@ -26,7 +26,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# ----------------- MODELE BAZY DANYCH -----------------
+# ----------------- STARE I WSPÓLNE MODELE -----------------
 
 teacher_university = db.Table('teacher_university',
     db.Column('teacher_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE')),
@@ -53,6 +53,7 @@ class Material(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     content_url = db.Column(db.String(500), nullable=False) 
+    category = db.Column(db.String(50), default='interview') # 'interview' lub 'essay'
     university_id = db.Column(db.Integer, db.ForeignKey('universities.id', ondelete='CASCADE'), nullable=False)
 
 class QaTopic(db.Model):
@@ -60,6 +61,7 @@ class QaTopic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     topic_full = db.Column(db.Text, nullable=False)
+    order_index = db.Column(db.Integer, default=0)
 
 class MathQuestion(db.Model):
     __tablename__ = 'math_questions'
@@ -70,6 +72,7 @@ class MathQuestion(db.Model):
     opt_c = db.Column(db.String(200), nullable=False)
     opt_d = db.Column(db.String(200), nullable=False)
     answer = db.Column(db.String(1), nullable=False)
+    university_id = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=True)
 
 class GbsMajor(db.Model):
     __tablename__ = 'gbs_majors'
@@ -196,7 +199,10 @@ def setup_database():
         'ALTER TABLE student_v5 ADD COLUMN has_math_test BOOLEAN DEFAULT FALSE',
         'ALTER TABLE student_v5 ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
         'ALTER TABLE notification_v5 ADD COLUMN recipient_id INTEGER REFERENCES users(id)',
-        'ALTER TABLE notification_v5 ADD COLUMN student_id INTEGER REFERENCES student_v5(id)'
+        'ALTER TABLE notification_v5 ADD COLUMN student_id INTEGER REFERENCES student_v5(id)',
+        'ALTER TABLE materials ADD COLUMN category VARCHAR(50) DEFAULT \'interview\'',
+        'ALTER TABLE qa_topics ADD COLUMN order_index INTEGER DEFAULT 0',
+        'ALTER TABLE math_questions ADD COLUMN university_id INTEGER REFERENCES universities(id)'
     ]
     for q in queries:
         try: db.session.execute(text(q)); db.session.commit()
@@ -208,11 +214,14 @@ def setup_database():
     db.session.commit()
 
     if QaTopic.query.count() == 0:
-        for t, tf in PRACTICE_TOPICS: db.session.add(QaTopic(title=t, topic_full=tf))
+        for idx, (t, tf) in enumerate(PRACTICE_TOPICS): 
+            db.session.add(QaTopic(title=t, topic_full=tf, order_index=idx))
         db.session.commit()
     
     if MathQuestion.query.count() == 0:
-        for mq in MATH_QUESTIONS: db.session.add(MathQuestion(text=mq['text'], opt_a=mq['a'], opt_b=mq['b'], opt_c=mq['c'], opt_d=mq['d'], answer=mq['ans']))
+        # Przypisujemy bazowe pytania do GBS jako domyslne
+        for mq in MATH_QUESTIONS: 
+            db.session.add(MathQuestion(text=mq['text'], opt_a=mq['a'], opt_b=mq['b'], opt_c=mq['c'], opt_d=mq['d'], answer=mq['ans'], university_id=gbs_uni.id))
         db.session.commit()
 
     if not User.query.filter_by(username="Julia").first(): db.session.add(User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin"))
@@ -247,6 +256,28 @@ def sort_students(students, sort_by):
     else: students.sort(key=lambda s: s.name.lower())
     return students
 
+def get_dir_size(path):
+    total = 0
+    for dirpath, dirnames, filenames in os.walk(path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if not os.path.islink(fp):
+                total += os.path.getsize(fp)
+    return total
+
+ARCHIVED_MSG = """
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Konto archiwalne</title></head>
+<body style="text-align:center; padding: 50px; font-family: sans-serif; background: #f4f6f9;">
+    <h2 style="color: #dc3545;">Konto archiwalne</h2>
+    <p style="font-size: 18px;">Twoje konto nie jest już aktywne. Skontaktuj się z Open UK Study aby przywrócić dostęp do materiałów.</p>
+</body></html>
+"""
+
+def check_archived(student):
+    if student.is_archived: return ARCHIVED_MSG, 403
+    return None
+
 # ----------------- ŚCIEŻKI AUTORYZACJI -----------------
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -264,7 +295,7 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# ----------------- NOWY PANEL KOORDYNACJI SYSTEMU PŁATFORMY (/panel) -----------------
+# ----------------- PANEL KOORDYNACJI SYSTEMU PŁATFORMY (/panel) -----------------
 
 @app.route('/panel')
 @login_required
@@ -272,6 +303,8 @@ def panel_dashboard():
     user = User.query.get(session['user_id'])
     universities = University.query.all() if user.role == 'admin' else user.universities
     uni_ids = [u.id for u in universities]
+    has_gbs = any("GBS" in u.name for u in universities)
+    has_qa = any("QA" in u.name for u in universities)
     
     majors = GbsMajor.query.all()
     intakes = GbsIntake.query.all()
@@ -291,7 +324,7 @@ def panel_dashboard():
     qa_students = [s for s in students if s.university and 'QA' in s.university.name]
     gbs_students = [s for s in students if s.university and 'GBS' in s.university.name]
     
-    return render_template('panel_dashboard.html', qa_students=qa_students, gbs_students=gbs_students, universities=universities, majors=majors, intakes=intakes, teacher_name=user.username, notifications=notifications, user=user, sort_by=sort_by, search_query=search_query)
+    return render_template('panel_dashboard.html', qa_students=qa_students, gbs_students=gbs_students, universities=universities, majors=majors, intakes=intakes, teacher_name=user.username, notifications=notifications, user=user, sort_by=sort_by, search_query=search_query, has_gbs=has_gbs, has_qa=has_qa)
 
 @app.route('/panel/student/add', methods=['POST'])
 @login_required
@@ -313,8 +346,9 @@ def panel_add_student():
         db.session.add(new_student)
     else:
         db.session.add(new_student)
-        for topic in QaTopic.query.all():
-            db.session.add(Essay(title=topic.title, topic_full=topic.topic_full, is_exam=False, student=new_student))
+        topics = QaTopic.query.order_by(QaTopic.order_index).all()
+        for t in topics:
+            db.session.add(Essay(title=t.title, topic_full=t.topic_full, is_exam=False, student=new_student))
         db.session.add(Essay(title="Egzamin", topic_full="[EGZAMIN] Tematy będą dostępne po wejściu.", is_exam=True, student=new_student))
         db.session.add(Essay(title="Egzamin Dodatkowy", topic_full="Wpisz temat nr 1...|||Wpisz temat nr 2...", is_exam=True, student=new_student))
     
@@ -329,6 +363,8 @@ def panel_add_student():
 def panel_database():
     user = User.query.get(session['user_id'])
     universities = University.query.all() if user.role == 'admin' else user.universities
+    has_gbs = any("GBS" in u.name for u in universities)
+    has_qa = any("QA" in u.name for u in universities)
     
     if request.method == 'POST':
         action = request.form.get('action')
@@ -337,20 +373,25 @@ def panel_database():
         if action == 'add_material':
             title = request.form.get('title')
             uni_id = request.form.get('university_id')
+            category = request.form.get('category', 'interview')
             link_url = request.form.get('link_url')
             file = request.files.get('pdf_file')
             if not uni_id and len(universities) == 1: uni_id = universities[0].id
             
             content_url = ""
             if file and file.filename != '':
-                if file.filename.endswith('.pdf'):
+                ext = file.filename.split('.')[-1].lower()
+                if ext in ['pdf', 'html', 'mp4', 'mov', 'avi']:
                     unique_filename = f"{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
                     content_url = url_for('download_file', name=unique_filename)
+                else:
+                    flash("Niedozwolony format pliku. Użyj PDF, HTML lub Video.", "error")
+                    return redirect(url_for('panel_database'))
             elif link_url: content_url = link_url
             
             if title and content_url and uni_id:
-                db.session.add(Material(title=title, content_url=content_url, university_id=int(uni_id)))
+                db.session.add(Material(title=title, content_url=content_url, category=category, university_id=int(uni_id)))
                 db.session.commit()
                 flash("Materiał dodany!", "success")
                 
@@ -360,9 +401,17 @@ def panel_database():
             
         # Akcje Rozprawek QA
         elif action == 'add_qa_topic':
-            db.session.add(QaTopic(title=request.form.get('title'), topic_full=request.form.get('topic_full')))
+            order_val = request.form.get('order_index', 0)
+            db.session.add(QaTopic(title=request.form.get('title'), topic_full=request.form.get('topic_full'), order_index=int(order_val)))
             db.session.commit()
-            flash("Temat rozprawki zapisany. Pojawi się u nowych studentów.", "success")
+            flash("Temat rozprawki zapisany.", "success")
+            
+        elif action == 'edit_qa_order':
+            t = QaTopic.query.get(request.form.get('topic_id'))
+            if t: 
+                t.order_index = int(request.form.get('order_index', 0))
+                db.session.commit()
+                flash("Kolejność zaktualizowana.", "success")
             
         elif action == 'del_qa_topic':
             t = QaTopic.query.get(request.form.get('topic_id'))
@@ -370,7 +419,9 @@ def panel_database():
             
         # Akcje Testu Matematyki
         elif action == 'add_math_q':
-            db.session.add(MathQuestion(text=request.form.get('text'), opt_a=request.form.get('opt_a'), opt_b=request.form.get('opt_b'), opt_c=request.form.get('opt_c'), opt_d=request.form.get('opt_d'), answer=request.form.get('answer')))
+            uni_id = request.form.get('university_id')
+            if not uni_id and len(universities) == 1: uni_id = universities[0].id
+            db.session.add(MathQuestion(text=request.form.get('text'), opt_a=request.form.get('opt_a'), opt_b=request.form.get('opt_b'), opt_c=request.form.get('opt_c'), opt_d=request.form.get('opt_d'), answer=request.form.get('answer'), university_id=int(uni_id)))
             db.session.commit()
             flash("Pytanie matematyczne dodane.", "success")
             
@@ -380,22 +431,23 @@ def panel_database():
 
         return redirect(url_for('panel_database'))
 
-    return render_template('panel_database.html', universities=universities, qa_topics=QaTopic.query.all(), math_questions=MathQuestion.query.all(), user=user)
+    qa_topics = QaTopic.query.order_by(QaTopic.order_index).all()
+    math_questions = MathQuestion.query.all()
+    return render_template('panel_database.html', universities=universities, qa_topics=qa_topics, math_questions=math_questions, user=user, has_gbs=has_gbs, has_qa=has_qa)
 
 @app.route('/uploads/<name>')
 def download_file(name):
     return send_from_directory(app.config['UPLOAD_FOLDER'], name, as_attachment=False)
 
-# ----------------- TRASY DLA HTML (GBS) -----------------
-@app.route('/gbs/materials/writing_guide')
-def gbs_writing_guide(): return render_template('gbs/writing_guide.html')
-@app.route('/gbs/materials/exam_info')
-def gbs_exam_info(): return render_template('gbs/exam_info.html')
-
 # ----------------- PANEL GBS (KONFIGURACJA NABORÓW I PYTAŃ) -----------------
 @app.route('/panel/gbs', methods=['GET', 'POST'])
 @login_required
 def panel_gbs():
+    user = User.query.get(session['user_id'])
+    universities = University.query.all() if user.role == 'admin' else user.universities
+    has_gbs = any("GBS" in u.name for u in universities)
+    has_qa = any("QA" in u.name for u in universities)
+    
     if request.method == 'POST':
         action = request.form.get('action')
         if action == 'add_intake':
@@ -408,7 +460,7 @@ def panel_gbs():
             i = GbsIntake.query.get(request.form.get('intake_id'))
             if i: db.session.delete(i); db.session.commit()
         return redirect(url_for('panel_gbs'))
-    return render_template('gbs/panel_gbs.html', intakes=GbsIntake.query.all())
+    return render_template('gbs/panel_gbs.html', intakes=GbsIntake.query.all(), has_qa=has_qa, has_gbs=has_gbs)
 
 @app.route('/panel/gbs/intake/<int:intake_id>', methods=['GET', 'POST'])
 @login_required
@@ -431,25 +483,37 @@ def panel_gbs_intake(intake_id):
 @app.route('/student/<url_slug>')
 def student_dashboard(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    archived_view = check_archived(student)
+    if archived_view: return archived_view
+    
     materials = student.university.materials if student.university else []
     if student.university and "GBS" in student.university.name:
         return render_template('gbs/student_gbs_dashboard.html', student=student, materials=materials)
-    # QA Dashboard
-    return render_template('qa/student.html', student=student, materials=materials)
+    
+    # Podział na kategorie dla QA
+    essay_materials = [m for m in materials if m.category == 'essay']
+    interview_materials = [m for m in materials if m.category == 'interview']
+    return render_template('qa/student.html', student=student, essay_materials=essay_materials, interview_materials=interview_materials)
 
 @app.route('/qa/essays/<url_slug>')
 def qa_essays(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    archived_view = check_archived(student)
+    if archived_view: return archived_view
     return render_template('qa/student_essays.html', student=student)
 
 @app.route('/qa/grades/<url_slug>')
 def qa_grades(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    archived_view = check_archived(student)
+    if archived_view: return archived_view
     return render_template('qa/student_grades.html', student=student)
 
 @app.route('/gbs/task/<url_slug>')
 def gbs_task(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    archived_view = check_archived(student)
+    if archived_view: return archived_view
     qset = GbsQuestionSet.query.filter_by(intake_id=student.gbs_intake_id, major_id=student.gbs_major_id).first()
     questions = [qset.q1, qset.q2, qset.q3] if qset else ["Pytanie 1 (Brak)", "Pytanie 2 (Brak)", "Pytanie 3 (Brak)"]
     return render_template('gbs/gbs_task.html', student=student, questions=questions, is_exam=(request.args.get('exam') == 'true'))
@@ -467,15 +531,18 @@ def gbs_submit(student_id):
 @app.route('/math/<url_slug>')
 def math_test(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    archived_view = check_archived(student)
+    if archived_view: return archived_view
     if not student.has_math_test: return "Brak dostępu do testu z matematyki", 403
-    questions = MathQuestion.query.all()
+    
+    questions = MathQuestion.query.filter_by(university_id=student.university_id).all()
     return render_template('gbs/math_test.html', student=student, questions=questions)
 
 @app.route('/api/math/submit/<int:student_id>', methods=['POST'])
 def math_submit(student_id):
     student = Student.query.get_or_404(student_id)
     data = request.get_json() 
-    questions = MathQuestion.query.all()
+    questions = MathQuestion.query.filter_by(university_id=student.university_id).all()
     score = sum(1 for q in questions if data.get(str(q.id)) == q.answer)
     db.session.add(MathTestResult(student_id=student.id, score=score, total=len(questions), answers_json=json.dumps(data)))
     db.session.add(Notification(message=f"<a href='/admin/student/{student.id}' class='notif-link'><b>{student.name}</b> ukończył/a test z matmy ({score}/{len(questions)}).</a>", recipient_id=student.creator_id, student_id=student.id))
@@ -497,8 +564,23 @@ def panel_master():
         elif action == 'delete_teacher':
             t = User.query.get(request.form.get('teacher_id'))
             if t: db.session.delete(t); db.session.commit()
+        elif action == 'delete_file':
+            m = Material.query.get(request.form.get('material_id'))
+            if m: 
+                filename = m.content_url.split('/')[-1]
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                if os.path.exists(filepath): os.remove(filepath)
+                db.session.delete(m)
+                db.session.commit()
+                flash("Plik całkowicie usunięty z serwera.", "success")
         return redirect(url_for('panel_master'))
-    return render_template('panel_master.html', teachers=User.query.filter_by(role='teacher').all(), all_unis=University.query.all(), stats={})
+    
+    size_bytes = get_dir_size(app.config['UPLOAD_FOLDER'])
+    folder_size_mb = round(size_bytes / (1024 * 1024), 2)
+    folder_size_gb = round(size_bytes / (1024 * 1024 * 1024), 4)
+    all_materials = Material.query.filter(Material.content_url.contains('/uploads/')).all()
+
+    return render_template('panel_master.html', teachers=User.query.filter_by(role='teacher').all(), all_unis=University.query.all(), folder_size_mb=folder_size_mb, folder_size_gb=folder_size_gb, all_materials=all_materials, stats={})
 
 # ----------------- FUNKCJE ROZPRAWEK (QA) -----------------
 @app.route('/admin')
@@ -591,14 +673,17 @@ def delete_notif(notif_id):
 @app.route('/exam/<url_slug>')
 def exam_direct_link(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    archived_view = check_archived(student)
+    if archived_view: return archived_view
     exam_essay = Essay.query.filter_by(student_id=student.id, title="Egzamin").first_or_404()
-    # Egzaminy mają stałe, globalne tematy
     topics = ["Some people think it is beneficial for old people to learn something new...", "Some people think that introducing children to team sports..."]
     return render_template('qa/write.html', essay=exam_essay, exam_topics=topics)
 
 @app.route('/exam_extra/<url_slug>')
 def exam_extra_direct_link(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
+    archived_view = check_archived(student)
+    if archived_view: return archived_view
     exam_essay = Essay.query.filter_by(student_id=student.id, title="Egzamin Dodatkowy").first()
     topics = exam_essay.topic_full.split('|||') if exam_essay and exam_essay.topic_full else ["Brak tematu 1", "Brak tematu 2"]
     return render_template('qa/write.html', essay=exam_essay, exam_topics=topics)
@@ -606,6 +691,9 @@ def exam_extra_direct_link(url_slug):
 @app.route('/write/<int:essay_id>')
 def write_essay(essay_id):
     essay = Essay.query.get_or_404(essay_id)
+    student = Student.query.get(essay.student_id)
+    archived_view = check_archived(student)
+    if archived_view: return archived_view
     topics = essay.topic_full.split('|||') if essay.title == "Egzamin Dodatkowy" and essay.topic_full else []
     return render_template('qa/write.html', essay=essay, exam_topics=topics)
 

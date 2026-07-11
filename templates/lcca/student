@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LCCA Panel - {{ student.name }}</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #f4f6f9, #e9ecef); 
+            height: 100vh; 
+            margin: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border-top: 6px solid #6f42c1;
+            max-width: 500px;
+            width: 90%;
+        }
+        h1 { color: #333; margin-top: 20px; font-size: 24px; }
+        p { color: #666; font-size: 16px; line-height: 1.5; }
+        .icon { font-size: 60px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <div class="icon">🚧</div>
+        <h1>Witaj, {{ student.name }}</h1>
+        <p>Platforma edukacyjna LCCA jest jeszcze w budowie.</p>
+        <p style="font-weight: bold; color: #6f42c1;">Wróć tu niedługo!</p>
+    </div>
+
+</body>
+</html>

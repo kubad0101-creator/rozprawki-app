@@ -42,17 +42,16 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), default='teacher', nullable=False)
-    # --- NOWE POLA DLA POCZTY GMAIL ---
     smtp_email = db.Column(db.String(120), nullable=True)
     smtp_password = db.Column(db.String(120), nullable=True)
     email_template = db.Column(db.Text, nullable=True)
-    # ----------------------------------
     universities = db.relationship('University', secondary=teacher_university, backref='teachers')
 
 class University(db.Model):
     __tablename__ = 'universities'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    email_template = db.Column(db.Text, nullable=True) # Szablon dla uczelni ustawiany w panelu Baza
     materials = db.relationship('Material', backref='university', lazy=True, cascade="all, delete-orphan")
     students = db.relationship('Student', backref='university', lazy=True)
 
@@ -182,7 +181,6 @@ def send_email_async(sender_email, sender_password, recipient_email, subject, bo
         msg['From'] = sender_email
         msg['To'] = recipient_email
 
-        # Połączenie przez bezpieczne SSL do Google
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(sender_email, sender_password)
             server.send_message(msg)
@@ -191,22 +189,24 @@ def send_email_async(sender_email, sender_password, recipient_email, subject, bo
         print(f"Błąd wysyłania e-maila: {e}")
 
 def trigger_welcome_email(teacher, student, request_host):
-    # Jeśli nauczyciel ma ustawiony adres, hasło i student podał email
     if not student.email or not teacher.smtp_email or not teacher.smtp_password:
-        return
+        return False
     
-    # Domyślna formatka, jeśli nauczyciel nic nie wpisał
-    default_template = "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nPozdrawiamy!"
-    template = teacher.email_template if teacher.email_template else default_template
-    
+    # PRIORYTET 1: Szablon ustawiony dla konkretnego Uniwersytetu w BAZIE DANYCH
+    # PRIORYTET 2: Szablon ustawiony w profilu nauczyciela w MASTER PANELU
+    template = student.university.email_template
+    if not template:
+        template = teacher.email_template
+    if not template:
+        template = "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nPozdrawiamy!"
+        
     link = f"https://{request_host}/student/{student.url_slug}"
     
-    # Podmiana dynamicznych tagów
     body = template.replace("{imie}", student.name).replace("{link}", link)
     subject = "Twój dostęp do platformy edukacyjnej"
     
-    # Odpal w tle, aby strona się nie przycinała
     threading.Thread(target=send_email_async, args=(teacher.smtp_email, teacher.smtp_password, student.email, subject, body)).start()
+    return True
 # ---------------------------------------------------------------
 
 
@@ -217,6 +217,7 @@ def setup_database():
         'ALTER TABLE users ADD COLUMN smtp_email VARCHAR(120)',
         'ALTER TABLE users ADD COLUMN smtp_password VARCHAR(120)',
         'ALTER TABLE users ADD COLUMN email_template TEXT',
+        'ALTER TABLE universities ADD COLUMN email_template TEXT',
         'ALTER TABLE student_v5 ADD COLUMN university_id INTEGER REFERENCES universities(id)',
         'ALTER TABLE student_v5 ADD COLUMN creator_id INTEGER REFERENCES users(id)',
         'ALTER TABLE student_v5 ADD COLUMN email VARCHAR(120)',
@@ -236,7 +237,8 @@ def setup_database():
 
     qa_uni = University.query.filter_by(name="QA Higher Education").first() or University(name="QA Higher Education")
     gbs_uni = University.query.filter_by(name="GBS").first() or University(name="GBS")
-    db.session.add_all([qa_uni, gbs_uni])
+    lcca_uni = University.query.filter_by(name="LCCA").first() or University(name="LCCA")
+    db.session.add_all([qa_uni, gbs_uni, lcca_uni])
     db.session.commit()
 
     if not User.query.filter_by(username="Julia").first(): db.session.add(User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin"))
@@ -318,8 +320,10 @@ def panel_dashboard():
     user = User.query.get(session['user_id'])
     universities = University.query.all() if user.role == 'admin' else user.universities
     uni_ids = [u.id for u in universities]
+    
     has_gbs = any("GBS" in u.name for u in universities)
     has_qa = any("QA" in u.name for u in universities)
+    has_lcca = any("LCCA" in u.name for u in universities)
     
     majors = GbsMajor.query.all()
     intakes = GbsIntake.query.all()
@@ -338,8 +342,9 @@ def panel_dashboard():
     
     qa_students = [s for s in students if s.university and 'QA' in s.university.name]
     gbs_students = [s for s in students if s.university and 'GBS' in s.university.name]
+    lcca_students = [s for s in students if s.university and 'LCCA' in s.university.name]
     
-    return render_template('panel_dashboard.html', qa_students=qa_students, gbs_students=gbs_students, universities=universities, majors=majors, intakes=intakes, teacher_name=user.username, notifications=notifications, user=user, sort_by=sort_by, search_query=search_query, has_gbs=has_gbs, has_qa=has_qa)
+    return render_template('panel_dashboard.html', qa_students=qa_students, gbs_students=gbs_students, lcca_students=lcca_students, universities=universities, majors=majors, intakes=intakes, teacher_name=user.username, notifications=notifications, user=user, sort_by=sort_by, search_query=search_query, has_gbs=has_gbs, has_qa=has_qa, has_lcca=has_lcca)
 
 @app.route('/panel/student/add', methods=['POST'])
 @login_required
@@ -347,7 +352,7 @@ def panel_add_student():
     user = User.query.get(session['user_id'])
     name = request.form.get('name')
     university_id = request.form.get('university_id')
-    email = request.form.get('email') # GBS i QA mogą mieć maila
+    email = request.form.get('email')
     
     if not university_id and len(user.universities) == 1: university_id = user.universities[0].id
     if not name or not university_id: return redirect(url_for('panel_dashboard'))
@@ -360,7 +365,10 @@ def panel_add_student():
         new_student.gbs_major_id = int(request.form.get('major_id')) if request.form.get('major_id') else None
         new_student.gbs_intake_id = int(request.form.get('intake_id')) if request.form.get('intake_id') else None
         db.session.add(new_student)
-    else:
+    elif "LCCA" in uni.name:
+        # LCCA ma dedykowany widok, brak dodatkowych tabel
+        db.session.add(new_student)
+    else: # Domyślnie QA
         db.session.add(new_student)
         topics = QaTopic.query.order_by(QaTopic.order_index).all()
         for t in topics:
@@ -370,10 +378,14 @@ def panel_add_student():
     
     db.session.commit()
     
-    # WYSYŁKA MAILA JEŚLI NAUCZYCIEL MA SKONFIGUROWANE KONTO I PODANO MAIL UCZNIA
-    trigger_welcome_email(user, new_student, request.host)
+    # WYSYŁKA MAILA (DLA LCCA, GBS, QA - jeśli jest e-mail)
+    email_sent = trigger_welcome_email(user, new_student, request.host)
     
-    flash(f"Student {name} dodany pomyślnie!", "success")
+    if "LCCA" in uni.name and not email_sent:
+        flash(f"Student {name} został dodany, ALE mail powitalny NIE Został wysłany. Nauczyciel musi uzupełnić dane SMTP (Hasło aplikacji Google) w Master Panelu!", "error")
+    else:
+        flash(f"Student {name} dodany pomyślnie!", "success")
+        
     return redirect(url_for('panel_dashboard'))
 
 # ----------------- SUPER-PANEL: BAZA WIEDZY I PYTAŃ -----------------
@@ -389,7 +401,6 @@ def panel_database():
     if request.method == 'POST':
         action = request.form.get('action')
         
-        # Akcje Materiałów
         if action == 'add_material':
             title = request.form.get('title')
             uni_id = request.form.get('university_id')
@@ -419,7 +430,6 @@ def panel_database():
             m = Material.query.get(request.form.get('material_id'))
             if m: db.session.delete(m); db.session.commit(); flash("Materiał usunięty.", "success")
             
-        # Akcje Rozprawek QA
         elif action == 'add_qa_topic':
             order_val = request.form.get('order_index', 0)
             db.session.add(QaTopic(title=request.form.get('title'), topic_full=request.form.get('topic_full'), order_index=int(order_val)))
@@ -437,7 +447,6 @@ def panel_database():
             t = QaTopic.query.get(request.form.get('topic_id'))
             if t: db.session.delete(t); db.session.commit(); flash("Temat usunięty.", "success")
             
-        # Akcje Testu Matematyki
         elif action == 'add_math_q':
             uni_id = request.form.get('university_id')
             if not uni_id and len(universities) == 1: uni_id = universities[0].id
@@ -448,6 +457,14 @@ def panel_database():
         elif action == 'del_math_q':
             mq = MathQuestion.query.get(request.form.get('question_id'))
             if mq: db.session.delete(mq); db.session.commit(); flash("Pytanie z matematyki usunięte.", "success")
+
+        # Nowa akcja - edycja szablonu email dla uniwersytetu
+        elif action == 'save_uni_template':
+            uni = University.query.get(request.form.get('university_id'))
+            if uni:
+                uni.email_template = request.form.get('email_template')
+                db.session.commit()
+                flash(f"Szablon email dla uczelni {uni.name} zapisany pomyślnie!", "success")
 
         return redirect(url_for('panel_database'))
 
@@ -507,7 +524,10 @@ def student_dashboard(url_slug):
     if archived_view: return archived_view
     
     materials = student.university.materials if student.university else []
-    if student.university and "GBS" in student.university.name:
+    
+    if student.university and "LCCA" in student.university.name:
+        return render_template('lcca/student.html', student=student)
+    elif student.university and "GBS" in student.university.name:
         return render_template('gbs/student_gbs_dashboard.html', student=student, materials=materials)
     
     essay_materials = [m for m in materials if m.category == 'essay']

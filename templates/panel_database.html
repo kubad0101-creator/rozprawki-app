@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Baza Materiałów i Pytań</title>
     <style>
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; flex-wrap: wrap; }
         .tab-btn { padding: 10px 20px; border: none; background: #e2e3e5; color: #333; font-weight: bold; border-radius: 5px; cursor: pointer; }
         .tab-btn.active { background: #17a2b8; color: white; }
         .tab-content { display: none; }
@@ -15,20 +15,22 @@
 <body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto;">
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h1 style="color: #17a2b8; margin: 0;">🗄️ Baza (Materiały, Rozprawki, Math)</h1>
+        <h1 style="color: #17a2b8; margin: 0;">🗄️ Baza (Materiały, Rozprawki, Szablony)</h1>
         <a href="/panel" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć do panelu</a>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div style="padding:15px; background:#d4edda; color:#155724; font-weight:bold; margin-bottom:15px; border-radius:5px;">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="showTab('mat')">📁 Pliki i Linki (QA/GBS)</button>
+        <button class="tab-btn active" onclick="showTab('mat')">📁 Pliki i Linki</button>
+        <button class="tab-btn" onclick="showTab('email')">✉️ Szablony Wiadomości</button>
         {% if has_qa %}
             <button class="tab-btn" onclick="showTab('qa')">✍️ Tematy Rozprawek (QA)</button>
         {% endif %}
         <button class="tab-btn" onclick="showTab('math')">🔢 Pytania Matematyczne</button>
     </div>
 
+    <!-- ZAKŁADKA 1: MATERIAŁY -->
     <div id="mat" class="tab-content active">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
             <h3>Dodaj materiał</h3>
@@ -73,6 +75,31 @@
         {% endfor %}
     </div>
 
+    <!-- ZAKŁADKA 2: SZABLONY E-MAIL -->
+    <div id="email" class="tab-content">
+        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+            <h3>Ustawienia E-mail dla Uniwersytetów</h3>
+            <p style="color: #666; font-size: 14px;">Jeżeli dana uczelnia ma skonfigurowany szablon tutaj, system zignoruje ogólny szablon nauczyciela i zawsze wyśle ten poniższy wariant dla studentów tego uniwersytetu.</p>
+            <p style="font-size: 13px; color: #dc3545; font-weight: bold;">Użyj w tekście {imie} oraz {link}, by podstawić dane studenta!</p>
+
+            <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+                <input type="hidden" name="action" value="save_uni_template">
+                
+                <select name="university_id" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;" onchange="loadTemplate(this)">
+                    <option value="" disabled selected>Wybierz uczelnię (np. LCCA)...</option>
+                    {% for u in universities %}
+                        <option value="{{ u.id }}" data-template="{{ u.email_template if u.email_template else '' }}">{{ u.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <textarea name="email_template" id="emailTemplateBox" rows="8" placeholder="Witaj {imie}! Tutaj masz dostęp: {link}" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: sans-serif;"></textarea>
+                
+                <button type="submit" style="padding: 10px; background: #28a745; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz Szablon dla uczelni</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ZAKŁADKA 3: ROZPRAWKI QA -->
     <div id="qa" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
             <h3>Dodaj nowy temat do Bazy Rozprawek QA</h3>
@@ -109,6 +136,7 @@
         {% endfor %}
     </div>
 
+    <!-- ZAKŁADKA 4: MATEMATYKA -->
     <div id="math" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
             <h3>Dodaj pytanie do Testu z Matematyki</h3>
@@ -163,6 +191,10 @@
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
+        }
+        function loadTemplate(selectElem) {
+            let selectedOption = selectElem.options[selectElem.selectedIndex];
+            document.getElementById('emailTemplateBox').value = selectedOption.getAttribute('data-template') || '';
         }
     </script>
 </body>

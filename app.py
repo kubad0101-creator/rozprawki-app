@@ -3,6 +3,9 @@ import re
 import unicodedata
 import uuid
 import json
+import smtplib
+import threading
+from email.mime.text import MIMEText
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash, send_from_directory
@@ -39,6 +42,11 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), default='teacher', nullable=False)
+    # --- NOWE POLA DLA POCZTY GMAIL ---
+    smtp_email = db.Column(db.String(120), nullable=True)
+    smtp_password = db.Column(db.String(120), nullable=True)
+    email_template = db.Column(db.Text, nullable=True)
+    # ----------------------------------
     universities = db.relationship('University', secondary=teacher_university, backref='teachers')
 
 class University(db.Model):
@@ -53,7 +61,7 @@ class Material(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     content_url = db.Column(db.String(500), nullable=False) 
-    category = db.Column(db.String(50), default='interview') # 'interview' lub 'essay'
+    category = db.Column(db.String(50), default='interview')
     university_id = db.Column(db.Integer, db.ForeignKey('universities.id', ondelete='CASCADE'), nullable=False)
 
 class QaTopic(db.Model):
@@ -165,32 +173,50 @@ class Notification(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('student_v5.id'), nullable=True)
     student = db.relationship('Student')
 
-# --- INITIAL DATA ---
-PRACTICE_TOPICS = [
-    ("Teachers Computers", "As computers are being used more and more in education, there will be no role for teachers in the classroom. Give reasons for your answer and include any relevant examples from your own knowledge and experience."),
-    ("Fluency", "Some people believe that the only way to become fluent in a foreign language is to live and work in a country where it is spoken. Do you agree or disagree with this statement? Give reasons for your answer and include any relevant examples from your own knowledge or experience."),
-    ("Violence", "Violence in the media promotes violence in real life. Do you agree with that statement or disagree ? Give reasons for your answer and include any relevant examples from your own knowledge."),
-    ("Fast food", "Fast food has become increasingly popular in many parts of the world due to its convenience and affordability. However, some people argue that it has negative effects on health and society. Discuss the advantages and disadvantages of eating fast food and give your own opinion."),
-    ("Generations", "Young people should be encouraged to meet their grandparents more often, as this benefits both generations. Do you agree or disagree with this statement? Give reasons for your answer and include any relevant examples from your own knowledge and experience."),
-    ("Boxing", "Some people believe that boxing is a dangerous sport that should be discouraged, while others argue that boxing is a valuable form of self-expression and personal development. What is your opinion? Include relevant examples from your own experience to support your answer.")
-]
-MATH_QUESTIONS = [
-    {"text": "Evaluate 3 to the power of 2:", "a": "8", "b": "15", "c": "20", "d": "9", "ans": "d"},
-    {"text": "A shop made £100,000 profit last year and expects a 10% decline this year. Calculate expected profit.", "a": "£105,000", "b": "£90,000", "c": "£101,000", "d": "£95,000", "ans": "b"},
-    {"text": "The cost has increased from £80 to £100. Percentage increase?", "a": "15%", "b": "17%", "c": "20%", "d": "25%", "ans": "d"},
-    {"text": "Add fractions: 1/2 + 1/4 = ?", "a": "3/4", "b": "1", "c": "5%", "d": "3/8", "ans": "a"},
-    {"text": "Evaluate 100,000 multiplied by 0.6", "a": "60,000", "b": "106,000", "c": "600,000", "d": "-160,000", "ans": "a"},
-    {"text": "Determine x in sequence 3, 8, 13, 18, x", "a": "24", "b": "23", "c": "25", "d": "-26", "ans": "b"},
-    {"text": "Calculate 37,500 divided by 50:", "a": "750", "b": "800", "c": "850", "d": "900", "ans": "a"},
-    {"text": "Multiply 650 by 9:", "a": "6500", "b": "5850", "c": "6250", "d": "6000", "ans": "b"},
-    {"text": "Average of 15, 25, 20:", "a": "20", "b": "18", "c": "19", "d": "22", "ans": "a"},
-    {"text": "Calculate (1 + r) * 5 when r = 5", "a": "40", "b": "30", "c": "35", "d": "36", "ans": "b"},
-    {"text": "Evaluate 5/15 as percentage:", "a": "0.33", "b": "33.33", "c": "66.66", "d": "3.33", "ans": "b"}
-]
 
+# ---------------- FUNKCJE POCZTOWE (GMAIL SMTP) ----------------
+def send_email_async(sender_email, sender_password, recipient_email, subject, body):
+    try:
+        msg = MIMEText(body, 'plain', 'utf-8')
+        msg['Subject'] = subject
+        msg['From'] = sender_email
+        msg['To'] = recipient_email
+
+        # Połączenie przez bezpieczne SSL do Google
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+            print(f"Wysłano e-mail do {recipient_email}")
+    except Exception as e:
+        print(f"Błąd wysyłania e-maila: {e}")
+
+def trigger_welcome_email(teacher, student, request_host):
+    # Jeśli nauczyciel ma ustawiony adres, hasło i student podał email
+    if not student.email or not teacher.smtp_email or not teacher.smtp_password:
+        return
+    
+    # Domyślna formatka, jeśli nauczyciel nic nie wpisał
+    default_template = "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nPozdrawiamy!"
+    template = teacher.email_template if teacher.email_template else default_template
+    
+    link = f"https://{request_host}/student/{student.url_slug}"
+    
+    # Podmiana dynamicznych tagów
+    body = template.replace("{imie}", student.name).replace("{link}", link)
+    subject = "Twój dostęp do platformy edukacyjnej"
+    
+    # Odpal w tle, aby strona się nie przycinała
+    threading.Thread(target=send_email_async, args=(teacher.smtp_email, teacher.smtp_password, student.email, subject, body)).start()
+# ---------------------------------------------------------------
+
+
+# --- INITIAL DATA ---
 def setup_database():
     db.create_all()
     queries = [
+        'ALTER TABLE users ADD COLUMN smtp_email VARCHAR(120)',
+        'ALTER TABLE users ADD COLUMN smtp_password VARCHAR(120)',
+        'ALTER TABLE users ADD COLUMN email_template TEXT',
         'ALTER TABLE student_v5 ADD COLUMN university_id INTEGER REFERENCES universities(id)',
         'ALTER TABLE student_v5 ADD COLUMN creator_id INTEGER REFERENCES users(id)',
         'ALTER TABLE student_v5 ADD COLUMN email VARCHAR(120)',
@@ -212,17 +238,6 @@ def setup_database():
     gbs_uni = University.query.filter_by(name="GBS").first() or University(name="GBS")
     db.session.add_all([qa_uni, gbs_uni])
     db.session.commit()
-
-    if QaTopic.query.count() == 0:
-        for idx, (t, tf) in enumerate(PRACTICE_TOPICS): 
-            db.session.add(QaTopic(title=t, topic_full=tf, order_index=idx))
-        db.session.commit()
-    
-    if MathQuestion.query.count() == 0:
-        # Przypisujemy bazowe pytania do GBS jako domyslne
-        for mq in MATH_QUESTIONS: 
-            db.session.add(MathQuestion(text=mq['text'], opt_a=mq['a'], opt_b=mq['b'], opt_c=mq['c'], opt_d=mq['d'], answer=mq['ans'], university_id=gbs_uni.id))
-        db.session.commit()
 
     if not User.query.filter_by(username="Julia").first(): db.session.add(User(username="Julia", password_hash=generate_password_hash("Open196!"), role="admin"))
     if not User.query.filter_by(username="Kuba").first(): db.session.add(User(username="Kuba", password_hash=generate_password_hash("Open196!"), role="admin"))
@@ -332,15 +347,16 @@ def panel_add_student():
     user = User.query.get(session['user_id'])
     name = request.form.get('name')
     university_id = request.form.get('university_id')
+    email = request.form.get('email') # GBS i QA mogą mieć maila
+    
     if not university_id and len(user.universities) == 1: university_id = user.universities[0].id
     if not name or not university_id: return redirect(url_for('panel_dashboard'))
         
     uni = University.query.get(int(university_id))
-    new_student = Student(name=name, url_slug=f"{uuid.uuid4().hex[:4]}-{slugify(name)}", university_id=uni.id, creator_id=user.id)
+    new_student = Student(name=name, email=email, url_slug=f"{uuid.uuid4().hex[:4]}-{slugify(name)}", university_id=uni.id, creator_id=user.id)
     new_student.has_math_test = 'has_math_test' in request.form
     
     if "GBS" in uni.name:
-        new_student.email = request.form.get('email')
         new_student.gbs_major_id = int(request.form.get('major_id')) if request.form.get('major_id') else None
         new_student.gbs_intake_id = int(request.form.get('intake_id')) if request.form.get('intake_id') else None
         db.session.add(new_student)
@@ -353,6 +369,10 @@ def panel_add_student():
         db.session.add(Essay(title="Egzamin Dodatkowy", topic_full="Wpisz temat nr 1...|||Wpisz temat nr 2...", is_exam=True, student=new_student))
     
     db.session.commit()
+    
+    # WYSYŁKA MAILA JEŚLI NAUCZYCIEL MA SKONFIGUROWANE KONTO I PODANO MAIL UCZNIA
+    trigger_welcome_email(user, new_student, request.host)
+    
     flash(f"Student {name} dodany pomyślnie!", "success")
     return redirect(url_for('panel_dashboard'))
 
@@ -490,7 +510,6 @@ def student_dashboard(url_slug):
     if student.university and "GBS" in student.university.name:
         return render_template('gbs/student_gbs_dashboard.html', student=student, materials=materials)
     
-    # Podział na kategorie dla QA
     essay_materials = [m for m in materials if m.category == 'essay']
     interview_materials = [m for m in materials if m.category == 'interview']
     return render_template('qa/student.html', student=student, essay_materials=essay_materials, interview_materials=interview_materials)
@@ -557,10 +576,17 @@ def panel_master():
         action = request.form.get('action')
         if action == 'create_teacher':
             if not User.query.filter_by(username=request.form.get('username')).first():
-                new_t = User(username=request.form.get('username'), password_hash=generate_password_hash(request.form.get('password')), role='teacher')
+                new_t = User(
+                    username=request.form.get('username'), 
+                    password_hash=generate_password_hash(request.form.get('password')), 
+                    role='teacher',
+                    smtp_email=request.form.get('smtp_email'),
+                    smtp_password=request.form.get('smtp_password'),
+                    email_template=request.form.get('email_template')
+                )
                 for uid in request.form.getlist('universities'): new_t.universities.append(University.query.get(int(uid)))
                 db.session.add(new_t); db.session.commit()
-                flash("Nauczyciel dodany!", "success")
+                flash("Nauczyciel z przypisaną pocztą dodany!", "success")
         elif action == 'delete_teacher':
             t = User.query.get(request.form.get('teacher_id'))
             if t: db.session.delete(t); db.session.commit()

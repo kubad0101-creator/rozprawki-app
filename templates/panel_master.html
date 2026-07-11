@@ -9,6 +9,7 @@
         .tab-btn.active { background: #001f5b; color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        .form-section { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 15px; }
     </style>
 </head>
 <body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto;">
@@ -21,41 +22,71 @@
     {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div style="padding:15px; background:#d4edda; color:#155724; font-weight:bold; margin-bottom:15px; border-radius:5px;">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="showTab('users')">Zarządzanie Nauczycielami</button>
+        <button class="tab-btn active" onclick="showTab('users')">Konta i Wysyłka (Gmail)</button>
         <button class="tab-btn" onclick="showTab('files')">Pliki na serwerze ({{ folder_size_mb }} MB)</button>
     </div>
 
+    <!-- ZAKŁADKA NAUCZYCIELI -->
     <div id="users" class="tab-content active">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
-            <h3>Utwórz nowe konto nauczyciela</h3>
+            <h3 style="margin-top:0;">Utwórz nowe konto nauczyciela z adresem Gmail</h3>
             <form method="POST" action="/panel/master" style="display: flex; flex-direction: column; gap: 15px;">
                 <input type="hidden" name="action" value="create_teacher">
-                <input type="text" name="username" placeholder="Login nauczyciela" required style="padding: 10px;">
-                <input type="password" name="password" placeholder="Hasło" required style="padding: 10px;">
-                <label>Przypisz uczelnie do tego konta:</label>
-                {% for uni in all_unis %}
-                    <label><input type="checkbox" name="universities" value="{{ uni.id }}"> {{ uni.name }}</label>
-                {% endfor %}
-                <button type="submit" style="padding: 10px; background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer;">Utwórz konto</button>
+                
+                <div class="form-section">
+                    <h4 style="margin-top:0; color:#001f5b;">1. Dane do logowania do systemu</h4>
+                    <input type="text" name="username" placeholder="Login nauczyciela w CRM" required style="padding: 10px; width: 100%; box-sizing: border-box; margin-bottom: 10px;">
+                    <input type="password" name="password" placeholder="Hasło do CRM" required style="padding: 10px; width: 100%; box-sizing: border-box;">
+                </div>
+
+                <div class="form-section">
+                    <h4 style="margin-top:0; color:#28a745;">2. Konfiguracja Wysyłki Powiadomień (Automatyzacja)</h4>
+                    <p style="font-size: 13px; color: #666;">Podaj dane konta Gmail, z którego ten nauczyciel będzie automatycznie wysyłał maile uczniom.</p>
+                    <input type="email" name="smtp_email" placeholder="Adres Gmail (np. kowalski@gmail.com)" style="padding: 10px; width: 100%; box-sizing: border-box; margin-bottom: 10px;">
+                    <input type="text" name="smtp_password" placeholder="16-znakowe Hasło Aplikacji z ustawień Google" style="padding: 10px; width: 100%; box-sizing: border-box; margin-bottom: 10px;">
+                    
+                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">Formatka wiadomości dla nowych uczniów:</label>
+                    <p style="font-size: 12px; color: #888; margin-top: 0;">Użyj znaczników <b>{imie}</b> oraz <b>{link}</b>, aby system automatycznie podstawił dane studenta.</p>
+                    <textarea name="email_template" rows="5" style="width: 100%; padding: 10px; box-sizing: border-box; font-family: sans-serif;">Witaj {imie}!
+
+Twoje konto na platformie zostało utworzone przez Twojego nauczyciela. 
+Poniżej znajdziesz unikalny link, który pozwoli Ci uzyskać dostęp do materiałów i zadań.
+
+Kliknij tutaj:
+{link}
+
+Pozdrawiam serdecznie!</textarea>
+                </div>
+
+                <div class="form-section">
+                    <h4 style="margin-top:0;">3. Przypisz uczelnie:</h4>
+                    {% for uni in all_unis %}
+                        <label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="universities" value="{{ uni.id }}"> {{ uni.name }}</label>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" style="padding: 15px; background: #28a745; color: white; border: none; font-weight: bold; font-size: 16px; border-radius: 5px; cursor: pointer;">Utwórz konto nauczyciela</button>
             </form>
         </div>
 
-        <h3>Lista Nauczycieli:</h3>
+        <h3>Lista Nauczycieli w systemie:</h3>
         {% for teacher in teachers %}
             <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #001f5b; display: flex; justify-content: space-between;">
                 <div>
                     <strong>{{ teacher.username }}</strong><br>
-                    <small>Przypisany do: {% for u in teacher.universities %}{{ u.name }}{% if not loop.last %}, {% endif %}{% endfor %}</small>
+                    <small>Przypisany do: {% for u in teacher.universities %}{{ u.name }}{% if not loop.last %}, {% endif %}{% endfor %}</small><br>
+                    <small style="color: #17a2b8;">Poczta wysyłkowa: <b>{{ teacher.smtp_email if teacher.smtp_email else 'Brak / Wyłączone' }}</b></small>
                 </div>
                 <form method="POST" action="/panel/master">
                     <input type="hidden" name="action" value="delete_teacher">
                     <input type="hidden" name="teacher_id" value="{{ teacher.id }}">
-                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold;">Usuń</button>
+                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor: pointer;">Usuń</button>
                 </form>
             </div>
         {% endfor %}
     </div>
 
+    <!-- ZAKŁADKA PLIKÓW -->
     <div id="files" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
             <div>

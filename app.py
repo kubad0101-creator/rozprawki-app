@@ -4,7 +4,6 @@ import unicodedata
 import uuid
 import json
 import smtplib
-import threading
 from email.mime.text import MIMEText
 from datetime import datetime
 from functools import wraps
@@ -51,7 +50,7 @@ class University(db.Model):
     __tablename__ = 'universities'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    email_template = db.Column(db.Text, nullable=True) # Szablon dla uczelni ustawiany w panelu Baza
+    email_template = db.Column(db.Text, nullable=True)
     materials = db.relationship('Material', backref='university', lazy=True, cascade="all, delete-orphan")
     students = db.relationship('Student', backref='university', lazy=True)
 
@@ -173,40 +172,46 @@ class Notification(db.Model):
     student = db.relationship('Student')
 
 
-# ---------------- FUNKCJE POCZTOWE (GMAIL SMTP) ----------------
-def send_email_async(sender_email, sender_password, recipient_email, subject, body):
+# ---------------- FUNKCJE POCZTOWE (GMAIL SMTP SYNCHRONICZNE) ----------------
+def send_email_sync(sender_email, sender_password, recipient_email, subject, body):
     try:
         msg = MIMEText(body, 'plain', 'utf-8')
         msg['Subject'] = subject
         msg['From'] = sender_email
         msg['To'] = recipient_email
 
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(sender_email, sender_password)
-            server.send_message(msg)
-            print(f"Wysłano e-mail do {recipient_email}")
+        # Port 587 + STARTTLS (standard dozwolony na Render.com)
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.ehlo()
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+        return True, "Wysłano"
+    except smtplib.SMTPAuthenticationError:
+        return False, "Błąd autoryzacji: Złe hasło aplikacji Google lub e-mail."
     except Exception as e:
-        print(f"Błąd wysyłania e-maila: {e}")
+        return False, str(e)
 
 def trigger_welcome_email(teacher, student, request_host):
     if not student.email or not teacher.smtp_email or not teacher.smtp_password:
-        return False
+        return False, "Nauczyciel nie ma uzupełnionego adresu e-mail / hasła aplikacji w systemie."
     
-    # PRIORYTET 1: Szablon ustawiony dla konkretnego Uniwersytetu w BAZIE DANYCH
-    # PRIORYTET 2: Szablon ustawiony w profilu nauczyciela w MASTER PANELU
-    template = student.university.email_template
+    # Określanie szablonu
+    template = student.university.email_template if student.university else None
     if not template:
         template = teacher.email_template
     if not template:
         template = "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nPozdrawiamy!"
         
+    # Wymuszenie HTTPS na Renderze
     link = f"https://{request_host}/student/{student.url_slug}"
     
     body = template.replace("{imie}", student.name).replace("{link}", link)
     subject = "Twój dostęp do platformy edukacyjnej"
     
-    threading.Thread(target=send_email_async, args=(teacher.smtp_email, teacher.smtp_password, student.email, subject, body)).start()
-    return True
+    success, msg = send_email_sync(teacher.smtp_email, teacher.smtp_password, student.email, subject, body)
+    return success, msg
 # ---------------------------------------------------------------
 
 
@@ -366,9 +371,8 @@ def panel_add_student():
         new_student.gbs_intake_id = int(request.form.get('intake_id')) if request.form.get('intake_id') else None
         db.session.add(new_student)
     elif "LCCA" in uni.name:
-        # LCCA ma dedykowany widok, brak dodatkowych tabel
         db.session.add(new_student)
-    else: # Domyślnie QA
+    else: 
         db.session.add(new_student)
         topics = QaTopic.query.order_by(QaTopic.order_index).all()
         for t in topics:
@@ -378,13 +382,18 @@ def panel_add_student():
     
     db.session.commit()
     
-    # WYSYŁKA MAILA (DLA LCCA, GBS, QA - jeśli jest e-mail)
-    email_sent = trigger_welcome_email(user, new_student, request.host)
-    
-    if "LCCA" in uni.name and not email_sent:
-        flash(f"Student {name} został dodany, ALE mail powitalny NIE Został wysłany. Nauczyciel musi uzupełnić dane SMTP (Hasło aplikacji Google) w Master Panelu!", "error")
+    # WYSYŁKA MAILA (Synchroniczna z obsługą błędów)
+    if email:
+        email_sent, msg = trigger_welcome_email(user, new_student, request.host)
+        if email_sent:
+            flash(f"Student {name} dodany pomyślnie. Mail został poprawnie wysłany na adres: {email}", "success")
+        else:
+            flash(f"Student dodany, ALE WYSYŁKA MAILA ZAWIODŁA! Powód: {msg}", "error")
     else:
-        flash(f"Student {name} dodany pomyślnie!", "success")
+        if "LCCA" in uni.name:
+            flash(f"Student {name} dodany, ale nie podałeś e-maila (a LCCA go wymaga).", "warning")
+        else:
+            flash(f"Student {name} dodany pomyślnie!", "success")
         
     return redirect(url_for('panel_dashboard'))
 
@@ -458,7 +467,6 @@ def panel_database():
             mq = MathQuestion.query.get(request.form.get('question_id'))
             if mq: db.session.delete(mq); db.session.commit(); flash("Pytanie z matematyki usunięte.", "success")
 
-        # Nowa akcja - edycja szablonu email dla uniwersytetu
         elif action == 'save_uni_template':
             uni = University.query.get(request.form.get('university_id'))
             if uni:

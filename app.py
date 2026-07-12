@@ -16,8 +16,8 @@ app = Flask(__name__)
 app.secret_key = "Open196!_System_Rozprawek_2024"
 
 # --- KONFIGURACJA BREVO API ---
-BREVO_API_KEY = "xsmtpsib-63c5b87db079307d7d8d7aafeebc34301b3fe262ac8116adb1f7f2a32cf01a6b-rLF2ev2QrXr1g4Hd"
-BREVO_SENDER_EMAIL = "b1bb47001@smtp-brevo.com"
+BREVO_API_KEY = "xsmtpsib-63c5b87db079307d7d8d7aafeebc34301b3fe262ac8116adb1f7f2a32cf01a6b-rLF2ev2QrXr1g4Hd" 
+BREVO_SENDER_EMAIL = "TWÓJ_EMAIL_Z_KOTA_BREVO@gmail.com" # <--- TUTAJ WPISZ SWÓJ EMAIL Z BREVO!
 # ------------------------------
 
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
@@ -32,7 +32,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# ----------------- STARE I WSPÓLNE MODELE -----------------
+# ----------------- MODELE BAZY DANYCH -----------------
 
 teacher_university = db.Table('teacher_university',
     db.Column('teacher_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE')),
@@ -196,7 +196,6 @@ def send_email_api(sender_email, sender_name, recipient_email, subject, body):
         if response.status_code in (200, 201, 202):
             return True, "Wysłano pomyślnie przez API."
         else:
-            # Zwraca czytelny błąd zwrócony przez Brevo
             err_details = response.json().get('message', response.text)
             return False, f"Odmowa API Brevo: {err_details}"
     except Exception as e:
@@ -206,8 +205,9 @@ def trigger_welcome_email(teacher, student, request_host):
     if not student.email:
         return False, "Nie podano adresu e-mail studenta."
     
-    # Używamy adresu nadawcy z ustawień systemowych (wymóg Brevo bez autoryzowanych domen)
-    # Możemy jednak przedstawiać się nazwą konkretnego nauczyciela
+    if "TUTAJ_WSTAW_SWOJ" in BREVO_API_KEY or BREVO_API_KEY.startswith("xsmtpsib"):
+        return False, "Błąd klucza! Wymagany jest klucz 'xkeysib-...', a wpisano hasło SMTP lub domyślny klucz."
+        
     sender_email = BREVO_SENDER_EMAIL
     sender_name = teacher.username
     
@@ -394,7 +394,6 @@ def panel_add_student():
     
     db.session.commit()
     
-    # WYSYŁKA MAILA (Przez Brevo API)
     if email:
         email_sent, msg = trigger_welcome_email(user, new_student, request.host)
         if email_sent:
@@ -614,22 +613,38 @@ def math_submit(student_id):
 def panel_master():
     if request.method == 'POST':
         action = request.form.get('action')
+        
         if action == 'create_teacher':
             if not User.query.filter_by(username=request.form.get('username')).first():
                 new_t = User(
                     username=request.form.get('username'), 
                     password_hash=generate_password_hash(request.form.get('password')), 
                     role='teacher',
-                    smtp_email=request.form.get('smtp_email'),
-                    smtp_password=request.form.get('smtp_password'),
                     email_template=request.form.get('email_template')
                 )
-                for uid in request.form.getlist('universities'): new_t.universities.append(University.query.get(int(uid)))
-                db.session.add(new_t); db.session.commit()
-                flash("Nauczyciel przypisany!", "success")
+                for uid in request.form.getlist('universities'): 
+                    new_t.universities.append(University.query.get(int(uid)))
+                db.session.add(new_t)
+                db.session.commit()
+                flash("Nauczyciel pomyślnie dodany do systemu!", "success")
+                
         elif action == 'delete_teacher':
             t = User.query.get(request.form.get('teacher_id'))
-            if t: db.session.delete(t); db.session.commit()
+            if t: 
+                try:
+                    # Oczyszczenie kluczy obcych, aby baza nie zablokowała usunięcia (Błąd 500)
+                    Student.query.filter_by(creator_id=t.id).update({'creator_id': None})
+                    Notification.query.filter_by(recipient_id=t.id).delete()
+                    # Ręczne czyszczenie tabeli pośredniej żeby uniknąć błędu 500
+                    t.universities = []
+                    
+                    db.session.delete(t)
+                    db.session.commit()
+                    flash(f"Konto {t.username} zostało bezpiecznie usunięte.", "success")
+                except Exception as e:
+                    db.session.rollback()
+                    flash(f"Błąd podczas usuwania: {str(e)}", "error")
+                    
         elif action == 'delete_file':
             m = Material.query.get(request.form.get('material_id'))
             if m: 
@@ -639,6 +654,7 @@ def panel_master():
                 db.session.delete(m)
                 db.session.commit()
                 flash("Plik całkowicie usunięty z serwera.", "success")
+                
         return redirect(url_for('panel_master'))
     
     size_bytes = get_dir_size(app.config['UPLOAD_FOLDER'])

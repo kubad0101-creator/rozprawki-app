@@ -16,7 +16,7 @@ app = Flask(__name__)
 app.secret_key = "Open196!_System_Rozprawek_2024"
 
 # --- KONFIGURACJA BREVO API ---
-BREVO_API_KEY = "xsmtpsib-63c5b87db079307d7d8d7aafeebc34301b3fe262ac8116adb1f7f2a32cf01a6b-i00zvDRAVcGlxYsL"
+BREVO_API_KEY = "xsmtpsib-63c5b87db079307d7d8d7aafeebc34301b3fe262ac8116adb1f7f2a32cf01a6b-rLF2ev2QrXr1g4Hd"
 BREVO_SENDER_EMAIL = "b1bb47001@smtp-brevo.com"
 # ------------------------------
 

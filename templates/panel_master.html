@@ -10,6 +10,8 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .form-section { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 15px; }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px; }
     </style>
 </head>
 <body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto;">
@@ -22,72 +24,84 @@
     {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div style="padding:15px; background:#d4edda; color:#155724; font-weight:bold; margin-bottom:15px; border-radius:5px;">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="showTab('users')">Konta Nauczycieli (Wysyłka Brevo API)</button>
-        <button class="tab-btn" onclick="showTab('files')">Pliki na serwerze ({{ folder_size_mb }} MB)</button>
+        <button class="tab-btn active" onclick="showTab('users')">Konta Nauczycieli</button>
+        <button class="tab-btn" onclick="showTab('files')">Pliki na serwerze i Filtrowanie</button>
     </div>
 
     <!-- ZAKŁADKA NAUCZYCIELI -->
     <div id="users" class="tab-content active">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
             <h3 style="margin-top:0;">Utwórz nowe konto nauczyciela</h3>
-            <p style="color: #666; font-size: 13px;">Wysyłka e-maili jest teraz zautomatyzowana centralnie przez Brevo API. Nauczyciel nie musi już konfigurować własnej poczty.</p>
             <form method="POST" action="/panel/master" style="display: flex; flex-direction: column; gap: 15px;">
                 <input type="hidden" name="action" value="create_teacher">
                 
                 <div class="form-section">
-                    <h4 style="margin-top:0; color:#001f5b;">1. Dane do logowania do systemu</h4>
                     <input type="text" name="username" placeholder="Login nauczyciela w CRM" required style="padding: 10px; width: 100%; box-sizing: border-box; margin-bottom: 10px;">
                     <input type="password" name="password" placeholder="Hasło do CRM" required style="padding: 10px; width: 100%; box-sizing: border-box;">
                 </div>
 
                 <div class="form-section">
-                    <h4 style="margin-top:0; color:#28a745;">2. Szablon Wiadomości Nauczyciela (Opcjonalnie)</h4>
-                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">Domyślna formatka dla tego nauczyciela:</label>
-                    <p style="font-size: 12px; color: #888; margin-top: 0;">Użyj znaczników <b>{imie}</b> oraz <b>{link}</b>.</p>
-                    <textarea name="email_template" rows="5" style="width: 100%; padding: 10px; box-sizing: border-box; font-family: sans-serif;">Witaj {imie}!
-
-Twoje konto na platformie zostało utworzone przez Twojego nauczyciela. 
-Poniżej znajdziesz unikalny link, który pozwoli Ci uzyskać dostęp do materiałów.
-
-Kliknij tutaj:
-{link}
-
-Pozdrawiam serdecznie!</textarea>
-                </div>
-
-                <div class="form-section">
-                    <h4 style="margin-top:0;">3. Przypisz uczelnie:</h4>
+                    <h4 style="margin-top:0;">Przypisz uczelnie:</h4>
                     {% for uni in all_unis %}
                         <label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="universities" value="{{ uni.id }}"> {{ uni.name }}</label>
                     {% endfor %}
                 </div>
 
-                <button type="submit" style="padding: 15px; background: #28a745; color: white; border: none; font-weight: bold; font-size: 16px; border-radius: 5px; cursor: pointer;">Utwórz konto nauczyciela</button>
+                <button type="submit" style="padding: 15px; background: #28a745; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Utwórz konto</button>
             </form>
         </div>
 
         <h3>Lista Nauczycieli w systemie:</h3>
         {% for teacher in teachers %}
-            <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #001f5b; display: flex; justify-content: space-between;">
+            <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #001f5b; display: flex; justify-content: space-between; align-items:center;">
                 <div>
                     <strong>{{ teacher.username }}</strong><br>
-                    <small>Przypisany do: {% for u in teacher.universities %}{{ u.name }}{% if not loop.last %}, {% endif %}{% endfor %}</small>
+                    <small>Dostęp: {% for u in teacher.universities %}{{ u.name }}{% if not loop.last %}, {% endif %}{% endfor %}</small>
                 </div>
-                <form method="POST" action="/panel/master">
-                    <input type="hidden" name="action" value="delete_teacher">
-                    <input type="hidden" name="teacher_id" value="{{ teacher.id }}">
-                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor: pointer;">Usuń</button>
-                </form>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="openEditModal({{ teacher.id }}, '{{ teacher.username }}')" style="background: #ffc107; color: #333; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor: pointer;">✏️ Edytuj</button>
+                    <form method="POST" action="/panel/master" style="margin:0;">
+                        <input type="hidden" name="action" value="delete_teacher">
+                        <input type="hidden" name="teacher_id" value="{{ teacher.id }}">
+                        <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor: pointer;">Usuń</button>
+                    </form>
+                </div>
             </div>
         {% endfor %}
     </div>
 
+    <!-- MODAL EDYCJI NAUCZYCIELA -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>Edytuj Nauczyciela</h3>
+            <form method="POST" action="/panel/master" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="hidden" name="action" value="edit_teacher">
+                <input type="hidden" name="teacher_id" id="editTeacherId">
+                
+                <input type="text" name="username" id="editUsername" placeholder="Nowy login" required style="padding: 10px; width: 100%; box-sizing: border-box;">
+                <input type="text" name="password" placeholder="Wpisz nowe hasło (lub zostaw puste)" style="padding: 10px; width: 100%; box-sizing: border-box;">
+                
+                <div style="background:#f8f9fa; padding:10px; border-radius:5px;">
+                    <h4 style="margin-top:0;">Nadpisz uprawnienia (zaznacz uczelnie od nowa):</h4>
+                    {% for uni in all_unis %}
+                        <label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="universities" value="{{ uni.id }}"> {{ uni.name }}</label>
+                    {% endfor %}
+                </div>
+                
+                <div style="text-align: right;">
+                    <button type="button" onclick="document.getElementById('editModal').style.display='none'" style="background: #ccc; padding: 10px; border:none; border-radius:5px;">Anuluj</button>
+                    <button type="submit" style="background: #007bff; color: white; padding: 10px; border:none; border-radius:5px; font-weight:bold;">Zapisz Zmiany</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ZAKŁADKA PLIKÓW -->
     <div id="files" class="tab-content">
-        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <h3 style="margin: 0; color: #001f5b;">Całkowity rozmiar wgranych plików</h3>
-                <p style="margin: 5px 0 0 0; color: #666;">Zajmowane miejsce na dysku hostingu.</p>
+                <p style="margin: 5px 0 0 0; color: #666;">Razem na serwerze wszystkich materiałów.</p>
             </div>
             <div style="text-align: right;">
                 <span style="font-size: 24px; font-weight: bold; color: #17a2b8;">{{ folder_size_mb }} MB</span><br>
@@ -95,12 +109,20 @@ Pozdrawiam serdecznie!</textarea>
             </div>
         </div>
 
-        <h3>Zarządzanie fizycznymi plikami (PDF, HTML, Video):</h3>
+        <!-- FILTRY W JS -->
+        <div style="margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px;">
+            <strong>Filtruj widok plików:</strong>
+            <select id="uniFilter" onchange="filterFiles()" style="padding: 8px; margin-left:10px;">
+                <option value="all">Wszystkie uczelnie</option>
+                {% for u in all_unis %}<option value="uni_{{ u.id }}">{{ u.name }}</option>{% endfor %}
+            </select>
+        </div>
+
         {% for mat in all_materials %}
-            <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #17a2b8; display: flex; justify-content: space-between; align-items: center;">
+            <div class="file-row" data-uni="uni_{{ mat.university_id }}" style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #17a2b8; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong>{{ mat.title }}</strong><br>
-                    <small>Używany w: {{ mat.university.name }} | Kat: {{ mat.category }}</small><br>
+                    <small>Uczelnia: {{ mat.university.name }} | Kierunek: {% if mat.qa_major %}{{ mat.qa_major.name }}{% elif mat.gbs_major %}{{ mat.gbs_major.name }}{% else %}Brak{% endif %}</small><br>
                     <a href="{{ mat.content_url }}" target="_blank" style="font-size: 12px; color: #007bff;">[Podgląd pliku]</a>
                 </div>
                 <form method="POST" action="/panel/master" style="margin: 0;" onsubmit="return confirm('To usunie plik definitywnie z serwera. Kontynuować?');">
@@ -109,8 +131,6 @@ Pozdrawiam serdecznie!</textarea>
                     <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Skasuj z serwera</button>
                 </form>
             </div>
-        {% else %}
-            <p style="color: #666; font-style: italic;">Brak fizycznych plików (tylko linki zewn.).</p>
         {% endfor %}
     </div>
 
@@ -120,6 +140,23 @@ Pozdrawiam serdecznie!</textarea>
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
+        }
+        function filterFiles() {
+            let filter = document.getElementById('uniFilter').value;
+            document.querySelectorAll('.file-row').forEach(row => {
+                if (filter === 'all' || row.getAttribute('data-uni') === filter) {
+                    row.style.display = 'flex';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        function openEditModal(id, username) {
+            document.getElementById('editTeacherId').value = id;
+            document.getElementById('editUsername').value = username;
+            // Odznaczamy wszystkie checkboxy domyślnie, nauczyciel musi kliknąć od nowa
+            document.querySelectorAll('#editModal input[type="checkbox"]').forEach(c => c.checked = false);
+            document.getElementById('editModal').style.display = 'block';
         }
     </script>
 </body>

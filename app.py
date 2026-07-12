@@ -17,7 +17,7 @@ app.secret_key = "Open196!_System_Rozprawek_2024"
 
 # --- KONFIGURACJA BREVO API ---
 BREVO_API_KEY = "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" 
-BREVO_SENDER_EMAIL = "b1bb47001@smtp-brevo.com" # Pamiętaj żeby to zmienić przed wdrożeniem!
+BREVO_SENDER_EMAIL = "b1bb47001@smtp-brevo.com"
 # ------------------------------
 
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
@@ -45,7 +45,7 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), default='teacher', nullable=False)
-    email_template = db.Column(db.Text, nullable=True) # Szablon przeniesiony do nauczyciela
+    email_template = db.Column(db.Text, nullable=True) 
     universities = db.relationship('University', secondary=teacher_university, backref='teachers')
 
 class University(db.Model):
@@ -72,7 +72,7 @@ class Material(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     content_url = db.Column(db.String(500), nullable=False) 
-    category = db.Column(db.String(50), default='interview') # np. 'interview', 'essay', 'math_test'
+    category = db.Column(db.String(50), default='interview') 
     university_id = db.Column(db.Integer, db.ForeignKey('universities.id', ondelete='CASCADE'), nullable=False)
     qa_major_id = db.Column(db.Integer, db.ForeignKey('qa_majors.id', ondelete='CASCADE'), nullable=True)
     gbs_major_id = db.Column(db.Integer, db.ForeignKey('gbs_majors.id', ondelete='CASCADE'), nullable=True)
@@ -256,12 +256,20 @@ def setup_database():
     db.session.add_all([qa_uni, gbs_uni, lcca_uni])
     db.session.commit()
 
-    # ZARZĄDZANIE ADMINAMI WEDŁUG WYTYCZNYCH
+    # ZARZĄDZANIE ADMINAMI WEDŁUG WYTYCZNYCH - Z ZABEZPIECZENIEM KLUCZA OBCEGO (Obejście błędu 500)
     kuba = User.query.filter_by(username="Kuba").first()
     if kuba:
-        db.session.delete(kuba)
-        db.session.commit()
-        
+        try:
+            # Odpinamy studentów i powiadomienia przed usunięciem konta Kuba
+            Student.query.filter_by(creator_id=kuba.id).update({'creator_id': None})
+            Notification.query.filter_by(recipient_id=kuba.id).delete()
+            db.session.execute(text("DELETE FROM teacher_university WHERE teacher_id = :tid"), {'tid': kuba.id})
+            db.session.delete(kuba)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print("Nie udało się usunąć Kuby podczas startu:", str(e))
+            
     if not User.query.filter_by(username="Admin Open UK Study").first(): 
         db.session.add(User(username="Admin Open UK Study", password_hash=generate_password_hash("Open196!"), role="admin"))
     
@@ -556,7 +564,6 @@ def student_dashboard(url_slug):
     interview_materials = [m for m in materials if m.category == 'interview']
     return render_template('qa/student.html', student=student, essay_materials=essay_materials, interview_materials=interview_materials)
 
-# (Tradycyjne widoki z endpointów skracam o resztę logiki - test z matematyki, qa, itd.)
 @app.route('/qa/essays/<url_slug>')
 def qa_essays(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
@@ -593,7 +600,6 @@ def math_test(url_slug):
     if check_archived(student): return check_archived(student)
     if not student.has_math_test: return "Brak dostępu do testu z matematyki", 403
     
-    # Pobieranie materiałów edukacyjnych specjalnie do testu
     all_uni_materials = student.university.materials if student.university else []
     study_materials = [m for m in all_uni_materials if m.category == 'math_test']
     questions = MathQuestion.query.filter_by(university_id=student.university_id).all()
@@ -648,7 +654,7 @@ def panel_master():
             t = User.query.get(request.form.get('teacher_id'))
             if t: 
                 try:
-                    # PANCERNE USUWANIE NAUCZYCIELA - Czyści tabelę pośrednią żeby baza nie zablokowała (Błąd 500)
+                    # PANCERNE USUWANIE NAUCZYCIELA
                     db.session.execute(text("DELETE FROM teacher_university WHERE teacher_id = :tid"), {'tid': t.id})
                     Student.query.filter_by(creator_id=t.id).update({'creator_id': None})
                     Notification.query.filter_by(recipient_id=t.id).delete()

@@ -3,8 +3,7 @@ import re
 import unicodedata
 import uuid
 import json
-import smtplib
-from email.mime.text import MIMEText
+import requests
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash, send_from_directory
@@ -15,6 +14,11 @@ from sqlalchemy import text
 
 app = Flask(__name__)
 app.secret_key = "Open196!_System_Rozprawek_2024"
+
+# --- KONFIGURACJA BREVO API ---
+BREVO_API_KEY = "xsmtpsib-63c5b87db079307d7d8d7aafeebc34301b3fe262ac8116adb1f7f2a32cf01a6b-i00zvDRAVcGlxYsL"
+BREVO_SENDER_EMAIL = "b1bb47001@smtp-brevo.com"
+# ------------------------------
 
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -172,45 +176,53 @@ class Notification(db.Model):
     student = db.relationship('Student')
 
 
-# ---------------- FUNKCJE POCZTOWE (GMAIL SMTP SYNCHRONICZNE - POPRAWKA RENDER) ----------------
-def send_email_sync(sender_email, sender_password, recipient_email, subject, body):
+# ---------------- FUNKCJE POCZTOWE (BREVO REST API) ----------------
+def send_email_api(sender_email, sender_name, recipient_email, subject, body):
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+    payload = {
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": recipient_email}],
+        "subject": subject,
+        "textContent": body
+    }
+    
     try:
-        msg = MIMEText(body, 'plain', 'utf-8')
-        msg['Subject'] = subject
-        msg['From'] = sender_email
-        msg['To'] = recipient_email
-
-        # Zmiana: Port 465 (SSL) + wymuszony limit czasu na 7 sekund!
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=7)
-        server.login(sender_email, sender_password)
-        server.send_message(msg)
-        server.quit()
-        return True, "Wysłano"
-    except smtplib.SMTPAuthenticationError:
-        return False, "Błąd autoryzacji: Złe hasło aplikacji Google lub e-mail."
-    except TimeoutError:
-        return False, "Serwer Render zablokował połączenie (Timeout). Google nie odpowiada."
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code in (200, 201, 202):
+            return True, "Wysłano pomyślnie przez API."
+        else:
+            # Zwraca czytelny błąd zwrócony przez Brevo
+            err_details = response.json().get('message', response.text)
+            return False, f"Odmowa API Brevo: {err_details}"
     except Exception as e:
-        return False, str(e)
+        return False, f"Błąd połączenia z siecią: {str(e)}"
 
 def trigger_welcome_email(teacher, student, request_host):
-    if not student.email or not teacher.smtp_email or not teacher.smtp_password:
-        return False, "Nauczyciel nie ma uzupełnionego adresu e-mail / hasła aplikacji w systemie."
+    if not student.email:
+        return False, "Nie podano adresu e-mail studenta."
     
-    # Określanie szablonu
+    # Używamy adresu nadawcy z ustawień systemowych (wymóg Brevo bez autoryzowanych domen)
+    # Możemy jednak przedstawiać się nazwą konkretnego nauczyciela
+    sender_email = BREVO_SENDER_EMAIL
+    sender_name = teacher.username
+    
     template = student.university.email_template if student.university and student.university.email_template else None
     if not template:
         template = teacher.email_template
     if not template:
         template = "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nPozdrawiamy!"
         
-    # Wymuszenie HTTPS na Renderze
     link = f"https://{request_host}/student/{student.url_slug}"
     
     body = template.replace("{imie}", student.name).replace("{link}", link)
     subject = "Twój dostęp do platformy edukacyjnej"
     
-    success, msg = send_email_sync(teacher.smtp_email, teacher.smtp_password, student.email, subject, body)
+    success, msg = send_email_api(sender_email, sender_name, student.email, subject, body)
     return success, msg
 # ---------------------------------------------------------------
 
@@ -382,11 +394,11 @@ def panel_add_student():
     
     db.session.commit()
     
-    # WYSYŁKA MAILA (Synchroniczna z obsługą błędów)
+    # WYSYŁKA MAILA (Przez Brevo API)
     if email:
         email_sent, msg = trigger_welcome_email(user, new_student, request.host)
         if email_sent:
-            flash(f"Student {name} dodany pomyślnie. Mail został poprawnie wysłany na adres: {email}", "success")
+            flash(f"Student {name} dodany pomyślnie. E-mail w drodze na adres: {email}", "success")
         else:
             flash(f"Student dodany, ALE WYSYŁKA MAILA ZAWIODŁA! Powód: {msg}", "error")
     else:
@@ -614,7 +626,7 @@ def panel_master():
                 )
                 for uid in request.form.getlist('universities'): new_t.universities.append(University.query.get(int(uid)))
                 db.session.add(new_t); db.session.commit()
-                flash("Nauczyciel z przypisaną pocztą dodany!", "success")
+                flash("Nauczyciel przypisany!", "success")
         elif action == 'delete_teacher':
             t = User.query.get(request.form.get('teacher_id'))
             if t: db.session.delete(t); db.session.commit()

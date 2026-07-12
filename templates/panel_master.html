@@ -22,14 +22,15 @@
     {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div style="padding:15px; background:#d4edda; color:#155724; font-weight:bold; margin-bottom:15px; border-radius:5px;">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="showTab('users')">Konta i Wysyłka (Gmail)</button>
+        <button class="tab-btn active" onclick="showTab('users')">Konta Nauczycieli (Wysyłka Brevo API)</button>
         <button class="tab-btn" onclick="showTab('files')">Pliki na serwerze ({{ folder_size_mb }} MB)</button>
     </div>
 
     <!-- ZAKŁADKA NAUCZYCIELI -->
     <div id="users" class="tab-content active">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
-            <h3 style="margin-top:0;">Utwórz nowe konto nauczyciela z adresem Gmail</h3>
+            <h3 style="margin-top:0;">Utwórz nowe konto nauczyciela</h3>
+            <p style="color: #666; font-size: 13px;">Wysyłka e-maili jest teraz zautomatyzowana centralnie przez Brevo API. Nauczyciel nie musi już konfigurować własnej poczty.</p>
             <form method="POST" action="/panel/master" style="display: flex; flex-direction: column; gap: 15px;">
                 <input type="hidden" name="action" value="create_teacher">
                 
@@ -40,17 +41,13 @@
                 </div>
 
                 <div class="form-section">
-                    <h4 style="margin-top:0; color:#28a745;">2. Konfiguracja Wysyłki Powiadomień (Automatyzacja)</h4>
-                    <p style="font-size: 13px; color: #666;">Podaj dane konta Gmail, z którego ten nauczyciel będzie automatycznie wysyłał maile uczniom.</p>
-                    <input type="email" name="smtp_email" placeholder="Adres Gmail (np. kowalski@gmail.com)" style="padding: 10px; width: 100%; box-sizing: border-box; margin-bottom: 10px;">
-                    <input type="text" name="smtp_password" placeholder="16-znakowe Hasło Aplikacji z ustawień Google" style="padding: 10px; width: 100%; box-sizing: border-box; margin-bottom: 10px;">
-                    
-                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">Formatka wiadomości dla nowych uczniów:</label>
-                    <p style="font-size: 12px; color: #888; margin-top: 0;">Użyj znaczników <b>{imie}</b> oraz <b>{link}</b>, aby system automatycznie podstawił dane studenta.</p>
+                    <h4 style="margin-top:0; color:#28a745;">2. Szablon Wiadomości Nauczyciela (Opcjonalnie)</h4>
+                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">Domyślna formatka dla tego nauczyciela:</label>
+                    <p style="font-size: 12px; color: #888; margin-top: 0;">Użyj znaczników <b>{imie}</b> oraz <b>{link}</b>.</p>
                     <textarea name="email_template" rows="5" style="width: 100%; padding: 10px; box-sizing: border-box; font-family: sans-serif;">Witaj {imie}!
 
 Twoje konto na platformie zostało utworzone przez Twojego nauczyciela. 
-Poniżej znajdziesz unikalny link, który pozwoli Ci uzyskać dostęp do materiałów i zadań.
+Poniżej znajdziesz unikalny link, który pozwoli Ci uzyskać dostęp do materiałów.
 
 Kliknij tutaj:
 {link}
@@ -74,8 +71,7 @@ Pozdrawiam serdecznie!</textarea>
             <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #001f5b; display: flex; justify-content: space-between;">
                 <div>
                     <strong>{{ teacher.username }}</strong><br>
-                    <small>Przypisany do: {% for u in teacher.universities %}{{ u.name }}{% if not loop.last %}, {% endif %}{% endfor %}</small><br>
-                    <small style="color: #17a2b8;">Poczta wysyłkowa: <b>{{ teacher.smtp_email if teacher.smtp_email else 'Brak / Wyłączone' }}</b></small>
+                    <small>Przypisany do: {% for u in teacher.universities %}{{ u.name }}{% if not loop.last %}, {% endif %}{% endfor %}</small>
                 </div>
                 <form method="POST" action="/panel/master">
                     <input type="hidden" name="action" value="delete_teacher">

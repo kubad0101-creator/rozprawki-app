@@ -172,7 +172,7 @@ class Notification(db.Model):
     student = db.relationship('Student')
 
 
-# ---------------- FUNKCJE POCZTOWE (GMAIL SMTP SYNCHRONICZNE) ----------------
+# ---------------- FUNKCJE POCZTOWE (GMAIL SMTP SYNCHRONICZNE - POPRAWKA RENDER) ----------------
 def send_email_sync(sender_email, sender_password, recipient_email, subject, body):
     try:
         msg = MIMEText(body, 'plain', 'utf-8')
@@ -180,16 +180,16 @@ def send_email_sync(sender_email, sender_password, recipient_email, subject, bod
         msg['From'] = sender_email
         msg['To'] = recipient_email
 
-        # Port 587 + STARTTLS (standard dozwolony na Render.com)
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.ehlo()
-        server.starttls()
+        # Zmiana: Port 465 (SSL) + wymuszony limit czasu na 7 sekund!
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=7)
         server.login(sender_email, sender_password)
         server.send_message(msg)
         server.quit()
         return True, "Wysłano"
     except smtplib.SMTPAuthenticationError:
         return False, "Błąd autoryzacji: Złe hasło aplikacji Google lub e-mail."
+    except TimeoutError:
+        return False, "Serwer Render zablokował połączenie (Timeout). Google nie odpowiada."
     except Exception as e:
         return False, str(e)
 
@@ -198,7 +198,7 @@ def trigger_welcome_email(teacher, student, request_host):
         return False, "Nauczyciel nie ma uzupełnionego adresu e-mail / hasła aplikacji w systemie."
     
     # Określanie szablonu
-    template = student.university.email_template if student.university else None
+    template = student.university.email_template if student.university and student.university.email_template else None
     if not template:
         template = teacher.email_template
     if not template:

@@ -10,46 +10,56 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .item-row { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Drag & drop styles dla QA topics */
+        .qa-topic-item { cursor: grab; background: #fff; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .qa-topic-item.over { border: 2px dashed #007bff; background: #f0f8ff; }
+        .drag-handle { font-size: 20px; color: #999; margin-right: 15px; cursor: grab; }
     </style>
 </head>
-<body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto;">
+<body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto;" onload="applyUniFilter()">
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h1 style="color: #17a2b8; margin: 0;">🗄️ Baza (Materiały, Kierunki, Rozprawki)</h1>
+        <h1 style="color: #17a2b8; margin: 0;">🗄️ Baza Wiedzy i Ustawienia</h1>
         <a href="/panel" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć do panelu</a>
+    </div>
+
+    <!-- KONTEKST UCZELNI -->
+    <div style="background: white; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #17a2b8; display: flex; align-items: center; gap: 15px;">
+        <label style="font-weight: bold; font-size: 16px;">Wybierz uczelnię do modyfikacji:</label>
+        <select id="activeUniSelector" onchange="applyUniFilter()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; flex: 1;">
+            {% for u in universities %}
+                <option value="{{ u.id }}" data-name="{{ u.name }}">{{ u.name }}</option>
+            {% endfor %}
+        </select>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div style="padding:15px; background:#d4edda; color:#155724; font-weight:bold; margin-bottom:15px; border-radius:5px;">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
 
     <div class="tabs">
         <button class="tab-btn active" onclick="showTab('mat')">📁 Pliki i Linki</button>
-        <button class="tab-btn" onclick="showTab('majors')">🎓 Kierunki (QA i GBS)</button>
-        {% if has_qa %}
-            <button class="tab-btn" onclick="showTab('qa')">✍️ Tematy Rozprawek (QA)</button>
-        {% endif %}
+        <button class="tab-btn" id="tab-majors" onclick="showTab('majors')">🎓 Kierunki</button>
+        <button class="tab-btn" id="tab-qa" onclick="showTab('qa')">✍️ Tematy Rozprawek</button>
         <button class="tab-btn" onclick="showTab('math')">🔢 Pytania Matematyczne</button>
+        <button class="tab-btn" onclick="showTab('email')">✉️ Twój Szablon E-mail</button>
     </div>
 
     <!-- ZAKŁADKA 1: MATERIAŁY -->
     <div id="mat" class="tab-content active">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
-            <h3>Dodaj materiał edukacyjny</h3>
+            <h3>Dodaj materiał edukacyjny dla wybranej uczelni</h3>
             <form method="POST" action="{{ url_for('panel_database') }}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 15px;">
                 <input type="hidden" name="action" value="add_material">
-                <input type="text" name="title" placeholder="Tytuł pliku / materiału" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <input type="hidden" name="university_id" class="dynamic-uni-id">
                 
-                <select name="university_id" id="matUniSelect" onchange="toggleMatUni()" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                    {% if universities|length != 1 %}<option value="" disabled selected>Wybierz uczelnię...</option>{% endif %}
-                    {% for u in universities %}<option value="{{ u.id }}" data-name="{{ u.name }}" {% if universities|length == 1 %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
-                </select>
+                <input type="text" name="title" placeholder="Tytuł pliku / materiału" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
 
                 <select name="category" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
                     <option value="interview">Kategoria: Interview / Materiały Ogólne</option>
-                    <option value="essay">Kategoria: Pomoce do Rozprawek (QA)</option>
+                    <option value="essay">Kategoria: Pomoce do Rozprawek</option>
                     <option value="math_test">Kategoria: Przygotowanie do testu matematycznego</option>
                 </select>
 
-                <!-- Przypisanie do kierunku w zależności od wybranej uczelni -->
                 <div id="matGbsMajor" style="display:none;">
                     <select name="gbs_major_id" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%;">
                         <option value="" selected>Dla wszystkich studentów GBS (Opcjonalnie wybierz kierunek)</option>
@@ -75,14 +85,14 @@
             </form>
         </div>
         
-        <h3>Twoje dodane materiały:</h3>
+        <h3>Materiały dla tej uczelni:</h3>
         {% for uni in universities %}
             {% for mat in uni.materials %}
-            <div class="item-row" style="border-left: 4px solid #17a2b8;">
+            <div class="item-row material-row" data-uni="{{ uni.id }}" style="border-left: 4px solid #17a2b8;">
                 <div>
                     <strong>{{ mat.title }}</strong><br>
-                    <small>Uczelnia: {{ uni.name }} | Kategoria: {{ mat.category }}<br>
-                    Przypisany kierunek: <b>{% if mat.qa_major %}{{ mat.qa_major.name }} (QA){% elif mat.gbs_major %}{{ mat.gbs_major.name }} (GBS){% else %}Wszyscy studenci tej uczelni{% endif %}</b>
+                    <small>Kategoria: {{ mat.category }}<br>
+                    Przypisany kierunek: <b>{% if mat.qa_major %}{{ mat.qa_major.name }} (QA){% elif mat.gbs_major %}{{ mat.gbs_major.name }} (GBS){% else %}Wszyscy studenci{% endif %}</b>
                     </small>
                 </div>
                 <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
@@ -97,50 +107,48 @@
 
     <!-- ZAKŁADKA 2: KIERUNKI (MAJORS) -->
     <div id="majors" class="tab-content">
-        <div style="display: flex; gap: 20px;">
-            <!-- QA KIERUNKI -->
-            <div style="flex: 1; background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #007bff;">
-                <h3 style="margin-top:0;">Kierunki QA</h3>
-                <form method="POST" action="{{ url_for('panel_database') }}" style="display:flex; gap:10px; margin-bottom:15px;">
-                    <input type="hidden" name="action" value="add_qa_major">
-                    <input type="text" name="name" placeholder="Nazwa kierunku QA" required style="flex:1; padding:8px;">
-                    <button type="submit" style="background:#007bff; color:white; border:none; padding:8px 12px; border-radius:4px;">Dodaj</button>
-                </form>
-                {% for m in qa_majors %}
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:5px;">
-                        <span>{{ m.name }}</span>
-                        <form method="POST" action="{{ url_for('panel_database') }}" style="margin:0;">
-                            <input type="hidden" name="action" value="del_qa_major">
-                            <input type="hidden" name="major_id" value="{{ m.id }}">
-                            <button type="submit" style="background:#dc3545; color:white; border:none; padding:2px 6px; border-radius:4px; font-size:11px;">Usuń</button>
-                        </form>
-                    </div>
-                {% endfor %}
-            </div>
+        <!-- QA KIERUNKI -->
+        <div id="qa-majors-section" style="background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #007bff; display:none;">
+            <h3 style="margin-top:0;">Kierunki QA</h3>
+            <form method="POST" action="{{ url_for('panel_database') }}" style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="hidden" name="action" value="add_qa_major">
+                <input type="text" name="name" placeholder="Nazwa kierunku QA" required style="flex:1; padding:8px;">
+                <button type="submit" style="background:#007bff; color:white; border:none; padding:8px 12px; border-radius:4px;">Dodaj kierunek</button>
+            </form>
+            {% for m in qa_majors %}
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:5px;">
+                    <span>{{ m.name }}</span>
+                    <form method="POST" action="{{ url_for('panel_database') }}" style="margin:0;">
+                        <input type="hidden" name="action" value="del_qa_major">
+                        <input type="hidden" name="major_id" value="{{ m.id }}">
+                        <button type="submit" style="background:#dc3545; color:white; border:none; padding:2px 6px; border-radius:4px; font-size:11px;">Usuń</button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
 
-            <!-- GBS KIERUNKI -->
-            <div style="flex: 1; background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #c8102e;">
-                <h3 style="margin-top:0;">Kierunki GBS</h3>
-                <form method="POST" action="{{ url_for('panel_database') }}" style="display:flex; gap:10px; margin-bottom:15px;">
-                    <input type="hidden" name="action" value="add_gbs_major">
-                    <input type="text" name="name" placeholder="Nazwa kierunku GBS" required style="flex:1; padding:8px;">
-                    <button type="submit" style="background:#c8102e; color:white; border:none; padding:8px 12px; border-radius:4px;">Dodaj</button>
-                </form>
-                {% for m in gbs_majors %}
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:5px;">
-                        <span>{{ m.name }}</span>
-                        <form method="POST" action="{{ url_for('panel_database') }}" style="margin:0;">
-                            <input type="hidden" name="action" value="del_gbs_major">
-                            <input type="hidden" name="major_id" value="{{ m.id }}">
-                            <button type="submit" style="background:#dc3545; color:white; border:none; padding:2px 6px; border-radius:4px; font-size:11px;">Usuń</button>
-                        </form>
-                    </div>
-                {% endfor %}
-            </div>
+        <!-- GBS KIERUNKI -->
+        <div id="gbs-majors-section" style="background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #c8102e; display:none;">
+            <h3 style="margin-top:0;">Kierunki GBS</h3>
+            <form method="POST" action="{{ url_for('panel_database') }}" style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="hidden" name="action" value="add_gbs_major">
+                <input type="text" name="name" placeholder="Nazwa kierunku GBS" required style="flex:1; padding:8px;">
+                <button type="submit" style="background:#c8102e; color:white; border:none; padding:8px 12px; border-radius:4px;">Dodaj kierunek</button>
+            </form>
+            {% for m in gbs_majors %}
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:5px;">
+                    <span>{{ m.name }}</span>
+                    <form method="POST" action="{{ url_for('panel_database') }}" style="margin:0;">
+                        <input type="hidden" name="action" value="del_gbs_major">
+                        <input type="hidden" name="major_id" value="{{ m.id }}">
+                        <button type="submit" style="background:#dc3545; color:white; border:none; padding:2px 6px; border-radius:4px; font-size:11px;">Usuń</button>
+                    </form>
+                </div>
+            {% endfor %}
         </div>
     </div>
 
-    <!-- ZAKŁADKA 3: ROZPRAWKI QA (bez zmian, tylko w innej zakładce) -->
+    <!-- ZAKŁADKA 3: ROZPRAWKI QA (DRAG & DROP) -->
     <div id="qa" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
             <h3>Dodaj nowy temat do Bazy Rozprawek QA</h3>
@@ -148,19 +156,90 @@
                 <input type="hidden" name="action" value="add_qa_topic">
                 <input type="text" name="title" placeholder="Krótki tytuł" required style="padding: 10px; border: 1px solid #ccc;">
                 <textarea name="topic_full" placeholder="Pełna treść tematu..." rows="4" required style="padding: 10px; border: 1px solid #ccc;"></textarea>
-                <input type="number" name="order_index" value="0" placeholder="Kolejność (0 = na początku)" style="padding: 10px; border: 1px solid #ccc;">
+                <!-- Ukryłem ręczny index, ponieważ mamy teraz przeciąganie! -->
+                <input type="hidden" name="order_index" value="0">
                 <button type="submit" style="padding: 10px; background: #007bff; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz temat</button>
             </form>
         </div>
-        <!-- Pętla tematów (skrócona na potrzeby widoku) -->
+        
+        <h3 style="margin-bottom: 5px;">Zarządzaj tematami (Złap i przeciągnij, aby zmienić kolejność)</h3>
+        <p style="font-size: 13px; color: #666;">Kolejność zapisuje się automatycznie po upuszczeniu.</p>
+        
+        <div id="qa-topics-list">
+            {% for t in qa_topics %}
+            <div class="qa-topic-item" draggable="true" data-id="{{ t.id }}">
+                <div style="display: flex; align-items: center;">
+                    <div class="drag-handle">☰</div>
+                    <div>
+                        <strong>{{ t.title }}</strong><br>
+                        <small style="color: #666;">{{ t.topic_full[:80] }}...</small>
+                    </div>
+                </div>
+                <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
+                    <input type="hidden" name="action" value="del_qa_topic">
+                    <input type="hidden" name="topic_id" value="{{ t.id }}">
+                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 
-    <!-- ZAKŁADKA 4: MATEMATYKA (bez zmian) -->
+    <!-- ZAKŁADKA 4: MATEMATYKA -->
     <div id="math" class="tab-content">
-        <!-- Pętla math -->
+        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+            <h3>Dodaj pytanie matematyczne do tej uczelni</h3>
+            <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 10px;">
+                <input type="hidden" name="action" value="add_math_q">
+                <input type="hidden" name="university_id" class="dynamic-uni-id">
+                
+                <textarea name="text" placeholder="Treść zadania..." rows="3" required style="padding: 10px; border: 1px solid #ccc;"></textarea>
+                <input type="text" name="opt_a" placeholder="Opcja A" required style="padding: 10px; border: 1px solid #ccc;">
+                <input type="text" name="opt_b" placeholder="Opcja B" required style="padding: 10px; border: 1px solid #ccc;">
+                <input type="text" name="opt_c" placeholder="Opcja C" required style="padding: 10px; border: 1px solid #ccc;">
+                <input type="text" name="opt_d" placeholder="Opcja D" required style="padding: 10px; border: 1px solid #ccc;">
+                
+                <select name="answer" required style="padding: 10px; border: 1px solid #ccc;">
+                    <option value="" disabled selected>Poprawna odpowiedź...</option>
+                    <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
+                </select>
+                <button type="submit" style="padding: 10px; background: #6f42c1; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz pytanie</button>
+            </form>
+        </div>
+
+        <h3>Pytania testowe dla tej uczelni:</h3>
+        {% for q in math_questions %}
+            <div class="item-row math-row" data-uni="{{ q.university_id }}" style="border-left: 4px solid #6f42c1;">
+                <div style="flex:1;">
+                    <strong>{{ q.text }}</strong><br>
+                    <small style="color: #666;">A: {{q.opt_a}} | B: {{q.opt_b}} | C: {{q.opt_c}} | D: {{q.opt_d}} <br><b>Poprawna: {{ q.answer|upper }}</b></small>
+                </div>
+                <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0; margin-left:15px;">
+                    <input type="hidden" name="action" value="del_math_q">
+                    <input type="hidden" name="question_id" value="{{ q.id }}">
+                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- ZAKŁADKA 5: SZABLON E-MAIL -->
+    <div id="email" class="tab-content">
+        <div style="background: white; padding: 25px; border-radius: 8px;">
+            <h2 style="margin-top:0;">Twój indywidualny szablon e-mail</h2>
+            <p style="font-size: 13px; color: #666;">Używaj tych znaczników, a system podmieni je na prawdziwe dane:<br> <b>{imie}</b> - Imię ucznia, <b>{link}</b> - Osobisty link do panelu, <b>{termin1}</b> oraz <b>{termin2}</b>.</p>
+            <form method="POST" action="/panel/database">
+                <input type="hidden" name="action" value="save_teacher_template">
+                <textarea name="email_template" rows="12" style="width: 100%; padding: 15px; font-family: sans-serif; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px;">{{ user.email_template if user.email_template else "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nTermin pierwszej sesji: {termin1}\nTermin drugiej sesji: {termin2}\n\nPozdrawiam!" }}</textarea>
+                <div style="margin-top: 15px;">
+                    <button type="submit" style="background: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Zapisz Mój Szablon</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
+        // LOGIKA ZAKŁADEK I TYPÓW PLIKÓW
         function toggleType() {
             let val = document.getElementById('typeSelect').value;
             document.getElementById('linkInput').style.display = (val === 'link') ? 'block' : 'none';
@@ -172,15 +251,104 @@
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
         }
-        function toggleMatUni() {
-            let sel = document.getElementById('matUniSelect');
+
+        // LOGIKA FILTROWANIA PO UCZELNI
+        function applyUniFilter() {
+            let sel = document.getElementById('activeUniSelector');
             if(!sel) return;
-            let opt = sel.options[sel.selectedIndex];
-            let name = opt.getAttribute('data-name');
-            document.getElementById('matGbsMajor').style.display = name.includes('GBS') ? 'block' : 'none';
-            document.getElementById('matQaMajor').style.display = name.includes('QA') ? 'block' : 'none';
+            let uniId = sel.value;
+            let uniName = sel.options[sel.selectedIndex].getAttribute('data-name');
+
+            let isGbs = uniName.includes('GBS');
+            let isQa = uniName.includes('QA');
+
+            // 1. Zmiana ukrytych inputów w formularzach
+            document.querySelectorAll('.dynamic-uni-id').forEach(input => {
+                input.value = uniId;
+            });
+
+            // 2. Widoczność zakładek (Tabs)
+            document.getElementById('tab-majors').style.display = (isGbs || isQa) ? 'inline-block' : 'none';
+            document.getElementById('tab-qa').style.display = isQa ? 'inline-block' : 'none';
+
+            // 3. Widoczność sekcji Kierunków wewnątrz zakładki
+            document.getElementById('qa-majors-section').style.display = isQa ? 'block' : 'none';
+            document.getElementById('gbs-majors-section').style.display = isGbs ? 'block' : 'none';
+
+            // 4. Rozwijane listy kierunków w formularzu dodawania Materiałów
+            document.getElementById('matQaMajor').style.display = isQa ? 'block' : 'none';
+            document.getElementById('matGbsMajor').style.display = isGbs ? 'block' : 'none';
+
+            // 5. Filtrowanie wierszy w listach (Materiały i Pytania matematyczne)
+            document.querySelectorAll('.material-row').forEach(row => {
+                row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none';
+            });
+            document.querySelectorAll('.math-row').forEach(row => {
+                row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none';
+            });
+            
+            // Jeśli ukryto obecną zakładkę, wróć do pierwszej
+            if(document.getElementById('tab-qa').classList.contains('active') && !isQa) {
+                showTab('mat');
+            }
         }
-        window.onload = toggleMatUni; // Uruchom przy starcie
+
+        // LOGIKA DRAG & DROP DLA ROZPRAWK QA
+        let dragSrcEl = null;
+
+        function handleDragStart(e) {
+            dragSrcEl = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+            this.style.opacity = '0.4';
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) { e.preventDefault(); }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) { this.classList.add('over'); }
+        function handleDragLeave(e) { this.classList.remove('over'); }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) { e.stopPropagation(); }
+            if (dragSrcEl != this) {
+                this.parentNode.insertBefore(dragSrcEl, this.nextSibling || this);
+            }
+            return false;
+        }
+
+        function handleDragEnd(e) {
+            this.style.opacity = '1';
+            let items = document.querySelectorAll('.qa-topic-item');
+            items.forEach(function (item) { item.classList.remove('over'); });
+
+            // Zbierz nową kolejność ID
+            let newOrder = [];
+            items.forEach((el) => {
+                newOrder.push(el.getAttribute('data-id'));
+            });
+
+            // Wyślij nową kolejność do backendu
+            fetch('/api/reorder_qa', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({order: newOrder})
+            });
+        }
+
+        let items = document.querySelectorAll('.qa-topic-item');
+        items.forEach(function(item) {
+            item.addEventListener('dragstart', handleDragStart, false);
+            item.addEventListener('dragenter', handleDragEnter, false);
+            item.addEventListener('dragover', handleDragOver, false);
+            item.addEventListener('dragleave', handleDragLeave, false);
+            item.addEventListener('drop', handleDrop, false);
+            item.addEventListener('dragend', handleDragEnd, false);
+        });
+
     </script>
 </body>
 </html>

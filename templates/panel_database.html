@@ -40,6 +40,7 @@
         <button class="tab-btn active" onclick="showTab('mat')">📁 Pliki i Linki</button>
         <button class="tab-btn" id="tab-majors" onclick="showTab('majors')">🎓 Kierunki</button>
         <button class="tab-btn" id="tab-qa" onclick="showTab('qa')">✍️ Tematy Rozprawek</button>
+        <button class="tab-btn" id="tab-exam" onclick="showTab('exam')">📝 Tematy Egzaminu</button>
         <button class="tab-btn" onclick="showTab('math')">🔢 Pytania Matematyczne</button>
         <button class="tab-btn" onclick="showTab('email')">✉️ Twój Szablon E-mail</button>
     </div>
@@ -151,12 +152,11 @@
     <!-- ZAKŁADKA 3: ROZPRAWKI QA (DRAG & DROP) -->
     <div id="qa" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
-            <h3>Dodaj nowy temat do Bazy Rozprawek QA</h3>
+            <h3>Dodaj nowy temat do Bazy Rozprawek QA (Zwykłych)</h3>
             <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px;">
                 <input type="hidden" name="action" value="add_qa_topic">
                 <input type="text" name="title" placeholder="Krótki tytuł" required style="padding: 10px; border: 1px solid #ccc;">
                 <textarea name="topic_full" placeholder="Pełna treść tematu..." rows="4" required style="padding: 10px; border: 1px solid #ccc;"></textarea>
-                <!-- Ukryłem ręczny index, ponieważ mamy teraz przeciąganie! -->
                 <input type="hidden" name="order_index" value="0">
                 <button type="submit" style="padding: 10px; background: #007bff; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz temat</button>
             </form>
@@ -177,6 +177,36 @@
                 </div>
                 <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
                     <input type="hidden" name="action" value="del_qa_topic">
+                    <input type="hidden" name="topic_id" value="{{ t.id }}">
+                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ZAKŁADKA 3.5: TEMATY EGZAMINU QA -->
+    <div id="exam" class="tab-content">
+        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+            <h3>Dodaj temat do Egzaminu Próbnego</h3>
+            <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="hidden" name="action" value="add_exam_topic">
+                <input type="text" name="title" placeholder="Krótki tytuł (np. Temat 3)" required style="padding: 10px; border: 1px solid #ccc;">
+                <textarea name="topic_full" placeholder="Pełna treść tematu egzaminacyjnego..." rows="4" required style="padding: 10px; border: 1px solid #ccc;"></textarea>
+                <button type="submit" style="padding: 10px; background: #007bff; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz temat egzaminu</button>
+            </form>
+        </div>
+        
+        <h3>Baza tematów egzaminacyjnych:</h3>
+        <div id="exam-topics-list">
+            {% for t in exam_topics %}
+            <div style="background: #fff; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #007bff;">
+                <div style="flex:1; margin-right: 15px;">
+                    <strong>{{ t.title }}</strong><br>
+                    <small style="color: #666;">{{ t.topic_full }}</small>
+                </div>
+                <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
+                    <input type="hidden" name="action" value="del_exam_topic">
                     <input type="hidden" name="topic_id" value="{{ t.id }}">
                     <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
                 </form>
@@ -270,6 +300,7 @@
             // 2. Widoczność zakładek (Tabs)
             document.getElementById('tab-majors').style.display = (isGbs || isQa) ? 'inline-block' : 'none';
             document.getElementById('tab-qa').style.display = isQa ? 'inline-block' : 'none';
+            document.getElementById('tab-exam').style.display = isQa ? 'inline-block' : 'none';
 
             // 3. Widoczność sekcji Kierunków wewnątrz zakładki
             document.getElementById('qa-majors-section').style.display = isQa ? 'block' : 'none';
@@ -288,7 +319,7 @@
             });
             
             // Jeśli ukryto obecną zakładkę, wróć do pierwszej
-            if(document.getElementById('tab-qa').classList.contains('active') && !isQa) {
+            if((document.getElementById('tab-qa').classList.contains('active') || document.getElementById('tab-exam').classList.contains('active')) && !isQa) {
                 showTab('mat');
             }
         }

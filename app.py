@@ -254,18 +254,6 @@ def setup_database():
     lcca_uni = University.query.filter_by(name="LCCA").first() or University(name="LCCA")
     db.session.add_all([qa_uni, gbs_uni, lcca_uni])
     db.session.commit()
-
-    kuba = User.query.filter_by(username="Kuba").first()
-    if kuba:
-        try:
-            Student.query.filter_by(creator_id=kuba.id).update({'creator_id': None})
-            Notification.query.filter_by(recipient_id=kuba.id).delete()
-            db.session.execute(text("DELETE FROM teacher_university WHERE teacher_id = :tid"), {'tid': kuba.id})
-            db.session.delete(kuba)
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            print("Nie udało się usunąć Kuby podczas startu:", str(e))
             
     if not User.query.filter_by(username="Admin Open UK Study").first(): 
         db.session.add(User(username="Admin Open UK Study", password_hash=generate_password_hash("Open196!"), role="admin"))
@@ -346,12 +334,6 @@ def logout():
 def panel_dashboard():
     user = User.query.get(session['user_id'])
     
-    if request.method == 'POST' and request.form.get('action') == 'save_teacher_template':
-        user.email_template = request.form.get('email_template')
-        db.session.commit()
-        flash("Twój szablon e-mail został zapisany!", "success")
-        return redirect(url_for('panel_dashboard'))
-        
     universities = University.query.all() if user.role == 'admin' else user.universities
     uni_ids = [u.id for u in universities]
     
@@ -389,8 +371,12 @@ def panel_add_student():
     name = request.form.get('name')
     university_id = request.form.get('university_id')
     email = request.form.get('email')
-    termin1 = request.form.get('termin1', '')
-    termin2 = request.form.get('termin2', '')
+    
+    # Przetwarzanie formatu datetime-local ("2024-08-15T14:00") na czytelny tekst w mailu
+    raw_t1 = request.form.get('termin1', '')
+    raw_t2 = request.form.get('termin2', '')
+    termin1 = raw_t1.replace('T', ' ') if raw_t1 else 'Brak'
+    termin2 = raw_t2.replace('T', ' ') if raw_t2 else 'Brak'
     
     if not university_id and len(user.universities) == 1: university_id = user.universities[0].id
     if not name or not university_id: return redirect(url_for('panel_dashboard'))
@@ -434,13 +420,17 @@ def panel_add_student():
 def panel_database():
     user = User.query.get(session['user_id'])
     universities = University.query.all() if user.role == 'admin' else user.universities
-    has_gbs = any("GBS" in u.name for u in universities)
-    has_qa = any("QA" in u.name for u in universities)
     
     if request.method == 'POST':
         action = request.form.get('action')
         
-        if action == 'add_material':
+        if action == 'save_teacher_template':
+            user.email_template = request.form.get('email_template')
+            db.session.commit()
+            flash("Twój szablon e-mail został zapisany!", "success")
+            return redirect(url_for('panel_database'))
+            
+        elif action == 'add_material':
             title = request.form.get('title')
             uni_id = request.form.get('university_id')
             category = request.form.get('category', 'interview') 
@@ -492,27 +482,19 @@ def panel_database():
             order_val = request.form.get('order_index', 0)
             db.session.add(QaTopic(title=request.form.get('title'), topic_full=request.form.get('topic_full'), order_index=int(order_val)))
             db.session.commit(); flash("Temat rozprawki zapisany.", "success")
-        elif action == 'edit_qa_order':
-            t = QaTopic.query.get(request.form.get('topic_id'))
-            if t: 
-                t.order_index = int(request.form.get('order_index', 0))
-                db.session.commit(); flash("Kolejność zaktualizowana.", "success")
         elif action == 'del_qa_topic':
             t = QaTopic.query.get(request.form.get('topic_id'))
             if t: db.session.delete(t); db.session.commit(); flash("Temat usunięty.", "success")
+            
         elif action == 'add_math_q':
             uni_id = request.form.get('university_id')
             if not uni_id and len(universities) == 1: uni_id = universities[0].id
             db.session.add(MathQuestion(text=request.form.get('text'), opt_a=request.form.get('opt_a'), opt_b=request.form.get('opt_b'), opt_c=request.form.get('opt_c'), opt_d=request.form.get('opt_d'), answer=request.form.get('answer'), university_id=int(uni_id)))
             db.session.commit(); flash("Pytanie matematyczne dodane.", "success")
+            
         elif action == 'del_math_q':
             mq = MathQuestion.query.get(request.form.get('question_id'))
             if mq: db.session.delete(mq); db.session.commit(); flash("Pytanie z matematyki usunięte.", "success")
-        elif action == 'save_uni_template':
-            uni = University.query.get(request.form.get('university_id'))
-            if uni:
-                uni.email_template = request.form.get('email_template')
-                db.session.commit(); flash(f"Szablon email dla uczelni {uni.name} zapisany pomyślnie!", "success")
 
         return redirect(url_for('panel_database'))
 
@@ -520,7 +502,21 @@ def panel_database():
     math_questions = MathQuestion.query.all()
     gbs_majors = GbsMajor.query.all()
     qa_majors = QaMajor.query.all()
-    return render_template('panel_database.html', universities=universities, qa_topics=qa_topics, math_questions=math_questions, gbs_majors=gbs_majors, qa_majors=qa_majors, user=user, has_gbs=has_gbs, has_qa=has_qa)
+    
+    return render_template('panel_database.html', universities=universities, qa_topics=qa_topics, math_questions=math_questions, gbs_majors=gbs_majors, qa_majors=qa_majors, user=user)
+
+# --- ENDPOINT API DO ZAPISU DRAG & DROP ROZPRAWK QA ---
+@app.route('/api/reorder_qa', methods=['POST'])
+@login_required
+def reorder_qa():
+    data = request.get_json()
+    for index, topic_id in enumerate(data.get('order', [])):
+        t = QaTopic.query.get(topic_id)
+        if t:
+            t.order_index = index
+    db.session.commit()
+    return jsonify({"status": "success"})
+
 
 @app.route('/uploads/<name>')
 def download_file(name):

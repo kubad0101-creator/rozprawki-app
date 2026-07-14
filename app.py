@@ -17,7 +17,7 @@ app.secret_key = "Open196!_System_Rozprawek_2024"
 
 # --- KONFIGURACJA BREVO API ---
 BREVO_API_KEY = "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" 
-BREVO_SENDER_EMAIL = "kuba@openukstudy.com"
+BREVO_SENDER_EMAIL = "kuba@openukstudy.com" # Adres rezerwowy (fallback)
 # ------------------------------
 
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
@@ -45,6 +45,8 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), default='teacher', nullable=False)
+    # Wykorzystujemy stare pole do przechowywania autoryzowanego maila z Brevo
+    smtp_email = db.Column(db.String(120), nullable=True) 
     email_template = db.Column(db.Text, nullable=True) 
     universities = db.relationship('University', secondary=teacher_university, backref='teachers')
 
@@ -217,7 +219,8 @@ def trigger_welcome_email(teacher, student, request_host, termin1, termin2):
     if not student.email:
         return False, "Nie podano adresu e-mail studenta."
         
-    sender_email = BREVO_SENDER_EMAIL
+    # LOGIKA WYBORU MAILA: Priorytet to wpisany mail nauczyciela, w razie braku - główny mail
+    sender_email = teacher.smtp_email if teacher.smtp_email else BREVO_SENDER_EMAIL
     sender_name = teacher.username
     
     template = student.university.email_template if student.university and student.university.email_template else None
@@ -334,6 +337,12 @@ def logout():
 def panel_dashboard():
     user = User.query.get(session['user_id'])
     
+    if request.method == 'POST' and request.form.get('action') == 'save_teacher_template':
+        user.email_template = request.form.get('email_template')
+        db.session.commit()
+        flash("Twój szablon e-mail został zapisany!", "success")
+        return redirect(url_for('panel_dashboard'))
+        
     universities = University.query.all() if user.role == 'admin' else user.universities
     uni_ids = [u.id for u in universities]
     
@@ -372,7 +381,6 @@ def panel_add_student():
     university_id = request.form.get('university_id')
     email = request.form.get('email')
     
-    # Przetwarzanie formatu datetime-local ("2024-08-15T14:00") na czytelny tekst w mailu
     raw_t1 = request.form.get('termin1', '')
     raw_t2 = request.form.get('termin2', '')
     termin1 = raw_t1.replace('T', ' ') if raw_t1 else 'Brak'
@@ -505,7 +513,6 @@ def panel_database():
     
     return render_template('panel_database.html', universities=universities, qa_topics=qa_topics, math_questions=math_questions, gbs_majors=gbs_majors, qa_majors=qa_majors, user=user)
 
-# --- ENDPOINT API DO ZAPISU DRAG & DROP ROZPRAWK QA ---
 @app.route('/api/reorder_qa', methods=['POST'])
 @login_required
 def reorder_qa():
@@ -614,7 +621,8 @@ def panel_master():
                 new_t = User(
                     username=request.form.get('username'), 
                     password_hash=generate_password_hash(request.form.get('password')), 
-                    role='teacher'
+                    role='teacher',
+                    smtp_email=request.form.get('smtp_email') # PRZECHWYTUJEMY OSOBISTY EMAIL BREVO
                 )
                 for uid in request.form.getlist('universities'): 
                     new_t.universities.append(University.query.get(int(uid)))
@@ -626,6 +634,7 @@ def panel_master():
             t = User.query.get(request.form.get('teacher_id'))
             if t:
                 t.username = request.form.get('username')
+                t.smtp_email = request.form.get('smtp_email') # AKTUALIZUJEMY EMAIL
                 new_pass = request.form.get('password')
                 if new_pass:
                     t.password_hash = generate_password_hash(new_pass)

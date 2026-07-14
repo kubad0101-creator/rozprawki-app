@@ -220,7 +220,6 @@ def trigger_welcome_email(teacher, student, request_host, termin1, termin2):
     sender_email = BREVO_SENDER_EMAIL
     sender_name = teacher.username
     
-    # Priorytet: szablon uczelni, potem szablon nauczyciela
     template = student.university.email_template if student.university and student.university.email_template else None
     if not template:
         template = teacher.email_template
@@ -256,11 +255,9 @@ def setup_database():
     db.session.add_all([qa_uni, gbs_uni, lcca_uni])
     db.session.commit()
 
-    # ZARZĄDZANIE ADMINAMI WEDŁUG WYTYCZNYCH - Z ZABEZPIECZENIEM KLUCZA OBCEGO (Obejście błędu 500)
     kuba = User.query.filter_by(username="Kuba").first()
     if kuba:
         try:
-            # Odpinamy studentów i powiadomienia przed usunięciem konta Kuba
             Student.query.filter_by(creator_id=kuba.id).update({'creator_id': None})
             Notification.query.filter_by(recipient_id=kuba.id).delete()
             db.session.execute(text("DELETE FROM teacher_university WHERE teacher_id = :tid"), {'tid': kuba.id})
@@ -349,7 +346,6 @@ def logout():
 def panel_dashboard():
     user = User.query.get(session['user_id'])
     
-    # Obsługa zapisu szablonu nauczyciela
     if request.method == 'POST' and request.form.get('action') == 'save_teacher_template':
         user.email_template = request.form.get('email_template')
         db.session.commit()
@@ -444,11 +440,10 @@ def panel_database():
     if request.method == 'POST':
         action = request.form.get('action')
         
-        # Akcje Materiałów
         if action == 'add_material':
             title = request.form.get('title')
             uni_id = request.form.get('university_id')
-            category = request.form.get('category', 'interview') # w tym math_test
+            category = request.form.get('category', 'interview') 
             gbs_major_id = request.form.get('gbs_major_id')
             qa_major_id = request.form.get('qa_major_id')
             link_url = request.form.get('link_url')
@@ -479,7 +474,6 @@ def panel_database():
             m = Material.query.get(request.form.get('material_id'))
             if m: db.session.delete(m); db.session.commit(); flash("Materiał usunięty.", "success")
             
-        # Akcje QA Kierunki
         elif action == 'add_qa_major':
             db.session.add(QaMajor(name=request.form.get('name')))
             db.session.commit(); flash("Kierunek QA dodany.", "success")
@@ -487,7 +481,6 @@ def panel_database():
             qm = QaMajor.query.get(request.form.get('major_id'))
             if qm: db.session.delete(qm); db.session.commit(); flash("Kierunek QA usunięty.", "success")
             
-        # Akcje GBS Kierunki
         elif action == 'add_gbs_major':
             db.session.add(GbsMajor(name=request.form.get('name')))
             db.session.commit(); flash("Kierunek GBS dodany.", "success")
@@ -495,7 +488,6 @@ def panel_database():
             gm = GbsMajor.query.get(request.form.get('major_id'))
             if gm: db.session.delete(gm); db.session.commit(); flash("Kierunek GBS usunięty.", "success")
             
-        # Reszta akcji
         elif action == 'add_qa_topic':
             order_val = request.form.get('order_index', 0)
             db.session.add(QaTopic(title=request.form.get('title'), topic_full=request.form.get('topic_full'), order_index=int(order_val)))
@@ -542,12 +534,9 @@ def student_dashboard(url_slug):
     archived_view = check_archived(student)
     if archived_view: return archived_view
     
-    # Pobieramy materiały dopasowane dla studenta (globalne lub konkretnie pod jego kierunek)
     all_uni_materials = student.university.materials if student.university else []
     materials = []
     for m in all_uni_materials:
-        # Pokaż jeśli nie przypisano kierunku (globalny materiał uczelni) 
-        # LUB przypisano dokładnie ten sam kierunek co ma uczeń
         if m.qa_major_id is None and m.gbs_major_id is None:
             materials.append(m)
         elif m.qa_major_id and student.qa_major_id and m.qa_major_id == student.qa_major_id:
@@ -654,7 +643,6 @@ def panel_master():
             t = User.query.get(request.form.get('teacher_id'))
             if t: 
                 try:
-                    # PANCERNE USUWANIE NAUCZYCIELA
                     db.session.execute(text("DELETE FROM teacher_university WHERE teacher_id = :tid"), {'tid': t.id})
                     Student.query.filter_by(creator_id=t.id).update({'creator_id': None})
                     Notification.query.filter_by(recipient_id=t.id).delete()

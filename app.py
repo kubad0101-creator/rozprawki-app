@@ -17,7 +17,7 @@ app.secret_key = "Open196!_System_Rozprawek_2024"
 
 # --- KONFIGURACJA BREVO API ---
 BREVO_API_KEY = "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" 
-BREVO_SENDER_EMAIL = "b1bb47001@smtp-brevo.com"
+BREVO_SENDER_EMAIL = "kuba@openukstudy.com"
 # ------------------------------
 
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')

@@ -17,7 +17,7 @@ app.secret_key = "Open196!_System_Rozprawek_2024"
 
 # --- KONFIGURACJA BREVO API ---
 BREVO_API_KEY = "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" 
-BREVO_SENDER_EMAIL = "kuba@openukstudy.com" # Adres rezerwowy (fallback)
+BREVO_SENDER_EMAIL = "b1bb47001@smtp-brevo.com"
 # ------------------------------
 
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
@@ -45,7 +45,6 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), default='teacher', nullable=False)
-    # Wykorzystujemy stare pole do przechowywania autoryzowanego maila z Brevo
     smtp_email = db.Column(db.String(120), nullable=True) 
     email_template = db.Column(db.Text, nullable=True) 
     universities = db.relationship('University', secondary=teacher_university, backref='teachers')
@@ -88,6 +87,13 @@ class QaTopic(db.Model):
     title = db.Column(db.String(200), nullable=False)
     topic_full = db.Column(db.Text, nullable=False)
     order_index = db.Column(db.Integer, default=0)
+
+# NOWY MODEL: TEMATY EGZAMINACYJNE
+class ExamTopic(db.Model):
+    __tablename__ = 'exam_topics'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    topic_full = db.Column(db.Text, nullable=False)
 
 class MathQuestion(db.Model):
     __tablename__ = 'math_questions'
@@ -219,7 +225,6 @@ def trigger_welcome_email(teacher, student, request_host, termin1, termin2):
     if not student.email:
         return False, "Nie podano adresu e-mail studenta."
         
-    # LOGIKA WYBORU MAILA: Priorytet to wpisany mail nauczyciela, w razie braku - główny mail
     sender_email = teacher.smtp_email if teacher.smtp_email else BREVO_SENDER_EMAIL
     sender_name = teacher.username
     
@@ -231,9 +236,18 @@ def trigger_welcome_email(teacher, student, request_host, termin1, termin2):
         
     link = f"https://{request_host}/student/{student.url_slug}"
     
-    body = template.replace("{imie}", student.name).replace("{link}", link).replace("{termin1}", termin1).replace("{termin2}", termin2)
-    subject = "Twój dostęp do platformy edukacyjnej"
+    body = template
+    replacements = {
+        "{imie}": student.name,
+        "{link}": link,
+        "{termin1}": termin1,
+        "{termin2}": termin2
+    }
     
+    for tag, value in replacements.items():
+        body = body.replace(tag, value)
+    
+    subject = "Twój dostęp do platformy edukacyjnej"
     success, msg = send_email_api(sender_email, sender_name, student.email, subject, body)
     return success, msg
 # ---------------------------------------------------------------
@@ -244,6 +258,7 @@ def setup_database():
     db.create_all()
     queries = [
         'CREATE TABLE IF NOT EXISTS qa_majors (id INTEGER PRIMARY KEY, name VARCHAR(200) NOT NULL)',
+        'CREATE TABLE IF NOT EXISTS exam_topics (id INTEGER PRIMARY KEY, title VARCHAR(200) NOT NULL, topic_full TEXT NOT NULL)',
         'ALTER TABLE student_v5 ADD COLUMN qa_major_id INTEGER REFERENCES qa_majors(id)',
         'ALTER TABLE materials ADD COLUMN qa_major_id INTEGER REFERENCES qa_majors(id)',
         'ALTER TABLE materials ADD COLUMN gbs_major_id INTEGER REFERENCES gbs_majors(id)'
@@ -256,6 +271,12 @@ def setup_database():
     gbs_uni = University.query.filter_by(name="GBS").first() or University(name="GBS")
     lcca_uni = University.query.filter_by(name="LCCA").first() or University(name="LCCA")
     db.session.add_all([qa_uni, gbs_uni, lcca_uni])
+    
+    # Dodanie domyślnych pełnych tematów egzaminacyjnych
+    if not ExamTopic.query.first():
+        db.session.add(ExamTopic(title="Egzamin 1", topic_full="Some people think it is beneficial for old people to learn something new... (Możesz zedytować pełną treść tego tematu w zakładce Baza)"))
+        db.session.add(ExamTopic(title="Egzamin 2", topic_full="Some people think that introducing children to team sports... (Możesz zedytować pełną treść tego tematu w zakładce Baza)"))
+    
     db.session.commit()
             
     if not User.query.filter_by(username="Admin Open UK Study").first(): 
@@ -493,6 +514,14 @@ def panel_database():
         elif action == 'del_qa_topic':
             t = QaTopic.query.get(request.form.get('topic_id'))
             if t: db.session.delete(t); db.session.commit(); flash("Temat usunięty.", "success")
+
+        # AKCJE TEMATÓW EGZAMINU
+        elif action == 'add_exam_topic':
+            db.session.add(ExamTopic(title=request.form.get('title'), topic_full=request.form.get('topic_full')))
+            db.session.commit(); flash("Temat egzaminu zapisany.", "success")
+        elif action == 'del_exam_topic':
+            t = ExamTopic.query.get(request.form.get('topic_id'))
+            if t: db.session.delete(t); db.session.commit(); flash("Temat usunięty.", "success")
             
         elif action == 'add_math_q':
             uni_id = request.form.get('university_id')
@@ -507,11 +536,12 @@ def panel_database():
         return redirect(url_for('panel_database'))
 
     qa_topics = QaTopic.query.order_by(QaTopic.order_index).all()
+    exam_topics = ExamTopic.query.all()
     math_questions = MathQuestion.query.all()
     gbs_majors = GbsMajor.query.all()
     qa_majors = QaMajor.query.all()
     
-    return render_template('panel_database.html', universities=universities, qa_topics=qa_topics, math_questions=math_questions, gbs_majors=gbs_majors, qa_majors=qa_majors, user=user)
+    return render_template('panel_database.html', universities=universities, qa_topics=qa_topics, exam_topics=exam_topics, math_questions=math_questions, gbs_majors=gbs_majors, qa_majors=qa_majors, user=user)
 
 @app.route('/api/reorder_qa', methods=['POST'])
 @login_required
@@ -523,7 +553,6 @@ def reorder_qa():
             t.order_index = index
     db.session.commit()
     return jsonify({"status": "success"})
-
 
 @app.route('/uploads/<name>')
 def download_file(name):
@@ -622,7 +651,7 @@ def panel_master():
                     username=request.form.get('username'), 
                     password_hash=generate_password_hash(request.form.get('password')), 
                     role='teacher',
-                    smtp_email=request.form.get('smtp_email') # PRZECHWYTUJEMY OSOBISTY EMAIL BREVO
+                    smtp_email=request.form.get('smtp_email')
                 )
                 for uid in request.form.getlist('universities'): 
                     new_t.universities.append(University.query.get(int(uid)))
@@ -634,7 +663,7 @@ def panel_master():
             t = User.query.get(request.form.get('teacher_id'))
             if t:
                 t.username = request.form.get('username')
-                t.smtp_email = request.form.get('smtp_email') # AKTUALIZUJEMY EMAIL
+                t.smtp_email = request.form.get('smtp_email')
                 new_pass = request.form.get('password')
                 if new_pass:
                     t.password_hash = generate_password_hash(new_pass)
@@ -720,7 +749,14 @@ def admin_student_detail(student_id):
     essays_sorted = sorted(student.essays, key=lambda x: x.last_edited_at or datetime.min, reverse=True)
     gbs_attempts = sorted(student.gbs_attempts, key=lambda x: x.submitted_at, reverse=True)
     math_results = sorted(student.math_results, key=lambda x: x.submitted_at, reverse=True)
-    return render_template('qa/student_detail.html', student=student, essays_sorted=essays_sorted, gbs_attempts=gbs_attempts, math_results=math_results)
+
+    # Przygotowanie tematów do Egzaminu Dodatkowego
+    extra_exam = next((e for e in student.essays if e.title == "Egzamin Dodatkowy"), None)
+    extra_topics = extra_exam.topic_full.split('|||') if extra_exam and extra_exam.topic_full else ["", ""]
+    extra_topic1 = extra_topics[0] if len(extra_topics) > 0 else ""
+    extra_topic2 = extra_topics[1] if len(extra_topics) > 1 else ""
+
+    return render_template('qa/student_detail.html', student=student, essays_sorted=essays_sorted, gbs_attempts=gbs_attempts, math_results=math_results, extra_topic1=extra_topic1, extra_topic2=extra_topic2)
 
 @app.route('/admin/student/<int:student_id>/archive', methods=['POST'])
 @login_required
@@ -778,7 +814,11 @@ def exam_direct_link(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     if check_archived(student): return check_archived(student)
     exam_essay = Essay.query.filter_by(student_id=student.id, title="Egzamin").first_or_404()
-    topics = ["Some people think it is beneficial for old people to learn something new...", "Some people think that introducing children to team sports..."]
+    
+    # Pobierz pełne tematy egzaminu z bazy
+    db_topics = ExamTopic.query.order_by(ExamTopic.id).all()
+    topics = [t.topic_full for t in db_topics]
+    
     return render_template('qa/write.html', essay=exam_essay, exam_topics=topics)
 
 @app.route('/exam_extra/<url_slug>')

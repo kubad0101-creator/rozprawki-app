@@ -17,8 +17,6 @@
         .btn-link { background-color: #52a8b9; color: white; border: none; border-radius: 6px; padding: 8px 12px; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; }
         .btn-exam { background-color: #cc444b; color: white; border: none; border-radius: 6px; padding: 8px 12px; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; }
         .dynamic-fields { display: none; background: #fdfdfd; padding: 15px; margin-top: 15px; border-radius: 4px; border: 1px solid #eee; }
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
-        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 8px; }
         
         @keyframes pulse { 
             0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 
@@ -36,29 +34,12 @@
             </h1>
         </div>
         <div style="display: flex; gap: 10px;">
-            <button onclick="document.getElementById('emailModal').style.display='block'" style="background: #e2e3e5; color: #333; padding: 10px 15px; border: none; cursor:pointer; border-radius: 5px; font-weight: bold;">✉️ Mój szablon E-mail</button>
-            <a href="{{ url_for('panel_database') }}" style="background: #17a2b8; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">🗄️ Baza (Kierunki/Materiały)</a>
+            <a href="{{ url_for('panel_database') }}" style="background: #17a2b8; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">🗄️ Baza / Ustawienia E-mail</a>
             
             {% if user.role == 'admin' %}
                 <a href="{{ url_for('panel_master') }}" style="background: #001f5b; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">🔑 Master Panel</a>
             {% endif %}
             <a href="/logout" style="background: #dc3545; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">Wyloguj</a>
-        </div>
-    </div>
-
-    <!-- Modal formatki E-mail -->
-    <div id="emailModal" class="modal">
-        <div class="modal-content">
-            <h2>Ustawienia własnego szablonu E-mail</h2>
-            <p style="font-size: 13px; color: #666;">Do szablonu możesz wpisać co chcesz. Wymagane tagi: <b>{imie}</b> (Imię ucznia), <b>{link}</b> (Indywidualny link do panelu), <b>{termin1}</b> oraz <b>{termin2}</b>.</p>
-            <form method="POST" action="/panel">
-                <input type="hidden" name="action" value="save_teacher_template">
-                <textarea name="email_template" rows="10" style="width: 100%; padding: 10px; font-family: sans-serif; box-sizing: border-box;">{{ user.email_template if user.email_template else "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nTermin pierwszej sesji: {termin1}\nTermin drugiej sesji: {termin2}\n\nPozdrawiam!" }}</textarea>
-                <div style="margin-top: 15px; text-align: right;">
-                    <button type="button" onclick="document.getElementById('emailModal').style.display='none'" style="background: #ccc; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">Anuluj</button>
-                    <button type="submit" style="background: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Zapisz Szablon</button>
-                </div>
-            </form>
         </div>
     </div>
 
@@ -88,17 +69,18 @@
                     </label>
 
                     <div id="emailFieldContainer" class="dynamic-fields" style="display:block;">
-                        <label style="font-weight: bold; color: #333; display: block; margin-bottom: 5px;">Adres E-mail studenta (wysyła powiadomienie):</label>
+                        <label style="font-weight: bold; color: #333; display: block; margin-bottom: 5px;">Adres E-mail studenta (wysyła powiadomienie z linkiem):</label>
                         <input type="email" name="email" id="emailInput" placeholder="Email ucznia" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-bottom: 10px;">
                         
                         <div style="display: flex; gap: 10px;">
                             <div style="flex:1;">
-                                <label style="font-size: 12px; color: #666;">Termin sesji 1 (np. 15-08-2024 14:00)</label>
-                                <input type="text" name="termin1" placeholder="Data i godzina" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                                <label style="font-size: 12px; color: #666;">Termin sesji 1 (Krok co 1 godzinę)</label>
+                                <!-- Wymusza pełną godzinę (3600 sekund) na wspieranych przeglądarkach -->
+                                <input type="datetime-local" name="termin1" step="3600" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
                             </div>
                             <div style="flex:1;">
                                 <label style="font-size: 12px; color: #666;">Termin sesji 2 (opcjonalnie)</label>
-                                <input type="text" name="termin2" placeholder="Data i godzina" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                                <input type="datetime-local" name="termin2" step="3600" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
                             </div>
                         </div>
                     </div>
@@ -112,7 +94,7 @@
                             </select>
                         </div>
                         <select name="gbs_major_id" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                            <option value="" disabled selected>Kierunek GBS...</option>
+                            <option value="" disabled selected>Kierunek GBS (Wymagane)...</option>
                             {% for major in gbs_majors %}<option value="{{ major.id }}">{{ major.name }}</option>{% endfor %}
                         </select>
                     </div>
@@ -120,7 +102,7 @@
                     <!-- QA POLA -->
                     <div id="qaFields" class="dynamic-fields" style="border-left: 4px solid #007bff;">
                         <select name="qa_major_id" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                            <option value="" selected>Kierunek QA (Opcjonalnie)...</option>
+                            <option value="" selected>Kierunek QA (Opcjonalnie - zostaw puste jeśli chcesz)...</option>
                             {% for major in qa_majors %}<option value="{{ major.id }}">{{ major.name }}</option>{% endfor %}
                         </select>
                     </div>
@@ -238,6 +220,7 @@
             document.getElementById('qaFields').style.display = isQa ? 'block' : 'none';
             
             document.querySelector('#gbsFields select[name="gbs_major_id"]').required = isGbs;
+            document.querySelector('#qaFields select[name="qa_major_id"]').required = false; // Kierunek opcjonalny w QA
         }
         function copy(url) {
             navigator.clipboard.writeText(url).then(() => {

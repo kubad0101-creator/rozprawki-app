@@ -3,6 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <title>Baza Materiałów i Pytań</title>
+    <!-- EDYTOR WYSIWYG TINYMCE DO EMAILI -->
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script>
+      tinymce.init({
+        selector: '#emailEditor',
+        menubar: false,
+        plugins: 'link image code lists',
+        toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | bullist numlist | link image | code',
+        height: 400
+      });
+    </script>
     <style>
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; flex-wrap: wrap; }
         .tab-btn { padding: 10px 20px; border: none; background: #e2e3e5; color: #333; font-weight: bold; border-radius: 5px; cursor: pointer; }
@@ -10,11 +21,11 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .item-row { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Drag & drop styles dla QA topics */
         .qa-topic-item { cursor: grab; background: #fff; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
         .qa-topic-item.over { border: 2px dashed #007bff; background: #f0f8ff; }
         .drag-handle { font-size: 20px; color: #999; margin-right: 15px; cursor: grab; }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border-radius: 8px; width: 80%; max-width: 600px; }
     </style>
 </head>
 <body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto;" onload="applyUniFilter()">
@@ -43,6 +54,7 @@
         <button class="tab-btn" id="tab-exam" onclick="showTab('exam')">📝 Tematy Egzaminu</button>
         <button class="tab-btn" onclick="showTab('math')">🔢 Pytania Matematyczne</button>
         <button class="tab-btn" onclick="showTab('email')">✉️ Twój Szablon E-mail</button>
+        <button class="tab-btn" onclick="showTab('archive')">🗑️ Archiwum</button>
     </div>
 
     <!-- ZAKŁADKA 1: MATERIAŁY -->
@@ -76,11 +88,11 @@
 
                 <select id="typeSelect" onchange="toggleType()" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
                     <option value="link">Podaj link zewnętrzny</option>
-                    <option value="pdf">Wgraj plik (HTML, PDF, Video)</option>
+                    <option value="pdf">Wgraj plik (HTML, PDF, Video, Zdjęcie)</option>
                 </select>
 
                 <input type="url" name="link_url" id="linkInput" placeholder="https://..." style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                <input type="file" name="pdf_file" id="pdfInput" accept=".pdf,.html,.mp4,.mov,.avi" style="padding: 10px; background: #f8f9fa; display: none;">
+                <input type="file" name="pdf_file" id="pdfInput" accept=".pdf,.html,.mp4,.mov,.avi,.jpg,.png,.jpeg" style="padding: 10px; background: #f8f9fa; display: none;">
                 
                 <button type="submit" style="padding: 10px; background: #17a2b8; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz materiał</button>
             </form>
@@ -108,7 +120,6 @@
 
     <!-- ZAKŁADKA 2: KIERUNKI (MAJORS) -->
     <div id="majors" class="tab-content">
-        <!-- QA KIERUNKI -->
         <div id="qa-majors-section" style="background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #007bff; display:none;">
             <h3 style="margin-top:0;">Kierunki QA</h3>
             <form method="POST" action="{{ url_for('panel_database') }}" style="display:flex; gap:10px; margin-bottom:15px;">
@@ -128,7 +139,6 @@
             {% endfor %}
         </div>
 
-        <!-- GBS KIERUNKI -->
         <div id="gbs-majors-section" style="background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #c8102e; display:none;">
             <h3 style="margin-top:0;">Kierunki GBS</h3>
             <form method="POST" action="{{ url_for('panel_database') }}" style="display:flex; gap:10px; margin-bottom:15px;">
@@ -149,7 +159,7 @@
         </div>
     </div>
 
-    <!-- ZAKŁADKA 3: ROZPRAWKI QA (DRAG & DROP) -->
+    <!-- ZAKŁADKA 3: ROZPRAWKI QA -->
     <div id="qa" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
             <h3>Dodaj nowy temat do Bazy Rozprawek QA (Zwykłych)</h3>
@@ -162,26 +172,45 @@
             </form>
         </div>
         
-        <h3 style="margin-bottom: 5px;">Zarządzaj tematami (Złap i przeciągnij, aby zmienić kolejność)</h3>
-        <p style="font-size: 13px; color: #666;">Kolejność zapisuje się automatycznie po upuszczeniu.</p>
+        <h3 style="margin-bottom: 5px;">Zarządzaj tematami (Złap ☰ i przeciągnij, aby zmienić kolejność)</h3>
         
         <div id="qa-topics-list">
             {% for t in qa_topics %}
             <div class="qa-topic-item" draggable="true" data-id="{{ t.id }}">
-                <div style="display: flex; align-items: center;">
+                <div style="display: flex; align-items: center; flex:1;">
                     <div class="drag-handle">☰</div>
-                    <div>
+                    <div style="flex:1;">
                         <strong>{{ t.title }}</strong><br>
                         <small style="color: #666;">{{ t.topic_full[:80] }}...</small>
                     </div>
                 </div>
-                <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
-                    <input type="hidden" name="action" value="del_qa_topic">
-                    <input type="hidden" name="topic_id" value="{{ t.id }}">
-                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
-                </form>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="openEditQaTopic('{{ t.id }}', '{{ t.title|escape }}', '{{ t.topic_full|replace('\n', '\\n')|replace('\r', '')|escape }}')" style="background: #ffc107; color: #333; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Edytuj</button>
+                    <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
+                        <input type="hidden" name="action" value="del_qa_topic">
+                        <input type="hidden" name="topic_id" value="{{ t.id }}">
+                        <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
+                    </form>
+                </div>
             </div>
             {% endfor %}
+        </div>
+    </div>
+
+    <!-- MODAL EDYCJI TEMATU QA -->
+    <div id="editQaModal" class="modal">
+        <div class="modal-content">
+            <h3>Edytuj Temat QA</h3>
+            <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="hidden" name="action" value="edit_qa_topic">
+                <input type="hidden" name="topic_id" id="editQaId">
+                <input type="text" name="title" id="editQaTitle" required style="padding: 10px; border: 1px solid #ccc;">
+                <textarea name="topic_full" id="editQaFull" rows="6" required style="padding: 10px; border: 1px solid #ccc;"></textarea>
+                <div style="text-align: right;">
+                    <button type="button" onclick="document.getElementById('editQaModal').style.display='none'" style="background: #ccc; padding: 10px; border:none; border-radius:5px; margin-right:10px;">Anuluj</button>
+                    <button type="submit" style="background: #007bff; color: white; padding: 10px; border:none; border-radius:5px; font-weight:bold;">Zapisz Zmiany</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -256,20 +285,41 @@
     <!-- ZAKŁADKA 5: SZABLON E-MAIL -->
     <div id="email" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px;">
-            <h2 style="margin-top:0;">Twój indywidualny szablon e-mail</h2>
+            <h2 style="margin-top:0;">Twój indywidualny szablon e-mail z Edytorem HTML</h2>
             <p style="font-size: 13px; color: #666;">Używaj tych znaczników, a system podmieni je na prawdziwe dane:<br> <b>{imie}</b> - Imię ucznia, <b>{link}</b> - Osobisty link do panelu, <b>{termin1}</b> oraz <b>{termin2}</b>.</p>
             <form method="POST" action="/panel/database">
                 <input type="hidden" name="action" value="save_teacher_template">
-                <textarea name="email_template" rows="12" style="width: 100%; padding: 15px; font-family: sans-serif; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px;">{{ user.email_template if user.email_template else "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nTermin pierwszej sesji: {termin1}\nTermin drugiej sesji: {termin2}\n\nPozdrawiam!" }}</textarea>
+                <!-- TEXTAREA OBSŁUGIWANE PRZEZ TINYMCE -->
+                <textarea id="emailEditor" name="email_template">{{ user.email_template if user.email_template else "<p>Witaj {imie}!</p><p>Oto Twój link do panelu:<br><a href='{link}'>{link}</a></p><p>Termin 1: {termin1}<br>Termin 2: {termin2}</p><p>Pozdrawiamy!</p>" }}</textarea>
                 <div style="margin-top: 15px;">
-                    <button type="submit" style="background: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Zapisz Mój Szablon</button>
+                    <button type="submit" style="background: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Zapisz Szablon E-mail</button>
                 </div>
             </form>
         </div>
     </div>
+    
+    <!-- ZAKŁADKA 6: ARCHIWUM -->
+    <div id="archive" class="tab-content">
+        <div style="background: white; padding: 25px; border-radius: 8px;">
+            <h2 style="margin-top:0; color:#dc3545;">Archiwum wybranej uczelni</h2>
+            <p style="font-size: 14px;">Zarchiwizowani studenci, których możesz w dowolnej chwili przywrócić do procesu.</p>
+            {% for student in archived_students %}
+                <div class="item-row archive-row" data-uni="{{ student.university_id }}" style="border-left: 4px solid #dc3545;">
+                    <div>
+                        <strong>{{ student.name }}</strong> ({{ student.email or 'Brak emaila' }})<br>
+                        <small>Uczelnia: {{ student.university.name if student.university else 'Brak' }}</small>
+                    </div>
+                    <form method="POST" action="/admin/student/{{ student.id }}/restore" style="margin: 0;">
+                        <button type="submit" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Przywróć</button>
+                    </form>
+                </div>
+            {% else %}
+                <p style="color:#666;">Brak zarchiwizowanych studentów dla Twoich uczelni.</p>
+            {% endfor %}
+        </div>
+    </div>
 
     <script>
-        // LOGIKA ZAKŁADEK I TYPÓW PLIKÓW
         function toggleType() {
             let val = document.getElementById('typeSelect').value;
             document.getElementById('linkInput').style.display = (val === 'link') ? 'block' : 'none';
@@ -280,6 +330,14 @@
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
+        }
+
+        // OTWIERANIE MODALU DO EDYCJI TEMATU
+        function openEditQaTopic(id, title, fullText) {
+            document.getElementById('editQaId').value = id;
+            document.getElementById('editQaTitle').value = title;
+            document.getElementById('editQaFull').value = fullText;
+            document.getElementById('editQaModal').style.display = 'block';
         }
 
         // LOGIKA FILTROWANIA PO UCZELNI
@@ -297,7 +355,7 @@
                 input.value = uniId;
             });
 
-            // 2. Widoczność zakładek (Tabs)
+            // 2. Widoczność zakładek
             document.getElementById('tab-majors').style.display = (isGbs || isQa) ? 'inline-block' : 'none';
             document.getElementById('tab-qa').style.display = isQa ? 'inline-block' : 'none';
             document.getElementById('tab-exam').style.display = isQa ? 'inline-block' : 'none';
@@ -305,20 +363,15 @@
             // 3. Widoczność sekcji Kierunków wewnątrz zakładki
             document.getElementById('qa-majors-section').style.display = isQa ? 'block' : 'none';
             document.getElementById('gbs-majors-section').style.display = isGbs ? 'block' : 'none';
-
-            // 4. Rozwijane listy kierunków w formularzu dodawania Materiałów
             document.getElementById('matQaMajor').style.display = isQa ? 'block' : 'none';
             document.getElementById('matGbsMajor').style.display = isGbs ? 'block' : 'none';
 
-            // 5. Filtrowanie wierszy w listach (Materiały i Pytania matematyczne)
-            document.querySelectorAll('.material-row').forEach(row => {
-                row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none';
-            });
-            document.querySelectorAll('.math-row').forEach(row => {
-                row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none';
-            });
+            // 4. Filtrowanie list po uniwersytecie
+            document.querySelectorAll('.material-row').forEach(row => { row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none'; });
+            document.querySelectorAll('.math-row').forEach(row => { row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none'; });
+            document.querySelectorAll('.archive-row').forEach(row => { row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none'; });
             
-            // Jeśli ukryto obecną zakładkę, wróć do pierwszej
+            // Auto powrót
             if((document.getElementById('tab-qa').classList.contains('active') || document.getElementById('tab-exam').classList.contains('active')) && !isQa) {
                 showTab('mat');
             }
@@ -356,13 +409,9 @@
             let items = document.querySelectorAll('.qa-topic-item');
             items.forEach(function (item) { item.classList.remove('over'); });
 
-            // Zbierz nową kolejność ID
             let newOrder = [];
-            items.forEach((el) => {
-                newOrder.push(el.getAttribute('data-id'));
-            });
+            items.forEach((el) => { newOrder.push(el.getAttribute('data-id')); });
 
-            // Wyślij nową kolejność do backendu
             fetch('/api/reorder_qa', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},

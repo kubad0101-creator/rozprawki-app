@@ -207,7 +207,7 @@ def send_email_api(sender_email, sender_name, recipient_email, subject, body):
         "sender": {"name": sender_name, "email": sender_email},
         "to": [{"email": recipient_email}],
         "subject": subject,
-        "htmlContent": body  # <--- ZMIANA NA WSPARCIE DLA HTML (OBRAZKI/LINKI)
+        "htmlContent": body
     }
     
     try:

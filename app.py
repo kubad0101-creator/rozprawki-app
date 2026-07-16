@@ -88,7 +88,6 @@ class QaTopic(db.Model):
     topic_full = db.Column(db.Text, nullable=False)
     order_index = db.Column(db.Integer, default=0)
 
-# NOWY MODEL: TEMATY EGZAMINACYJNE
 class ExamTopic(db.Model):
     __tablename__ = 'exam_topics'
     id = db.Column(db.Integer, primary_key=True)
@@ -196,7 +195,7 @@ class Notification(db.Model):
     student = db.relationship('Student')
 
 
-# ---------------- FUNKCJE POCZTOWE (BREVO REST API) ----------------
+# ---------------- FUNKCJE POCZTOWE (BREVO REST API - HTML) ----------------
 def send_email_api(sender_email, sender_name, recipient_email, subject, body):
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
@@ -208,7 +207,7 @@ def send_email_api(sender_email, sender_name, recipient_email, subject, body):
         "sender": {"name": sender_name, "email": sender_email},
         "to": [{"email": recipient_email}],
         "subject": subject,
-        "textContent": body
+        "htmlContent": body  # <--- ZMIANA NA WSPARCIE DLA HTML (OBRAZKI/LINKI)
     }
     
     try:
@@ -232,7 +231,7 @@ def trigger_welcome_email(teacher, student, request_host, termin1, termin2):
     if not template:
         template = teacher.email_template
     if not template:
-        template = "Witaj {imie}!\n\nOto Twój link do panelu:\n{link}\n\nTermin 1: {termin1}\nTermin 2: {termin2}\n\nPozdrawiamy!"
+        template = "<p>Witaj {imie}!</p><p>Oto Twój link do panelu:<br><a href='{link}'>{link}</a></p><p>Termin 1: {termin1}<br>Termin 2: {termin2}</p><p>Pozdrawiamy!</p>"
         
     link = f"https://{request_host}/student/{student.url_slug}"
     
@@ -272,7 +271,6 @@ def setup_database():
     lcca_uni = University.query.filter_by(name="LCCA").first() or University(name="LCCA")
     db.session.add_all([qa_uni, gbs_uni, lcca_uni])
     
-    # Dodanie domyślnych pełnych tematów egzaminacyjnych
     if not ExamTopic.query.first():
         db.session.add(ExamTopic(title="Egzamin 1", topic_full="Some people think it is beneficial for old people to learn something new... (Możesz zedytować pełną treść tego tematu w zakładce Baza)"))
         db.session.add(ExamTopic(title="Egzamin 2", topic_full="Some people think that introducing children to team sports... (Możesz zedytować pełną treść tego tematu w zakładce Baza)"))
@@ -358,12 +356,6 @@ def logout():
 def panel_dashboard():
     user = User.query.get(session['user_id'])
     
-    if request.method == 'POST' and request.form.get('action') == 'save_teacher_template':
-        user.email_template = request.form.get('email_template')
-        db.session.commit()
-        flash("Twój szablon e-mail został zapisany!", "success")
-        return redirect(url_for('panel_dashboard'))
-        
     universities = University.query.all() if user.role == 'admin' else user.universities
     uni_ids = [u.id for u in universities]
     
@@ -472,12 +464,12 @@ def panel_database():
             content_url = ""
             if file and file.filename != '':
                 ext = file.filename.split('.')[-1].lower()
-                if ext in ['pdf', 'html', 'mp4', 'mov', 'avi']:
+                if ext in ['pdf', 'html', 'mp4', 'mov', 'avi', 'jpg', 'jpeg', 'png']:
                     unique_filename = f"{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
                     content_url = url_for('download_file', name=unique_filename)
                 else:
-                    flash("Niedozwolony format pliku. Użyj PDF, HTML lub Video.", "error")
+                    flash("Niedozwolony format pliku.", "error")
                     return redirect(url_for('panel_database'))
             elif link_url: content_url = link_url
             
@@ -511,11 +503,18 @@ def panel_database():
             order_val = request.form.get('order_index', 0)
             db.session.add(QaTopic(title=request.form.get('title'), topic_full=request.form.get('topic_full'), order_index=int(order_val)))
             db.session.commit(); flash("Temat rozprawki zapisany.", "success")
+            
+        elif action == 'edit_qa_topic':
+            t = QaTopic.query.get(request.form.get('topic_id'))
+            if t: 
+                t.title = request.form.get('title')
+                t.topic_full = request.form.get('topic_full')
+                db.session.commit(); flash("Temat zaktualizowany.", "success")
+                
         elif action == 'del_qa_topic':
             t = QaTopic.query.get(request.form.get('topic_id'))
             if t: db.session.delete(t); db.session.commit(); flash("Temat usunięty.", "success")
 
-        # AKCJE TEMATÓW EGZAMINU
         elif action == 'add_exam_topic':
             db.session.add(ExamTopic(title=request.form.get('title'), topic_full=request.form.get('topic_full')))
             db.session.commit(); flash("Temat egzaminu zapisany.", "success")
@@ -541,7 +540,10 @@ def panel_database():
     gbs_majors = GbsMajor.query.all()
     qa_majors = QaMajor.query.all()
     
-    return render_template('panel_database.html', universities=universities, qa_topics=qa_topics, exam_topics=exam_topics, math_questions=math_questions, gbs_majors=gbs_majors, qa_majors=qa_majors, user=user)
+    # Przekazywanie archiwum przefiltrowanego dla widocznych uczelni
+    archived_students = Student.query.filter_by(is_archived=True).filter(Student.university_id.in_([u.id for u in universities])).order_by(Student.name.asc()).all()
+    
+    return render_template('panel_database.html', universities=universities, qa_topics=qa_topics, exam_topics=exam_topics, math_questions=math_questions, gbs_majors=gbs_majors, qa_majors=qa_majors, archived_students=archived_students, user=user)
 
 @app.route('/api/reorder_qa', methods=['POST'])
 @login_required
@@ -719,20 +721,12 @@ def panel_master():
 @login_required
 def admin(): return redirect(url_for('panel_dashboard'))
 
-@app.route('/admin/archive')
-@login_required
-def admin_archive():
-    user = User.query.get(session['user_id'])
-    query = Student.query.filter_by(is_archived=True)
-    if user.role != 'admin': query = query.filter(Student.university_id.in_([u.id for u in user.universities]))
-    return render_template('qa/admin_archive.html', archived_students=query.order_by(Student.name.asc()).all())
-
 @app.route('/admin/student/<int:student_id>/restore', methods=['POST'])
 @login_required
 def restore_student(student_id):
     student = Student.query.get_or_404(student_id)
     student.is_archived = False; db.session.commit()
-    return redirect(url_for('admin_archive'))
+    return redirect(url_for('panel_database'))
 
 @app.route('/admin/student/<int:student_id>/delete_forever', methods=['POST'])
 @admin_required
@@ -740,7 +734,7 @@ def delete_student_forever(student_id):
     student = Student.query.get_or_404(student_id)
     Essay.query.filter_by(student_id=student.id).delete()
     db.session.delete(student); db.session.commit()
-    return redirect(url_for('admin_archive'))
+    return redirect(url_for('panel_database'))
 
 @app.route('/admin/student/<int:student_id>')
 @login_required
@@ -750,7 +744,6 @@ def admin_student_detail(student_id):
     gbs_attempts = sorted(student.gbs_attempts, key=lambda x: x.submitted_at, reverse=True)
     math_results = sorted(student.math_results, key=lambda x: x.submitted_at, reverse=True)
 
-    # Przygotowanie tematów do Egzaminu Dodatkowego
     extra_exam = next((e for e in student.essays if e.title == "Egzamin Dodatkowy"), None)
     extra_topics = extra_exam.topic_full.split('|||') if extra_exam and extra_exam.topic_full else ["", ""]
     extra_topic1 = extra_topics[0] if len(extra_topics) > 0 else ""
@@ -814,11 +807,8 @@ def exam_direct_link(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
     if check_archived(student): return check_archived(student)
     exam_essay = Essay.query.filter_by(student_id=student.id, title="Egzamin").first_or_404()
-    
-    # Pobierz pełne tematy egzaminu z bazy
     db_topics = ExamTopic.query.order_by(ExamTopic.id).all()
     topics = [t.topic_full for t in db_topics]
-    
     return render_template('qa/write.html', essay=exam_essay, exam_topics=topics)
 
 @app.route('/exam_extra/<url_slug>')

@@ -2,89 +2,486 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Profil Studenta - {{ student.name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student: {{ student.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; background: #f4f6f9; padding: 30px; max-width: 1000px; margin: auto; }
-        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .essay-box { border-left: 4px solid #007bff; padding: 15px; margin-bottom: 15px; background: #fdfdfd; border-radius: 4px; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;}
-        .essay-box.completed { border-left-color: #28a745; }
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; color: white; }
-        .badge-pending { background: #ffc107; color: #333; }
-        .badge-done { background: #28a745; }
-        .badge-exam { background: #dc3545; }
-        
-        details.extra-exam-panel > summary { list-style: none; }
-        details.extra-exam-panel > summary::-webkit-details-marker { display: none; }
+        :root {
+            --bg-page: #0c0a14;
+            --text-main: #f3f1f8;
+            --text-muted: #a8a2bb;
+            --text-faint: #766f8c;
+            --card-bg: rgba(255,255,255,0.04);
+            --border-soft: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.14);
+            --glow-1: rgba(124,92,255,0.30);
+            --glow-2: rgba(236,72,153,0.20);
+            --glow-3: rgba(109,60,240,0.14);
+            --gradient: linear-gradient(135deg, #7c5cff 0%, #c04ce0 55%, #ec4899 100%);
+            --toggle-bg: rgba(255,255,255,0.08);
+            --toggle-border: rgba(255,255,255,0.16);
+            --input-bg: rgba(255,255,255,0.05);
+            --content-bg: rgba(255,255,255,0.03);
+            --gbs-red: #e0294f;
+            --navy: #4d7cff;
+            --green: #3ecf8e;
+            --amber: #ffc857;
+            --danger: #ef4759;
+        }
+        html[data-theme="light"] {
+            --bg-page: #f6f4fb;
+            --text-main: #201c30;
+            --text-muted: #6b6580;
+            --text-faint: #948dab;
+            --card-bg: #ffffff;
+            --border-soft: rgba(32,28,48,0.08);
+            --border-strong: rgba(32,28,48,0.14);
+            --glow-1: rgba(124,92,255,0.14);
+            --glow-2: rgba(236,72,153,0.10);
+            --glow-3: rgba(109,60,240,0.08);
+            --toggle-bg: rgba(32,28,48,0.06);
+            --toggle-border: rgba(32,28,48,0.14);
+            --input-bg: rgba(32,28,48,0.03);
+            --content-bg: rgba(32,28,48,0.02);
+        }
+        * { box-sizing: border-box; }
+        a { color: inherit; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 28px clamp(16px, 4vw, 40px) 60px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 12% -10%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 100% 0%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 100%, var(--glow-3), transparent 50%),
+                var(--bg-page);
+            min-height: 100vh;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        .wrap { max-width: 1050px; margin: auto; }
+
+        .switch { position: relative; width: 52px; height: 28px; border-radius: 999px; background: var(--toggle-bg); border: 1px solid var(--toggle-border); cursor: pointer; transition: background 0.25s ease, border-color 0.25s ease; flex-shrink: 0; }
+        .switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 11px; box-shadow: 0 2px 8px rgba(124,92,255,0.4); transition: transform 0.25s ease; }
+        html[data-theme="light"] .switch .knob { transform: translateX(24px); }
+        .theme-toggle { display: flex; align-items: center; gap: 10px; user-select: none; }
+        .theme-toggle .toggle-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+        .topbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 8px; }
+        .back-link { text-decoration: none; color: var(--text-muted); font-weight: 700; font-size: 13px; }
+        .back-link:hover { color: var(--text-main); }
+
+        .page-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin: 14px 0 22px; }
+        .page-head h1 { margin: 0; font-size: 24px; font-weight: 800; }
+
+        .btn { border: none; border-radius: 10px; padding: 10px 18px; font-weight: 800; font-size: 13px; cursor: pointer; transition: transform 0.15s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-grey { background: rgba(255,255,255,0.08); border: 1px solid var(--border-strong); color: var(--text-main); }
+        .btn-teal { background: linear-gradient(135deg, #1fb5a8, #23c1b3); color: #04241f; }
+        .btn-navy { background: linear-gradient(135deg, #2d3fb0, #4d7cff); color: #fff; }
+        .btn-danger { background: linear-gradient(135deg, #d63451, #ef4759); color: #fff; }
+        .btn-purple { background: linear-gradient(135deg, #6f42c1, #8a63d2); color: #fff; }
+        .btn-amber { background: linear-gradient(135deg, #e0ac0a, #ffc857); color: #2b2103; }
+        .btn-green { background: linear-gradient(135deg, #22a878, #3ecf8e); color: #04241f; }
+        .btn-orange { background: linear-gradient(135deg, #d9700f, #fd7e14); color: #fff; }
+        .btn-blue { background: var(--gradient); color: #fff; }
+        .btn-sm { padding: 7px 12px; font-size: 12px; }
+
+        .card { background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 18px; padding: 24px 26px; margin-bottom: 22px; backdrop-filter: blur(10px); }
+
+        .link-label { font-weight: 800; font-size: 13px; display: block; margin-bottom: 8px; }
+        .link-row { display: flex; gap: 10px; margin-bottom: 16px; }
+        .link-row:last-child { margin-bottom: 0; }
+        .link-row input[type=text] {
+            flex: 1; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--border-strong);
+            background: var(--input-bg); color: var(--text-main); font-weight: 700; font-family: inherit; font-size: 13px;
+        }
+        .link-row.exam input[type=text] { color: var(--danger); }
+        .link-row.exam-gbs input[type=text] { color: var(--gbs-red); }
+
+        h2.section-heading { font-size: 19px; font-weight: 800; margin: 34px 0 18px; padding-bottom: 10px; border-bottom: 2px solid; }
+        h2.heading-red { color: #ff8b9e; border-color: rgba(224,41,79,0.4); }
+        h2.heading-navy { color: #9db3ff; border-color: rgba(77,124,255,0.4); }
+        h2.heading-blue { color: #a9b8ff; border-color: rgba(124,92,255,0.4); }
+        h2.heading-green { color: #7be8b6; border-color: rgba(62,207,142,0.4); }
+
+        .attempt-card { background: var(--card-bg); border: 1px solid var(--border-soft); padding: 18px 20px; border-radius: 14px; margin-bottom: 14px; }
+        .attempt-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+        .attempt-meta .exam-tag { color: var(--danger); font-weight: 800; }
+        .attempt-ans { background: var(--content-bg); padding: 12px 14px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; line-height: 1.6; }
+
+        .math-result { background: rgba(77,124,255,0.08); border-left: 4px solid var(--navy); padding: 14px 18px; border-radius: 0 12px 12px 0; margin-bottom: 12px; }
+        .math-result h3 { margin: 0; font-size: 17px; }
+        .math-result .date { font-size: 12px; color: var(--text-muted); }
+
+        .extra-exam-card { border-left: 4px solid var(--amber); }
+        .extra-exam-card h3 { margin: 0 0 6px; color: #ffd77d; font-size: 16px; }
+        .extra-exam-card > p { font-size: 13px; color: var(--text-muted); margin: 0 0 14px; }
+        .extra-exam-card input[type=text] {
+            width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--border-strong);
+            background: var(--input-bg); color: var(--text-main); font-family: inherit; font-size: 14px; margin-bottom: 10px;
+        }
+
+        .highlight-toolbar { position: sticky; top: 12px; z-index: 100; margin-bottom: 22px; box-shadow: 0 10px 26px rgba(0,0,0,0.25); }
+        .highlight-toolbar strong { display: block; margin-bottom: 10px; font-size: 13px; }
+        .hl-btn { border: 1px solid var(--border-strong); padding: 8px 20px; cursor: pointer; font-weight: 800; border-radius: 8px; font-size: 13px; margin-right: 6px; }
+
+        .essay-card { background: var(--card-bg); border: 1px solid var(--border-soft); padding: 24px; margin-bottom: 30px; border-radius: 16px; backdrop-filter: blur(10px); }
+        .essay-card.is-exam { border-color: rgba(224,41,79,0.35); }
+        .essay-card.graded { background: var(--content-bg); border-color: rgba(62,207,142,0.3); }
+        .essay-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .essay-top h3 { margin: 0; display: flex; align-items: center; font-size: 17px; font-weight: 800; }
+        .exam-badge { background: var(--danger); color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; font-weight: 800; text-transform: uppercase; }
+        .graded-tag { font-size: 0.7em; color: #3ecf8e; font-weight: 700; margin-left: 8px; }
+        .essay-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .status-tag { padding: 5px 10px; border-radius: 6px; font-weight: 800; font-size: 12px; }
+        .status-submitted { background: var(--green); color: #04241f; }
+        .status-writing { background: var(--amber); color: #2b2103; }
+
+        .chosen-topic { background: rgba(255,200,87,0.1); padding: 10px 14px; border-left: 4px solid var(--amber); font-weight: 700; border-radius: 0 8px 8px 0; margin-top: 14px; font-size: 14px; }
+
+        .meta-line { display: flex; gap: 20px; color: var(--text-muted); margin-top: 12px; font-size: 13px; }
+        .meta-line .words { font-weight: 800; color: #a9b8ff; }
+
+        .content-block-label { font-weight: 800; font-size: 13px; margin-top: 16px; display: block; }
+        .editable-content {
+            background: var(--content-bg); border: 1px solid var(--border-strong); padding: 16px;
+            font-family: 'Source Serif 4', 'Times New Roman', serif; font-size: 16px; min-height: 150px;
+            white-space: pre-wrap; line-height: 1.7; margin-top: 8px; border-radius: 10px; color: var(--text-main);
+        }
+
+        .feedback-form { margin-top: 22px; background: var(--content-bg); border-top: 2px solid #7c5cff; padding-top: 16px; border-radius: 0 0 10px 10px; }
+        .feedback-form h4 { margin: 8px 0 10px 0; color: #a9b8ff; font-size: 14px; }
+        .checklist-textarea {
+            width: 100%; height: 130px; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border-strong);
+            border-radius: 8px; background: var(--input-bg); color: var(--text-main); font-family: monospace; font-size: 13px;
+        }
+        .feedback-editable {
+            width: 100%; min-height: 150px; padding: 14px; margin-top: 6px; border: 1px solid var(--border-strong);
+            border-radius: 8px; background: var(--content-bg); white-space: pre-wrap; line-height: 1.7; color: var(--text-main);
+        }
+        .feedback-label { font-weight: 800; font-size: 13px; }
+
+        .sent-comment-box { margin-top: 16px; background: rgba(62,207,142,0.1); padding: 16px; border-radius: 10px; border-left: 4px solid var(--green); }
+        .sent-comment-box strong { display: block; margin-bottom: 8px; font-size: 13px; color: #7be8b6; }
+        .sent-comment-content { margin-top: 6px; white-space: pre-wrap; background: var(--content-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-soft); color: var(--text-main); }
+
+        details summary { cursor: pointer; color: #a9b8ff; font-weight: 800; font-size: 13px; }
+        details.extra-exam-card > summary::-webkit-details-marker { display: none; }
+
+        .empty-note { color: var(--text-muted); font-style: italic; font-size: 14px; }
     </style>
 </head>
 <body>
-    <a href="/panel" style="color: #007bff; text-decoration: none; font-weight: bold;">⬅ Powrót do panelu</a>
-    <h1 style="color: #001f5b; margin-top: 15px;">👤 {{ student.name }}</h1>
-    <p style="color: #666;">Uczelnia: {{ student.university.name if student.university else 'Brak' }} | E-mail: {{ student.email or 'Brak' }}</p>
+    <div class="wrap">
 
-    <!-- ZWIJANA ZAKŁADKA EGZAMINU DODATKOWEGO -->
-    <details class="card extra-exam-panel" style="border: 1px solid #17a2b8; outline: none; padding: 15px 25px;">
-        <summary style="font-weight: bold; font-size: 16px; cursor: pointer; color: #17a2b8; outline: none;">
-            ➕ Pokaż Egzamin Dodatkowy (Zarządzaj linkiem i tematami)
-        </summary>
-        <div style="margin-top: 20px;">
-            <p style="font-size: 14px;">W tym miejscu ustawiasz tematy wyłącznie dla tego studenta. Po zapisaniu wyślij mu poniższy link.</p>
-            <p><strong>Gotowy link do egzaminu:</strong><br>
-            <a href="https://{{ request.host }}/exam_extra/{{ student.url_slug }}" target="_blank" style="color: #007bff;">https://{{ request.host }}/exam_extra/{{ student.url_slug }}</a></p>
-            <form method="POST" action="/admin/student/{{ student.id }}/extra_exam" style="display: flex; flex-direction: column; gap: 15px;">
-                <textarea name="topic1" rows="3" placeholder="Wpisz pełną treść tematu nr 1..." style="padding: 10px; width: 100%; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: sans-serif;">{{ extra_topic1 }}</textarea>
-                <textarea name="topic2" rows="3" placeholder="Wpisz pełną treść tematu nr 2..." style="padding: 10px; width: 100%; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: sans-serif;">{{ extra_topic2 }}</textarea>
-                <button type="submit" style="background: #17a2b8; color: white; border: none; padding: 10px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; width: fit-content;">Zapisz tematy</button>
+        <div class="topbar">
+            <a href="/admin" class="back-link">⬅ Wróć do listy</a>
+            <div class="theme-toggle">
+                <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+                <div class="switch" onclick="toggleTheme()" role="button" aria-label="Zmień motyw">
+                    <div class="knob" id="themeKnob">🌙</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-head">
+            <h1>Uczeń: {{ student.name }}</h1>
+            <form action="/admin/student/{{ student.id }}/archive" method="POST">
+                <button type="submit" class="btn btn-grey">📁 Przenieś do archiwum</button>
             </form>
         </div>
-    </details>
 
-    <h2>Zadania studenta:</h2>
-    {% for essay in essays_sorted %}
-        <div class="essay-box {% if essay.is_completed %}completed{% endif %}">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <h3 style="margin: 0;">{{ essay.title }} 
-                        {% if essay.is_exam %}<span class="badge badge-exam">Egzamin</span>{% endif %}
-                        {% if essay.is_completed %}
-                            {% if essay.feedback %}
-                                <span class="badge badge-done">Sprawdzone</span>
-                            {% else %}
-                                <span class="badge badge-pending">Oczekuje na ocenę</span>
-                            {% endif %}
-                        {% endif %}
-                    </h3>
-                    <p style="font-size: 13px; color: #666; margin-top: 5px;">
-                        Czas pisania: {{ essay.time_spent // 60 }} min {{ essay.time_spent % 60 }} sek | 
-                        Wybór tematu: {{ essay.chosen_topic or 'Brak / Nie dotyczy' }}
-                    </p>
-                </div>
-                {% if essay.is_completed and not essay.feedback %}
-                    <form method="POST" action="/admin/essay/{{ essay.id }}/return" style="margin: 0;">
-                        <button type="submit" style="background: #ffc107; border: none; padding: 5px 10px; font-weight: bold; border-radius: 4px; cursor: pointer;">Cofnij do poprawy (Uczeń poprawi treść)</button>
-                    </form>
-                {% endif %}
+        <div class="card">
+            <label class="link-label">Ogólny link do pulpitu studenta (Ćwiczenia/Zadania):</label>
+            <div class="link-row">
+                <input type="text" value="https://{{ request.host }}/student/{{ student.url_slug }}" readonly>
+                <button onclick="copyLink('https://{{ request.host }}/student/{{ student.url_slug }}')" class="btn btn-navy">Kopiuj</button>
             </div>
-            
-            {% if essay.content %}
-                <div style="background: #f1f3f5; padding: 15px; border-radius: 5px; margin-top: 15px; white-space: pre-wrap; font-family: monospace; font-size: 14px; border: 1px solid #e2e3e5;">{{ essay.content }}</div>
-            {% else %}
-                <p style="color: #999; font-style: italic;">Student jeszcze nic nie napisał.</p>
-            {% endif %}
 
-            {% if essay.is_completed %}
-                <div style="margin-top: 15px;">
-                    <h4 style="margin-bottom: 5px;">Zostaw Feedback / Ocenę:</h4>
-                    <form method="POST" action="/admin/essay/{{ essay.id }}/feedback" style="display: flex; flex-direction: column; gap: 10px;">
-                        <textarea name="feedback" rows="4" placeholder="Wpisz swoją opinię dla studenta..." style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: sans-serif;">{{ essay.feedback or '' }}</textarea>
-                        <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; width: fit-content;">Zapisz Ocenę</button>
-                    </form>
+            {% if student.university and 'GBS' in student.university.name %}
+                <label class="link-label" style="color: var(--gbs-red);">🚨 BEZPOŚREDNI LINK DO EGZAMINU GBS:</label>
+                <div class="link-row exam-gbs">
+                    <input type="text" value="https://{{ request.host }}/gbs/task/{{ student.url_slug }}?exam=true" readonly>
+                    <button onclick="copyLink('https://{{ request.host }}/gbs/task/{{ student.url_slug }}?exam=true')" class="btn btn-danger">Kopiuj</button>
+                </div>
+            {% else %}
+                <label class="link-label" style="color: var(--danger);">🚨 BEZPOŚREDNI LINK DO EGZAMINU GŁÓWNEGO QA:</label>
+                <div class="link-row exam">
+                    <input type="text" value="https://{{ request.host }}/exam/{{ student.url_slug }}" readonly>
+                    <button onclick="copyLink('https://{{ request.host }}/exam/{{ student.url_slug }}')" class="btn btn-danger">Kopiuj</button>
                 </div>
             {% endif %}
         </div>
-    {% else %}
-        <p>Brak rozprawek.</p>
-    {% endfor %}
 
+        {% if student.university and 'GBS' in student.university.name %}
+
+            <h2 class="section-heading heading-red">📄 Historia Podejść (GBS)</h2>
+            {% for att in gbs_attempts %}
+                <div class="attempt-card">
+                    <div class="attempt-meta">Data: {{ att.submitted_at.strftime('%Y-%m-%d %H:%M') }} | {% if att.is_exam %}<span class="exam-tag">EGZAMIN</span>{% else %}Homework{% endif %}</div>
+                    <strong>Pytanie 1:</strong>
+                    <div class="attempt-ans">{{ att.q1_ans }}</div>
+                    <strong>Pytanie 2:</strong>
+                    <div class="attempt-ans">{{ att.q2_ans }}</div>
+                    <strong>Pytanie 3:</strong>
+                    <div class="attempt-ans" style="margin-bottom:0;">{{ att.q3_ans }}</div>
+                </div>
+            {% else %}
+                <p class="empty-note">Brak podejść.</p>
+            {% endfor %}
+
+            <h2 class="section-heading heading-navy">🧮 Wyniki z Matematyki</h2>
+            {% for res in math_results %}
+                <div class="math-result">
+                    <h3>Wynik: {{ res.score }} / {{ res.total }}</h3>
+                    <div class="date">Data: {{ res.submitted_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+            {% else %}
+                <p class="empty-note">{% if student.has_math_test %}Test nie został jeszcze rozwiązany.{% else %}Student nie ma przypisanego testu.{% endif %}</p>
+            {% endfor %}
+
+        {% else %}
+
+            <details class="card extra-exam-card" style="outline: none;">
+                <summary style="font-weight: 800; font-size: 16px; color: #ffd77d; cursor: pointer; outline: none; list-style: none;">➕ Egzamin Dodatkowy (Tajny Link - Kliknij by rozwinąć)</summary>
+                <div style="margin-top: 15px;">
+                    <p>Egzamin ten ma własne tematy i nie pojawia się u studenta na pulpicie. Dostęp możliwy tylko z poniższego linku.</p>
+
+                    <label class="link-label">Link do wysłania dla ucznia:</label>
+                    <div class="link-row">
+                        <input type="text" value="https://{{ request.host }}/exam_extra/{{ student.url_slug }}" readonly>
+                        <button onclick="copyLink('https://{{ request.host }}/exam_extra/{{ student.url_slug }}')" class="btn btn-amber">Kopiuj</button>
+                    </div>
+
+                    <label class="link-label">Wpisz tematy na Egzamin Dodatkowy:</label>
+                    <form action="/admin/student/{{ student.id }}/extra_exam" method="POST">
+                        {% set extra_exam = student.essays | selectattr("title", "equalto", "Egzamin Dodatkowy") | first %}
+                        {% set t1, t2 = ("", "") %}
+                        {% if extra_exam and extra_exam.topic_full and '|||' in extra_exam.topic_full %}
+                            {% set parts = extra_exam.topic_full.split('|||') %}
+                            {% set t1 = parts[0] %}
+                            {% set t2 = parts[1] %}
+                        {% endif %}
+                        <input type="text" name="topic1" value="{{ t1 }}" placeholder="Treść tematu nr 1..." required>
+                        <input type="text" name="topic2" value="{{ t2 }}" placeholder="Treść tematu nr 2..." required>
+                        <button type="submit" class="btn btn-green">Zapisz nowe tematy</button>
+                    </form>
+                </div>
+            </details>
+
+            <div class="card highlight-toolbar">
+                <strong>🖍️ Globalne narzędzie podświetlania tekstu:</strong> (Zaznacz tekst myszką w wypracowaniu LUB w komentarzu opisowym i kliknij kolor)
+                <div style="margin-top: 10px;">
+                    <button type="button" onclick="highlight('yellow')" class="hl-btn" style="background: yellow; color:#000;">Żółty</button>
+                    <button type="button" onclick="highlight('#98fb98')" class="hl-btn" style="background: #98fb98; color:#000;">Jasny Zielony</button>
+                    <button type="button" onclick="highlight('#dc3545')" class="hl-btn" style="background: #dc3545; color:#fff; border:none;">Czerwony</button>
+                    <button type="button" onclick="highlight('transparent')" class="hl-btn" style="background: var(--input-bg); color: var(--text-main);">Usuń kolor</button>
+                </div>
+            </div>
+
+            <h2 class="section-heading heading-blue">📝 W trakcie pracy / Do sprawdzenia</h2>
+            {% set ns_pending = namespace(has_items=false) %}
+
+            {% for essay in essays_sorted if not essay.feedback %}
+            {% set ns_pending.has_items = true %}
+            <div class="essay-card {% if essay.is_exam %}is-exam{% endif %}">
+
+                <div class="essay-top">
+                    <h3>
+                        {{ essay.title }}
+                        {% if essay.is_exam %}<span class="exam-badge">EGZAMIN</span>{% endif %}
+                    </h3>
+                    <div class="essay-actions">
+                        <button type="button" onclick="copyEssay('{{ essay.id }}')" class="btn btn-purple btn-sm">Kopiuj treść</button>
+                        <button type="button" onclick="loadLiveContent({{ essay.id }})" class="btn btn-teal btn-sm">🔄 Podgląd LIVE</button>
+                        {% if essay.is_completed %}
+                            <form action="/admin/essay/{{ essay.id }}/return" method="POST" style="margin:0;" onsubmit="return confirm('Czy na pewno chcesz cofnąć oddanie tej pracy? Uczeń będzie mógł ponownie ją edytować.');">
+                                <button type="submit" class="btn btn-orange btn-sm">↩ Oddaj do poprawy</button>
+                            </form>
+                            <span class="status-tag status-submitted">ODDANE PRZEZ UCZNIA</span>
+                        {% else %}
+                            <span class="status-tag status-writing">STUDENT JESZCZE PISZE</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if essay.is_exam and essay.chosen_topic %}
+                <p class="chosen-topic">Uczeń wpisał temat: {{ essay.chosen_topic }}</p>
+                {% endif %}
+
+                {% set word_count = (essay.marked_content | safe if essay.marked_content else essay.content).split() | length %}
+                <div class="meta-line">
+                    <p style="margin:0;">Czas pracy: <span id="time_display_{{ essay.id }}">{{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s</span></p>
+                    <p style="margin:0;" class="words">Słowa: <span id="word_count_{{ essay.id }}">{{ word_count }}</span></p>
+                </div>
+
+                <span class="content-block-label">Treść studenta:</span>
+                <div id="content_{{ essay.id }}" contenteditable="true" class="editable-content">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
+
+                <form action="/admin/essay/{{ essay.id }}/feedback" method="POST" onsubmit="prepareSubmit({{ essay.id }})" class="feedback-form">
+                    <h4>✅ Elementy do sprawdzenia (Skopiuj do komentarza poniżej):</h4>
+                    <textarea id="checklist_text_{{ essay.id }}" readonly class="checklist-textarea">Ponad 250 słów
+Schemat + podział na 5 akapitów
+Zwroty rozpoczynające
+Jasna teza we wstępie
+Wartościowe argumenty broniące tezy
+Przykład z własnego doświadczenia
+Ponowne podkreślenie tezy w zakończeniu</textarea>
+
+                    <button type="button" onclick="copyChecklist('{{ essay.id }}')" class="btn btn-grey btn-sm" style="margin-bottom: 15px;">📋 Skopiuj schemat</button>
+
+                    <input type="hidden" name="marked_content" id="hidden_content_{{ essay.id }}">
+                    <input type="hidden" name="feedback" id="hidden_feedback_{{ essay.id }}">
+
+                    <label class="feedback-label">Komentarz opisowy (Możesz również zaznaczać tekst tutaj i kolorować go przyciskami na górze):</label>
+                    <!-- ZWRÓĆ UWAGĘ NA BRAK SPACJI W ŚRODKU ZNACZNIKA DIV, ABY ZAPOBIEC "ZNAKOM DOMYŚLNYM" -->
+                    <div id="feedback_editable_{{ essay.id }}" contenteditable="true" class="feedback-editable" placeholder="Wklej tutaj schemat i dokonaj oceny...">{{ essay.feedback | default('', true) | safe }}</div>
+
+                    <button type="submit" class="btn btn-blue" style="margin-top: 16px; font-size: 14px; padding: 12px 26px;">Zapisz i udostępnij ocenę (Przenieś do sprawdzonych)</button>
+                </form>
+            </div>
+            {% endfor %}
+
+            {% if not ns_pending.has_items %}
+            <p class="empty-note" style="margin-bottom: 40px;">Brak prac oczekujących na sprawdzenie.</p>
+            {% endif %}
+
+            <h2 class="section-heading heading-green" style="margin-top: 50px;">✅ Sprawdzone prace (Wysłany feedback)</h2>
+            {% set ns_graded = namespace(has_items=false) %}
+
+            {% for essay in essays_sorted if essay.feedback %}
+            {% set ns_graded.has_items = true %}
+            <div class="essay-card graded">
+                <h3 style="color: #7be8b6;">{{ essay.title }} <span class="graded-tag">(Sprawdzono)</span></h3>
+
+                {% set word_count_done = (essay.marked_content | safe if essay.marked_content else essay.content).split() | length %}
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 0;">Czas pracy: {{ essay.time_spent // 60 }}m {{ essay.time_spent % 60 }}s | <strong style="color: #a9b8ff;">Słowa: {{ word_count_done }}</strong></p>
+
+                <!-- BEZ SPACJI -->
+                <div class="editable-content" style="margin-top:15px;">{{ essay.marked_content | default(essay.content, true) | safe }}</div>
+
+                <div class="sent-comment-box">
+                    <strong>📨 Wysłany Komentarz:</strong>
+                    <div class="sent-comment-content">{{ essay.feedback | safe }}</div>
+                </div>
+
+                <form action="/admin/essay/{{ essay.id }}/feedback" method="POST" onsubmit="prepareSubmitEdit({{ essay.id }})" style="margin-top: 15px;">
+                    <input type="hidden" name="marked_content" id="hidden_content_{{ essay.id }}_edit" value="{{ essay.marked_content if essay.marked_content else essay.content }}">
+                    <input type="hidden" name="feedback" id="hidden_feedback_{{ essay.id }}_edit">
+                    <details>
+                        <summary>Edytuj Komentarz i Kolory</summary>
+                        <!-- BEZ SPACJI -->
+                        <div id="feedback_editable_{{ essay.id }}_edit" contenteditable="true" class="feedback-editable">{{ essay.feedback | default('', true) | safe }}</div>
+                        <button type="submit" class="btn btn-amber btn-sm" style="margin-top: 10px;">Aktualizuj Komentarz</button>
+                    </details>
+                </form>
+            </div>
+            {% endfor %}
+
+            {% if not ns_graded.has_items %}
+            <p class="empty-note">Brak sprawdzonych prac.</p>
+            {% endif %}
+
+        {% endif %}
+    </div>
+
+    <script>
+        function highlight(color) {
+            document.execCommand('backColor', false, color);
+        }
+
+        function copyLink(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Skopiowano link:\n' + url);
+            });
+        }
+
+        function copyEssay(essayId) {
+            const text = document.getElementById('content_' + essayId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Treść rozprawki skopiowana.");
+            });
+        }
+
+        function copyChecklist(essayId) {
+            const textarea = document.getElementById('checklist_text_' + essayId);
+            textarea.select();
+            document.execCommand('copy');
+            alert('Schemat skopiowany!');
+        }
+
+        function loadLiveContent(essayId) {
+            fetch('/api/admin/essay/' + essayId + '/content')
+                .then(response => response.json())
+                .then(data => {
+                    const div = document.getElementById('content_' + essayId);
+                    if (div) { div.innerText = data.content; }
+
+                    const timeSpan = document.getElementById('time_display_' + essayId);
+                    if (timeSpan) {
+                        let m = Math.floor(data.time_spent / 60);
+                        let s = data.time_spent % 60;
+                        timeSpan.innerText = m + "m " + s + "s";
+                    }
+
+                    const wordSpan = document.getElementById('word_count_' + essayId);
+                    if (wordSpan) {
+                        let words = data.content.trim() ? data.content.trim().split(/\s+/).length : 0;
+                        wordSpan.innerText = words;
+                    }
+
+                    alert('Odświeżono treść LIVE.');
+                });
+        }
+
+        document.querySelectorAll('div[id^="content_"]').forEach(el => {
+            el.addEventListener('input', function() {
+                const id = this.id.split('_')[1];
+                const count = this.innerText.trim() ? this.innerText.trim().split(/\s+/).length : 0;
+                const span = document.getElementById('word_count_' + id);
+                if (span) span.innerText = count;
+            });
+        });
+
+        function prepareSubmit(essayId) {
+            const editableDiv = document.getElementById('content_' + essayId);
+            if (editableDiv) document.getElementById('hidden_content_' + essayId).value = editableDiv.innerHTML;
+            const editableFeedback = document.getElementById('feedback_editable_' + essayId);
+            if (editableFeedback) document.getElementById('hidden_feedback_' + essayId).value = editableFeedback.innerHTML;
+        }
+
+        function prepareSubmitEdit(essayId) {
+            const editableFeedback = document.getElementById('feedback_editable_' + essayId + '_edit');
+            if (editableFeedback) document.getElementById('hidden_feedback_' + essayId + '_edit').value = editableFeedback.innerHTML;
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const knob = document.getElementById('themeKnob');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'light') { knob.textContent = '☀️'; label.textContent = 'Tryb jasny'; }
+            else { knob.textContent = '🌙'; label.textContent = 'Tryb ciemny'; }
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            const systemTheme = (mql && mql.matches) ? 'light' : 'dark';
+            applyTheme(saved || systemTheme);
+            if (mql) {
+                mql.addEventListener('change', (e) => {
+                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'light' : 'dark');
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

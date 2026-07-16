@@ -2,41 +2,164 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oceny i Feedback</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg-page:#0c0a14;
+            --text-main:#f5f2fb;
+            --text-muted:#aaa3bc;
+            --card-bg:rgba(255,255,255,.045);
+            --border-soft:rgba(255,255,255,.09);
+            --border-strong:rgba(255,255,255,.16);
+            --surface:rgba(255,255,255,.045);
+            --content-bg:rgba(255,255,255,.035);
+            --glow-1:rgba(124,92,255,.32);
+            --glow-2:rgba(236,72,153,.18);
+            --glow-3:rgba(109,60,240,.14);
+            --gradient:linear-gradient(135deg,#7c5cff 0%,#c04ce0 55%,#ec4899 100%);
+            --green:#3ecf8e;
+            --green-soft:rgba(62,207,142,.11);
+            --blue:#7c5cff;
+            --shadow:0 24px 60px rgba(0,0,0,.24);
+        }
+        html[data-theme="light"] {
+            color-scheme:light;
+            --bg-page:#f7f4fc;
+            --text-main:#211d31;
+            --text-muted:#6e6781;
+            --card-bg:rgba(255,255,255,.9);
+            --border-soft:rgba(35,28,54,.09);
+            --border-strong:rgba(35,28,54,.15);
+            --surface:rgba(35,28,54,.045);
+            --content-bg:rgba(35,28,54,.025);
+            --glow-1:rgba(124,92,255,.16);
+            --glow-2:rgba(236,72,153,.10);
+            --glow-3:rgba(109,60,240,.08);
+            --green-soft:rgba(34,168,120,.09);
+            --shadow:0 22px 60px rgba(73,48,112,.12);
+        }
+        * { box-sizing:border-box; }
+        body {
+            margin:0;
+            min-height:100vh;
+            padding:24px clamp(16px,4vw,42px) 60px;
+            font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;
+            color:var(--text-main);
+            background:
+                radial-gradient(circle at 12% -12%,var(--glow-1),transparent 44%),
+                radial-gradient(circle at 100% 0,var(--glow-2),transparent 40%),
+                radial-gradient(circle at 50% 110%,var(--glow-3),transparent 48%),
+                var(--bg-page);
+            transition:background .25s ease,color .25s ease;
+        }
+        .wrap { width:min(980px,100%); margin:0 auto; }
+        .topbar { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; }
+        .back-link { color:var(--text-muted); text-decoration:none; font-size:13px; font-weight:800; }
+        .back-link:hover { color:var(--text-main); }
+        .theme-toggle { display:flex; align-items:center; gap:10px; user-select:none; }
+        .toggle-label { color:var(--text-muted); font-size:12px; font-weight:800; }
+        .switch { position:relative; width:52px; height:28px; border:1px solid var(--border-strong); border-radius:999px; background:var(--surface); cursor:pointer; }
+        .knob { position:absolute; top:3px; left:3px; width:20px; height:20px; display:grid; place-items:center; border-radius:50%; background:var(--gradient); font-size:11px; box-shadow:0 3px 12px rgba(124,92,255,.4); transition:transform .25s ease; }
+        html[data-theme="light"] .knob { transform:translateX(24px); }
+        .hero { text-align:center; margin:44px auto 34px; }
+        .hero-icon { width:62px; height:62px; display:grid; place-items:center; margin:0 auto 16px; border:1px solid var(--border-soft); border-radius:19px; background:var(--card-bg); font-size:30px; box-shadow:var(--shadow); }
+        .hero h1 { margin:0 0 10px; font-size:clamp(29px,5vw,44px); letter-spacing:-.04em; }
+        .hero p { margin:0 auto; max-width:620px; color:var(--text-muted); line-height:1.7; font-size:14px; }
+        .list { display:flex; flex-direction:column; gap:24px; }
+        .grade-card { overflow:hidden; border:1px solid var(--border-soft); border-radius:22px; background:var(--card-bg); backdrop-filter:blur(14px); box-shadow:var(--shadow); }
+        .grade-head { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:20px 24px; border-bottom:1px solid var(--border-soft); background:linear-gradient(135deg,var(--green-soft),transparent); }
+        .grade-head h2 { margin:0 0 5px; font-size:19px; }
+        .grade-head p { margin:0; color:var(--text-muted); font-size:12px; }
+        .status { flex:0 0 auto; display:inline-flex; align-items:center; gap:7px; padding:7px 11px; border-radius:999px; background:var(--green); color:#04241f; font-size:11px; font-weight:800; }
+        .grade-body { padding:24px; }
+        .section-label { display:flex; align-items:center; gap:9px; margin:0 0 12px; font-size:13px; font-weight:800; }
+        .section-label::after { content:""; flex:1; height:1px; background:var(--border-soft); }
+        .student-work { margin-bottom:24px; padding:18px; border:1px solid var(--border-soft); border-radius:14px; background:var(--content-bg); font-family:'Source Serif 4','Times New Roman',serif; white-space:pre-wrap; font-size:16px; line-height:1.8; }
+        .teacher-feedback { padding:18px; border-left:4px solid var(--blue); border-radius:0 14px 14px 0; background:rgba(124,92,255,.09); white-space:pre-wrap; font-size:14px; line-height:1.7; }
+        .empty { text-align:center; padding:50px 24px; border:1px dashed var(--border-strong); border-radius:22px; background:var(--card-bg); color:var(--text-muted); box-shadow:var(--shadow); }
+        .empty .icon { font-size:42px; margin-bottom:10px; }
+        .empty h2 { margin:0 0 8px; color:var(--text-main); font-size:19px; }
+        .empty p { margin:0; font-size:14px; }
+        @media (max-width:640px) {
+            .hero { margin-top:34px; }
+            .grade-head { align-items:flex-start; flex-direction:column; }
+            .grade-body,.grade-head { padding:19px; }
+            .student-work,.teacher-feedback { padding:15px; }
+        }
+        @media (prefers-reduced-motion:reduce) { * { transition:none!important; } }
+    </style>
 </head>
-<body style="font-family: sans-serif; background: #f4f6f9; padding: 30px; max-width: 900px; margin: auto;">
-    
-    <a href="/student/{{ student.url_slug }}" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć na stronę główną</a>
-    
-    <div style="text-align: center; margin-bottom: 30px; margin-top: 20px;">
-        <h2>🎓 Oceny i Feedback</h2>
-        <p style="color: #666;">Tutaj pojawią się komentarze nauczyciela po sprawdzeniu Twoich prac.</p>
+<body>
+    <div class="wrap">
+        <div class="topbar">
+            <a href="/student/{{ student.url_slug }}" class="back-link">⬅ Wróć na stronę główną</a>
+            <div class="theme-toggle">
+                <span class="toggle-label" id="themeLabel">Tryb ciemny</span>
+                <div class="switch" onclick="toggleTheme()" role="button" tabindex="0" aria-label="Zmień motyw" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTheme();}">
+                    <div class="knob" id="themeKnob">🌙</div>
+                </div>
+            </div>
+        </div>
+
+        <header class="hero">
+            <div class="hero-icon">🎓</div>
+            <h1>Oceny i feedback</h1>
+            <p>Tutaj znajdziesz sprawdzone prace, zaznaczenia w tekście oraz komentarze przekazane przez nauczyciela.</p>
+        </header>
+
+        <main class="list">
+            {% set graded = student.essays | selectattr("feedback") | list %}
+            {% for essay in graded %}
+                <article class="grade-card">
+                    <header class="grade-head">
+                        <div>
+                            <h2>{{ essay.title }}</h2>
+                            <p>Praca została sprawdzona i udostępniona.</p>
+                        </div>
+                        <span class="status">✓ Sprawdzono</span>
+                    </header>
+                    <div class="grade-body">
+                        <h3 class="section-label">Twoja praca</h3>
+                        <div class="student-work">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
+                        <h3 class="section-label">Komentarz nauczyciela</h3>
+                        <div class="teacher-feedback">{{ essay.feedback | safe }}</div>
+                    </div>
+                </article>
+            {% else %}
+                <section class="empty">
+                    <div class="icon">⏳</div>
+                    <h2>Brak ocenionych prac</h2>
+                    <p>Kiedy nauczyciel sprawdzi Twoją pracę, komentarz pojawi się właśnie tutaj.</p>
+                </section>
+            {% endfor %}
+        </main>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 30px;">
-        {% set graded = student.essays | selectattr("feedback") | list %}
-        
-        {% for essay in graded %}
-            <div style="background: white; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden;">
-                <div style="background: #28a745; color: white; padding: 15px 25px;">
-                    <h3 style="margin: 0;">{{ essay.title }}</h3>
-                    <span style="font-size: 13px;">Sprawdzono pomyślnie</span>
-                </div>
-                
-                <div style="padding: 25px;">
-                    <h4 style="color: #666; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Twoja praca:</h4>
-                    <div style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 16px; line-height: 1.6; color: #333; margin-bottom: 20px;">{{ essay.marked_content | safe if essay.marked_content else essay.content }}</div>
-                    
-                    <h4 style="color: #007bff; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Komentarz Nauczyciela:</h4>
-                    <div style="background: #eef2f5; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; font-size: 14px; color: #333; border-left: 4px solid #007bff;">{{ essay.feedback | safe }}</div>
-                </div>
-            </div>
-        {% else %}
-            <div style="text-align: center; background: white; padding: 40px; border-radius: 8px; color: #999;">
-                <div style="font-size: 40px; margin-bottom: 10px;">⏳</div>
-                <p>Nie masz jeszcze żadnych ocenionych prac.</p>
-            </div>
-        {% endfor %}
-    </div>
+    <script>
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            document.getElementById('themeKnob').textContent = theme === 'light' ? '☀️' : '🌙';
+            document.getElementById('themeLabel').textContent = theme === 'light' ? 'Tryb jasny' : 'Tryb ciemny';
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('openuk-theme', next);
+            applyTheme(next);
+        }
+        (function initTheme() {
+            const saved = localStorage.getItem('openuk-theme');
+            const media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+            applyTheme(saved || (media && media.matches ? 'light' : 'dark'));
+            if (media) media.addEventListener('change', function(event) {
+                if (!localStorage.getItem('openuk-theme')) applyTheme(event.matches ? 'light' : 'dark');
+            });
+        })();
+    </script>
 </body>
 </html>

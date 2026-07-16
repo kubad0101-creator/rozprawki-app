@@ -232,7 +232,6 @@
     </div>
 
     <script>
-        // DOMYŚLNA DATA I GODZINA (18:00) PO ZAŁADOWANIU
         document.addEventListener("DOMContentLoaded", function() {
             let now = new Date();
             let year = now.getFullYear();
@@ -242,7 +241,7 @@
             if(document.getElementById('termin1')) {
                 document.getElementById('termin1').value = localISO;
             }
-            toggleUniFields(); // Odpal logikę pól dla pierwszej opcji z listy
+            toggleUniFields(); 
         });
 
         function filterDashboard() {

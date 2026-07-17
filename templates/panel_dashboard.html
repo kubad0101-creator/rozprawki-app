@@ -116,6 +116,12 @@
       .card h3 {
         margin-top: 0;
       }
+      .row-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
       .btn {
         border: 0;
         border-radius: 11px;
@@ -585,9 +591,16 @@
                 </td>
                 <td>{{ s.created_at.strftime('%Y-%m-%d') }}</td>
                 <td>
-                  <a href="/admin/student/{{ s.id }}" class="btn btn-blue"
-                    >Oceny i profil</a
-                  >
+                  <div class="row-actions">
+                    <a href="/admin/student/{{ s.id }}" class="btn btn-blue">Oceny i profil</a>
+                    <button
+                      type="button"
+                      class="btn btn-grey"
+                      onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)"
+                    >
+                      Kopiuj link
+                    </button>
+                  </div>
                 </td>
               </tr>
               {% endfor %}
@@ -623,9 +636,16 @@
                 </td>
                 <td>{{ s.created_at.strftime('%Y-%m-%d') }}</td>
                 <td>
-                  <a href="/admin/student/{{ s.id }}" class="btn btn-blue"
-                    >Oceny i profil</a
-                  >
+                  <div class="row-actions">
+                    <a href="/admin/student/{{ s.id }}" class="btn btn-blue">Oceny i profil</a>
+                    <button
+                      type="button"
+                      class="btn btn-grey"
+                      onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)"
+                    >
+                      Kopiuj link
+                    </button>
+                  </div>
                 </td>
               </tr>
               {% endfor %}
@@ -654,9 +674,16 @@
                 <td><strong>{{ s.name }}</strong></td>
                 <td>{{ s.created_at.strftime('%Y-%m-%d') }}</td>
                 <td>
-                  <a href="/admin/student/{{ s.id }}" class="btn btn-blue"
-                    >Oceny i profil</a
-                  >
+                  <div class="row-actions">
+                    <a href="/admin/student/{{ s.id }}" class="btn btn-blue">Oceny i profil</a>
+                    <button
+                      type="button"
+                      class="btn btn-grey"
+                      onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)"
+                    >
+                      Kopiuj link
+                    </button>
+                  </div>
                 </td>
               </tr>
               {% endfor %}
@@ -698,6 +725,42 @@
               applyTheme(e.matches ? "dark" : "light");
           });
       })();
+
+      function copySilent(text, button) {
+        if (!navigator.clipboard) {
+          const temporary = document.createElement("textarea");
+          temporary.value = text;
+          temporary.setAttribute("readonly", "");
+          temporary.style.position = "fixed";
+          temporary.style.opacity = "0";
+          document.body.appendChild(temporary);
+          temporary.select();
+          document.execCommand("copy");
+          temporary.remove();
+          showCopyState(button);
+          return;
+        }
+
+        navigator.clipboard
+          .writeText(text)
+          .then(() => showCopyState(button))
+          .catch((error) => console.error("Błąd kopiowania linku:", error));
+      }
+
+      function showCopyState(button) {
+        const originalText = button.textContent;
+        button.textContent = "Skopiowano";
+        button.classList.remove("btn-grey");
+        button.classList.add("btn-green");
+        button.disabled = true;
+
+        window.setTimeout(() => {
+          button.textContent = originalText;
+          button.classList.remove("btn-green");
+          button.classList.add("btn-grey");
+          button.disabled = false;
+        }, 1500);
+      }
 
       function toggleUniFields() {
         const sel = document.getElementById("uniSelector");

@@ -3,17 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Baza Materiałów i Pytań</title>
-    <!-- EDYTOR WYSIWYG TINYMCE DO EMAILI -->
-    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-    <script>
-      tinymce.init({
-        selector: '#emailEditor',
-        menubar: false,
-        plugins: 'link image code lists',
-        toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | bullist numlist | link image | code',
-        height: 400
-      });
-    </script>
     <style>
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; flex-wrap: wrap; }
         .tab-btn { padding: 10px 20px; border: none; background: #e2e3e5; color: #333; font-weight: bold; border-radius: 5px; cursor: pointer; }
@@ -26,138 +15,9 @@
         .qa-topic-item { cursor: grab; background: #fff; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
         .qa-topic-item.over { border: 2px dashed #007bff; background: #f0f8ff; }
         .drag-handle { font-size: 20px; color: #999; margin-right: 15px; cursor: grab; }
-        
-        /* Modal do edycji tematów */
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border-radius: 8px; width: 80%; max-width: 600px; }
-    </style>
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style id="openuk-redesign">
-      :root {
-        color-scheme: light;
-        --page:#f7f3fc; --surface:#ffffff; --surface-2:#fbf9fe; --surface-3:#f1ebfa;
-        --text:#211b31; --muted:#756d86; --faint:#9c94aa;
-        --border:rgba(55,38,77,.11); --border-strong:rgba(55,38,77,.19);
-        --purple:#6f42c1; --purple-2:#8f5ee8; --pink:#e84a9b; --blue:#4169e1;
-        --teal:#1db7ad; --green:#35c98b; --amber:#ffc857; --danger:#ed4057;
-        --shadow:0 18px 50px rgba(67,39,94,.10); --shadow-sm:0 8px 22px rgba(67,39,94,.08);
-        --gradient:linear-gradient(135deg,#6f42c1 0%,#9a5ce0 52%,#e84a9b 100%);
-      }
-      html[data-theme="dark"] {
-        color-scheme: dark;
-        --page:#28163b; --surface:#3a224e; --surface-2:#412858; --surface-3:#4b3061;
-        --text:#faf7ff; --muted:#c8bdd5; --faint:#a99ab8;
-        --border:rgba(255,255,255,.10); --border-strong:rgba(255,255,255,.18);
-        --shadow:0 20px 54px rgba(9,3,17,.28); --shadow-sm:0 10px 26px rgba(9,3,17,.22);
-      }
-      *{box-sizing:border-box}
-      html{scroll-behavior:smooth}
-      body{
-        font-family:'Plus Jakarta Sans','Segoe UI',sans-serif !important;
-        color:var(--text) !important;
-        background:
-          radial-gradient(circle at 8% -8%,rgba(151,91,221,.20),transparent 35%),
-          radial-gradient(circle at 100% 0%,rgba(232,74,155,.12),transparent 32%),
-          var(--page) !important;
-        min-height:100vh; line-height:1.55; transition:background .25s ease,color .25s ease;
-      }
-      body>div, body>section, body>main { max-width:100%; }
-      h1,h2,h3,h4{letter-spacing:-.025em;color:var(--text)}
-      h1{font-size:clamp(1.55rem,3vw,2.15rem)!important;line-height:1.16}
-      h2{font-size:clamp(1.18rem,2vw,1.55rem)!important}
-      p,small,label{color:inherit}
-      a{transition:opacity .15s ease,transform .15s ease}
-      a:hover{opacity:.84}
-
-      /* Cards and panels */
-      [style*="background: white"], [style*="background:#fff"], [style*="background: #fff"],
-      [style*="background-color: #fff"], [style*="background-color:#fff"], .item-row,.qa-topic-item,.gbs-card,.qa-row,.modal-content {
-        background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important;
-        box-shadow:var(--shadow-sm)!important;
-      }
-      [style*="background: #f8f9fa"], [style*="background:#f8f9fa"], [style*="background: #fdfdfd"],
-      [style*="background:#fdfdfd"], .form-section,.dynamic-fields {
-        background:var(--surface-2)!important;color:var(--text)!important;border-color:var(--border)!important;
-      }
-      .item-row,.qa-topic-item,.gbs-card,.qa-row,[style*="border-radius: 8px"],[style*="border-radius:8px"]{border-radius:16px!important}
-      .tabs{border-color:var(--border)!important;gap:8px!important;overflow-x:auto;padding:5px 2px 12px!important;scrollbar-width:thin}
-      .tab-btn{border-radius:999px!important;background:var(--surface-3)!important;color:var(--muted)!important;padding:10px 16px!important;white-space:nowrap;box-shadow:none!important}
-      .tab-btn.active{background:var(--gradient)!important;color:#fff!important;box-shadow:0 8px 20px rgba(111,66,193,.24)!important}
-
-      input,select,textarea,[contenteditable="true"]{
-        font:inherit!important;background:var(--surface-2)!important;color:var(--text)!important;
-        border:1px solid var(--border-strong)!important;border-radius:11px!important;outline:none!important;
-        transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
-      }
-      input:focus,select:focus,textarea:focus,[contenteditable="true"]:focus{
-        border-color:var(--purple-2)!important;box-shadow:0 0 0 4px rgba(143,94,232,.14)!important;
-      }
-      input::placeholder,textarea::placeholder{color:var(--faint)!important}
-      input[type="checkbox"]{accent-color:var(--purple);width:17px;height:17px;vertical-align:-3px}
-
-      button,.btn-link,[style*="cursor: pointer"],a[style*="background:"]{
-        font-family:inherit!important;border-radius:10px!important;transition:transform .15s ease,filter .15s ease,box-shadow .15s ease!important;
-      }
-      button:hover,.btn-link:hover,a[style*="background:"]:hover{transform:translateY(-1px);filter:brightness(1.04)}
-      button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(143,94,232,.28)!important;outline-offset:2px}
-
-      /* Improve legacy semantic colors in dark mode */
-      html[data-theme="dark"] [style*="color: #333"],html[data-theme="dark"] [style*="color:#333"],
-      html[data-theme="dark"] [style*="color: #343a40"],html[data-theme="dark"] [style*="color:#343a40"],
-      html[data-theme="dark"] [style*="color: #555"],html[data-theme="dark"] [style*="color:#555"]{color:var(--text)!important}
-      html[data-theme="dark"] [style*="color: #666"],html[data-theme="dark"] [style*="color:#666"],
-      html[data-theme="dark"] [style*="color: #777"],html[data-theme="dark"] [style*="color:#777"],
-      html[data-theme="dark"] [style*="color: #999"],html[data-theme="dark"] [style*="color:#999"]{color:var(--muted)!important}
-      html[data-theme="dark"] [style*="background: #e9ecef"],html[data-theme="dark"] [style*="background:#e9ecef"],
-      html[data-theme="dark"] [style*="background: #e2e3e5"],html[data-theme="dark"] [style*="background:#e2e3e5"]{background:var(--surface-3)!important;color:var(--text)!important}
-
-      .alert{border:none!important;box-shadow:var(--shadow-sm)}
-      .alert-success{background:rgba(53,201,139,.15)!important;color:var(--green)!important}
-      .alert-error{background:rgba(237,64,87,.14)!important;color:#ff8998!important}
-      .modal{backdrop-filter:blur(8px);background:rgba(15,8,24,.62)!important}
-      .modal-content{margin:8vh auto!important;border-radius:20px!important;padding:26px!important}
-      details>summary{list-style:none}
-      details>summary::-webkit-details-marker{display:none}
-
-      /* Theme control */
-      .openuk-theme-control{position:fixed;top:18px;right:18px;z-index:9999;display:flex;align-items:center;gap:9px;padding:7px 9px 7px 12px;background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--border);border-radius:999px;box-shadow:var(--shadow-sm);backdrop-filter:blur(14px)}
-      .openuk-theme-label{font-size:12px;font-weight:800;color:var(--muted)}
-      .openuk-theme-switch{width:48px;height:26px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface-3);padding:0;position:relative;cursor:pointer}
-      .openuk-theme-knob{position:absolute;width:20px;height:20px;left:2px;top:2px;border-radius:50%;display:grid;place-items:center;background:var(--gradient);font-size:11px;box-shadow:0 3px 10px rgba(80,38,122,.35);transition:transform .22s ease}
-      html[data-theme="light"] .openuk-theme-knob{transform:translateX(22px)}
-
-      @media (max-width:820px){
-        body{padding:76px 14px 36px!important}
-        .openuk-theme-control{top:12px;right:12px}
-        body>div[style*="display: flex"],body div[style*="display: flex"]{flex-wrap:wrap}
-        [style*="position: sticky"]{position:static!important}
-        .item-row,.qa-row,.gbs-card{align-items:flex-start!important;gap:12px}
-        .item-row>div:last-child,.qa-row>div:last-child,.gbs-card>div:last-child{width:100%;justify-content:flex-start!important;flex-wrap:wrap}
-        form[style*="display: flex"]{flex-wrap:wrap}
-        input,select,textarea{min-width:0}
-      }
-      @media (max-width:560px){
-        h1{font-size:1.45rem!important}
-        [style*="padding: 25px"],[style*="padding:25px"],[style*="padding: 30px"],[style*="padding:30px"]{padding:18px!important}
-        .tab-btn{font-size:12px!important;padding:9px 13px!important}
-        button,a[style*="padding"]{max-width:100%}
-        .openuk-theme-label{display:none}
-      }
     </style>
 </head>
 <body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto;" onload="applyUniFilter()">
-
-<div class="openuk-theme-control" aria-label="Ustawienia motywu">
-  <span class="openuk-theme-label" id="openukThemeLabel">Tryb systemowy</span>
-  <button class="openuk-theme-switch" type="button" id="openukThemeSwitch" aria-label="Zmień tryb jasny lub ciemny" aria-pressed="false">
-    <span class="openuk-theme-knob" id="openukThemeKnob">◐</span>
-  </button>
-</div>
-
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h1 style="color: #17a2b8; margin: 0;">🗄️ Baza Wiedzy i Ustawienia</h1>
@@ -183,7 +43,6 @@
         <button class="tab-btn" id="tab-exam" onclick="showTab('exam')">📝 Tematy Egzaminu</button>
         <button class="tab-btn" onclick="showTab('math')">🔢 Pytania Matematyczne</button>
         <button class="tab-btn" onclick="showTab('email')">✉️ Twój Szablon E-mail</button>
-        <button class="tab-btn" onclick="showTab('archive')">🗑️ Archiwum</button>
     </div>
 
     <!-- ZAKŁADKA 1: MATERIAŁY -->
@@ -217,11 +76,11 @@
 
                 <select id="typeSelect" onchange="toggleType()" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
                     <option value="link">Podaj link zewnętrzny</option>
-                    <option value="pdf">Wgraj plik (HTML, PDF, Video, Zdjęcie)</option>
+                    <option value="pdf">Wgraj plik (HTML, PDF, Video)</option>
                 </select>
 
                 <input type="url" name="link_url" id="linkInput" placeholder="https://..." style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                <input type="file" name="pdf_file" id="pdfInput" accept=".pdf,.html,.mp4,.mov,.avi,.jpg,.jpeg,.png" style="padding: 10px; background: #f8f9fa; display: none;">
+                <input type="file" name="pdf_file" id="pdfInput" accept=".pdf,.html,.mp4,.mov,.avi" style="padding: 10px; background: #f8f9fa; display: none;">
                 
                 <button type="submit" style="padding: 10px; background: #17a2b8; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz materiał</button>
             </form>
@@ -290,7 +149,7 @@
         </div>
     </div>
 
-    <!-- ZAKŁADKA 3: ROZPRAWKI QA (DRAG & DROP + EDYCJA) -->
+    <!-- ZAKŁADKA 3: ROZPRAWKI QA (DRAG & DROP) -->
     <div id="qa" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
             <h3>Dodaj nowy temat do Bazy Rozprawek QA (Zwykłych)</h3>
@@ -303,46 +162,26 @@
             </form>
         </div>
         
-        <h3 style="margin-bottom: 5px;">Zarządzaj tematami (Złap ☰ i przeciągnij, aby zmienić kolejność)</h3>
+        <h3 style="margin-bottom: 5px;">Zarządzaj tematami (Złap i przeciągnij, aby zmienić kolejność)</h3>
         <p style="font-size: 13px; color: #666;">Kolejność zapisuje się automatycznie po upuszczeniu.</p>
         
         <div id="qa-topics-list">
             {% for t in qa_topics %}
             <div class="qa-topic-item" draggable="true" data-id="{{ t.id }}">
-                <div style="display: flex; align-items: center; flex:1;">
+                <div style="display: flex; align-items: center;">
                     <div class="drag-handle">☰</div>
-                    <div style="flex:1;">
+                    <div>
                         <strong>{{ t.title }}</strong><br>
                         <small style="color: #666;">{{ t.topic_full[:80] }}...</small>
                     </div>
                 </div>
-                <div style="display:flex; gap:10px;">
-                    <button type="button" onclick="openEditQaTopic('{{ t.id }}', '{{ t.title|escape }}', '{{ t.topic_full|replace('\n', '\\n')|replace('\r', '')|escape }}')" style="background: #ffc107; color: #333; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Edytuj</button>
-                    <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
-                        <input type="hidden" name="action" value="del_qa_topic">
-                        <input type="hidden" name="topic_id" value="{{ t.id }}">
-                        <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
-                    </form>
-                </div>
+                <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
+                    <input type="hidden" name="action" value="del_qa_topic">
+                    <input type="hidden" name="topic_id" value="{{ t.id }}">
+                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
+                </form>
             </div>
             {% endfor %}
-        </div>
-    </div>
-    
-    <!-- MODAL EDYCJI TEMATU QA -->
-    <div id="editQaModal" class="modal">
-        <div class="modal-content">
-            <h3>Edytuj Temat QA</h3>
-            <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px;">
-                <input type="hidden" name="action" value="edit_qa_topic">
-                <input type="hidden" name="topic_id" id="editQaId">
-                <input type="text" name="title" id="editQaTitle" required style="padding: 10px; border: 1px solid #ccc;">
-                <textarea name="topic_full" id="editQaFull" rows="6" required style="padding: 10px; border: 1px solid #ccc;"></textarea>
-                <div style="text-align: right;">
-                    <button type="button" onclick="document.getElementById('editQaModal').style.display='none'" style="background: #ccc; padding: 10px; border:none; border-radius:5px; margin-right:10px;">Anuluj</button>
-                    <button type="submit" style="background: #007bff; color: white; padding: 10px; border:none; border-radius:5px; font-weight:bold;">Zapisz Zmiany</button>
-                </div>
-            </form>
         </div>
     </div>
 
@@ -417,37 +256,20 @@
     <!-- ZAKŁADKA 5: SZABLON E-MAIL -->
     <div id="email" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px;">
-            <h2 style="margin-top:0;">Twój indywidualny szablon e-mail z obsługą HTML</h2>
-            <p style="font-size: 13px; color: #666;">Używaj tych znaczników, a system podmieni je na prawdziwe dane:<br> <b>{imie}</b> - Imię ucznia, <b>{link}</b> - Osobisty link do panelu, <b>{termin1}</b> oraz <b>{termin2}</b>.</p>
+            <h2 style="margin-top:0;">Twój indywidualny szablon e-mail</h2>
+            <p style="font-size: 13px; color: #666;">
+                Używaj tych znaczników, a system automatycznie podmieni je na prawdziwe dane:<br> 
+                <b>{imie}</b> - Imię ucznia,<br> 
+                <b>{link}</b> - Osobisty link do panelu ucznia,<br>
+                <b>{terminy}</b> - Inteligentnie wyświetli jeden lub oba terminy spotkań.
+            </p>
             <form method="POST" action="/panel/database">
                 <input type="hidden" name="action" value="save_teacher_template">
-                <!-- TinyMCE -->
-                <textarea id="emailEditor" name="email_template">{{ user.email_template if user.email_template else "<p>Witaj {imie}!</p><p>Oto Twój link do panelu:<br><a href='{link}'>{link}</a></p><p>Termin 1: {termin1}<br>Termin 2: {termin2}</p><p>Pozdrawiamy!</p>" }}</textarea>
+                <textarea name="email_template" rows="12" style="width: 100%; padding: 15px; font-family: sans-serif; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px;">{{ user.email_template if user.email_template else "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nProponowany termin spotkania: {terminy}\n\nPozdrawiam!" }}</textarea>
                 <div style="margin-top: 15px;">
                     <button type="submit" style="background: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Zapisz Mój Szablon</button>
                 </div>
             </form>
-        </div>
-    </div>
-    
-    <!-- ZAKŁADKA 6: ARCHIWUM -->
-    <div id="archive" class="tab-content">
-        <div style="background: white; padding: 25px; border-radius: 8px;">
-            <h2 style="margin-top:0; color:#dc3545;">Archiwum wybranej uczelni</h2>
-            <p style="font-size: 14px;">Zarchiwizowani studenci, których możesz w dowolnej chwili przywrócić do procesu.</p>
-            {% for student in archived_students %}
-                <div class="item-row archive-row" data-uni="{{ student.university_id }}" style="border-left: 4px solid #dc3545;">
-                    <div>
-                        <strong>{{ student.name }}</strong> ({{ student.email or 'Brak emaila' }})<br>
-                        <small>Uczelnia: {{ student.university.name if student.university else 'Brak' }}</small>
-                    </div>
-                    <form method="POST" action="/admin/student/{{ student.id }}/restore" style="margin: 0;">
-                        <button type="submit" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Przywróć</button>
-                    </form>
-                </div>
-            {% else %}
-                <p style="color:#666;">Brak zarchiwizowanych studentów dla Twoich uczelni.</p>
-            {% endfor %}
         </div>
     </div>
 
@@ -463,13 +285,6 @@
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
-        }
-        
-        function openEditQaTopic(id, title, fullText) {
-            document.getElementById('editQaId').value = id;
-            document.getElementById('editQaTitle').value = title;
-            document.getElementById('editQaFull').value = fullText;
-            document.getElementById('editQaModal').style.display = 'block';
         }
 
         // LOGIKA FILTROWANIA PO UCZELNI
@@ -500,10 +315,13 @@
             document.getElementById('matQaMajor').style.display = isQa ? 'block' : 'none';
             document.getElementById('matGbsMajor').style.display = isGbs ? 'block' : 'none';
 
-            // 5. Filtrowanie wierszy w listach
-            document.querySelectorAll('.material-row').forEach(row => { row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none'; });
-            document.querySelectorAll('.math-row').forEach(row => { row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none'; });
-            document.querySelectorAll('.archive-row').forEach(row => { row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none'; });
+            // 5. Filtrowanie wierszy w listach (Materiały i Pytania matematyczne)
+            document.querySelectorAll('.material-row').forEach(row => {
+                row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none';
+            });
+            document.querySelectorAll('.math-row').forEach(row => {
+                row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none';
+            });
             
             // Jeśli ukryto obecną zakładkę, wróć do pierwszej
             if((document.getElementById('tab-qa').classList.contains('active') || document.getElementById('tab-exam').classList.contains('active')) && !isQa) {
@@ -568,34 +386,5 @@
         });
 
     </script>
-
-<script id="openuk-theme-script">
-(function(){
-  const root=document.documentElement;
-  const key='openuk-theme';
-  const media=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');
-  function systemTheme(){return media&&media.matches?'dark':'light'}
-  function render(theme,manual){
-    root.setAttribute('data-theme',theme);
-    const label=document.getElementById('openukThemeLabel');
-    const knob=document.getElementById('openukThemeKnob');
-    const btn=document.getElementById('openukThemeSwitch');
-    if(label) label.textContent=manual?(theme==='dark'?'Tryb ciemny':'Tryb jasny'):'Tryb systemowy';
-    if(knob) knob.textContent=theme==='dark'?'🌙':'☀️';
-    if(btn) btn.setAttribute('aria-pressed',theme==='dark'?'true':'false');
-  }
-  const saved=localStorage.getItem(key);
-  render(saved||systemTheme(),!!saved);
-  document.addEventListener('DOMContentLoaded',()=>{
-    const btn=document.getElementById('openukThemeSwitch');
-    if(btn) btn.addEventListener('click',()=>{
-      const next=root.getAttribute('data-theme')==='dark'?'light':'dark';
-      localStorage.setItem(key,next); render(next,true);
-    });
-  });
-  if(media) media.addEventListener('change',e=>{if(!localStorage.getItem(key))render(e.matches?'dark':'light',false)});
-})();
-</script>
-
 </body>
 </html>

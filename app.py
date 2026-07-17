@@ -1,10 +1,3 @@
-Mój błąd! Ten komunikat (`AssertionError: View function mapping is overwriting an existing endpoint function: panel_master`) oznacza, że w poprzednim pliku `app.py`, dodając nowe statystyki, przypadkowo zostawiłem w kodzie **dwie funkcje o tej samej nazwie** (`def panel_master():`). Flask (framework, na którym działa Twoja aplikacja) zwariował, bo nie wiedział, do którego fragmentu kodu ma kierować użytkowników.
-
-Usunąłem duplikat, połączyłem logicznie zarządzanie plikami ze statystykami i przygotowałem jeden kompletny plik.
-
-Skopiuj całość i nadpisz swój `app.py`. Tym razem przejdzie bez problemu.
-
-```python
 import os
 import re
 import unicodedata

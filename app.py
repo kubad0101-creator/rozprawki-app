@@ -590,6 +590,71 @@ def reorder_qa():
 def download_file(name):
     return send_from_directory(app.config['UPLOAD_FOLDER'], name, as_attachment=False)
 
+# ----------------- PANEL MASTER Z ZAAWANSOWANYMI STATYSTYKAMI -----------------
+@app.route('/panel/master', methods=['GET', 'POST'])
+@admin_required
+def panel_master():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'create_teacher':
+            if not User.query.filter_by(username=request.form.get('username')).first():
+                new_t = User(username=request.form.get('username'), password_hash=generate_password_hash(request.form.get('password')), role='teacher', smtp_email=request.form.get('smtp_email'))
+                for uid in request.form.getlist('universities'): new_t.universities.append(University.query.get(int(uid)))
+                db.session.add(new_t); db.session.commit()
+                flash("Nauczyciel pomyślnie dodany do systemu!", "success")
+        elif action == 'edit_teacher':
+            t = User.query.get(request.form.get('teacher_id'))
+            if t:
+                t.username = request.form.get('username'); t.smtp_email = request.form.get('smtp_email')
+                new_pass = request.form.get('password')
+                if new_pass: t.password_hash = generate_password_hash(new_pass)
+                t.universities = []
+                for uid in request.form.getlist('universities'): t.universities.append(University.query.get(int(uid)))
+                db.session.commit()
+                flash("Konto nauczyciela zaktualizowane!", "success")
+        elif action == 'delete_teacher':
+            t = User.query.get(request.form.get('teacher_id'))
+            if t: 
+                db.session.execute(text("DELETE FROM teacher_university WHERE teacher_id = :tid"), {'tid': t.id})
+                Student.query.filter_by(creator_id=t.id).update({'creator_id': None})
+                Notification.query.filter_by(recipient_id=t.id).delete()
+                db.session.delete(t); db.session.commit()
+                flash(f"Konto usunięte.", "success")
+        return redirect(url_for('panel_master'))
+    
+    # KALKULACJA ZAAWANSOWANYCH STATYSTYK DLA KAŻDEGO NAUCZYCIELA
+    teachers = User.query.filter_by(role='teacher').all()
+    teacher_stats = {}
+    for t in teachers:
+        t_students = Student.query.filter_by(creator_id=t.id).all()
+        student_ids = [s.id for s in t_students]
+        
+        tot = len(t_students)
+        act = sum(1 for s in t_students if not s.is_archived)
+        arc = sum(1 for s in t_students if s.is_archived)
+        
+        if student_ids:
+            tot_essays = Essay.query.filter(Essay.student_id.in_(student_ids), Essay.is_completed == True).count()
+            to_check = Essay.query.filter(Essay.student_id.in_(student_ids), Essay.is_completed == True, Essay.feedback == None).count()
+        else:
+            tot_essays = 0
+            to_check = 0
+            
+        teacher_stats[t.id] = {
+            'total_students': tot,
+            'active_students': act,
+            'archived_students': arc,
+            'total_essays': tot_essays,
+            'essays_to_check': to_check
+        }
+
+    return render_template('panel_master.html', 
+                           teachers=teachers, 
+                           teacher_stats=teacher_stats,
+                           all_unis=University.query.all(), 
+                           qa_majors=QaMajor.query.all(),
+                           gbs_majors=GbsMajor.query.all())
+
 # ----------------- WIDOKI I AKCJE STUDENTA -----------------
 
 @app.route('/student/<url_slug>')

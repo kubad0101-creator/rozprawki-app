@@ -241,6 +241,8 @@ def trigger_welcome_email(teacher, student, request_host, termin1_raw, termin2_r
         return False, "Nie podano adresu e-mail studenta."
         
     sender_email = BREVO_SENDER_EMAIL
+    
+    # DODANE - Imię nauczyciela + " Open UK Study" w nadawcy!
     sender_name = f"{teacher.username} Open UK Study"
     
     template = teacher.email_template
@@ -312,8 +314,7 @@ def setup_database():
     db.session.add_all([qa_uni, gbs_uni, lcca_uni])
     
     if not ExamTopic.query.first():
-        db.session.add(ExamTopic(title="Egzamin 1", topic_full="Some people think it is beneficial for old people to learn something new... (Możesz zedytować pełną treść tego tematu w zakładce Baza)"))
-        db.session.add(ExamTopic(title="Egzamin 2", topic_full="Some people think that introducing children to team sports... (Możesz zedytować pełną treść tego tematu w zakładce Baza)"))
+        db.session.add(ExamTopic(title="Egzamin 1", topic_full="Some people think it is beneficial for old people to learn something new..."))
     
     db.session.commit()
             
@@ -588,8 +589,7 @@ def reorder_qa():
     data = request.get_json()
     for index, topic_id in enumerate(data.get('order', [])):
         t = QaTopic.query.get(topic_id)
-        if t:
-            t.order_index = index
+        if t: t.order_index = index
     db.session.commit()
     return jsonify({"status": "success"})
 
@@ -994,5 +994,3 @@ def evaluate_listening():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-```

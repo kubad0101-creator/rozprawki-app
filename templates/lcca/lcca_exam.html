@@ -7,104 +7,213 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f7f6; color: #333; line-height: 1.6; margin: 0; padding: 20px; }
         .container { max-width: 900px; margin: 0 auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        
-        /* Sekcje */
         .section { display: none; }
         .section.active { display: block; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        h1, h2, h3 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
-        
-        /* Siatka kwadratów na ekranie startowym */
+        h1, h2, h3, h4 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; margin-top: 30px; }
         .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 30px; }
         .module-card { background: #3498db; color: #fff; padding: 40px 20px; text-align: center; border-radius: 10px; cursor: pointer; font-size: 24px; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .module-card:hover { background: #2980b9; transform: scale(1.02); }
         .module-card.locked { background: #95a5a6; cursor: not-allowed; }
         .module-card.locked:hover { transform: none; }
-
-        /* Formularze i przyciski */
         .btn { background: #e74c3c; color: #fff; border: none; padding: 15px 20px; font-size: 18px; border-radius: 5px; cursor: pointer; margin-top: 30px; width: 100%; font-weight: bold; transition: background 0.3s; }
         .btn:hover { background: #c0392b; }
         .btn-blue { background: #3498db; }
         .btn-blue:hover { background: #2980b9; }
-
         .question-block { margin-bottom: 25px; padding: 20px; background: #fdfdfd; border-left: 5px solid #3498db; border-radius: 0 5px 5px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .text-passage { background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px; font-size: 15px; color: #444; max-height: 400px; overflow-y: auto; }
         input[type="text"] { padding: 8px; margin: 0 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
         select { padding: 8px; margin: 0 5px; border-radius: 4px; font-size: 15px; border: 1px solid #ccc; }
-        .audio-wrapper { margin-bottom: 20px; padding: 15px; background: #ecf0f1; border-radius: 5px; }
-        
+        .audio-wrapper { margin-bottom: 20px; padding: 15px; background: #ecf0f1; border-radius: 5px; text-align: center; border-left: 5px solid #e74c3c; }
         #results-container { margin-top: 20px; padding: 20px; background: #e8f8f5; border: 1px solid #1abc9c; border-radius: 5px; text-align: center; }
+        .info-box { background-color: #fff3cd; color: #856404; padding: 10px; border: 1px solid #ffeeba; border-radius: 5px; margin-bottom: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     
-    <!-- EKRAN GŁÓWNY: 4 KWADRATY -->
+    <!-- EKRAN GŁÓWNY -->
     <div id="dashboard-section" class="section active">
         <h2>Panel Egzaminacyjny LCCA</h2>
-        <p>Wybierz moduł, aby rozpocząć. Pamiętaj: po rozpoczęciu testu nie ma możliwości powrotu do poprzednich sekcji.</p>
+        <p>Wybierz moduł, aby rozpocząć. System wymusza rozwiązywanie modułów chronologicznie.</p>
         <div class="dashboard-grid">
             <div class="module-card" onclick="startModule('reading-section')">1. Reading</div>
             <div class="module-card locked" onclick="alert('Zablokowane. Musisz najpierw ukończyć Reading.')" id="card-listening">2. Listening</div>
-            <div class="module-card locked" onclick="alert('Zablokowane. Musisz najpierw ukończyć Listening.')" id="card-writing">3. Writing</div>
-            <div class="module-card" onclick="startModule('speaking-section')">4. Speaking</div>
+            <div class="module-card locked" onclick="alert('Zablokowane. Moduł dostępny wkrótce.')" id="card-writing">3. Writing</div>
+            <div class="module-card locked" onclick="alert('Zablokowane. Moduł dostępny wkrótce.')" id="card-speaking">4. Speaking</div>
         </div>
     </div>
 
     <!-- SEKCJA READING -->
     <div id="reading-section" class="section">
-        <h2>Moduł 1: Reading</h2>
-        <p>Rozwiąż zadania z sekcji Reading. Po przejściu dalej powrót do tego modułu będzie <b>niemożliwy</b>.</p>
-        
-        <div class="question-block">
-            <p>[Miejsce na treść i pytania z Reading...]</p>
-        </div>
+        <h2>Moduł 1: Reading (60 minut)</h2>
+        <div class="info-box">Uwaga: po zatwierdzeniu odpowiedzi nie ma powrotu do tej sekcji.</div>
 
-        <button class="btn btn-blue" onclick="finishReading()">Zakończ Reading i rozpocznij Listening</button>
+        <form id="reading-form">
+            
+            <!-- TEXT 1 -->
+            <h3>Text 1: How sled dogs and pets respond when the clocks change</h3>
+            <div class="text-passage">
+                <p>Many people struggle with the biannual time shift caused by daylight saving time, often finding it difficult to adjust to the sudden change in their daily routine. However, humans are not the only ones affected. A recent study conducted by researchers from the University of Toronto has revealed that sled dogs in Ontario, Canada, also experience noticeable disruptions when the clocks change, particularly when they "fall back" in autumn.</p>
+                <p>The study, which was published in the journal PLoS One, examined how the time shift impacted sled dogs whose daily lives are structured by a strict schedule. Researchers placed movement sensors on a group of sled dogs in Ontario’s Haliburton Forest Wildlife Reserve...</p>
+            </div>
+            
+            <div class="question-block">
+                <h4>Questions 1-3</h4>
+                <p>Complete each sentence with the correct ending (A-F).</p>
+                <div style="background:#eee; padding:10px; margin-bottom:15px; font-size:14px;">
+                    A. been influenced by other pets.<br>
+                    B. continued with their usual routine despite an adjusted schedule.<br>
+                    C. given importance to daylight saving time.<br>
+                    D. difficulty adjusting to daylight saving time.<br>
+                    E. developed naturally over time.<br>
+                    F. aligned their schedules to their pet counterparts.
+                </div>
+                <p><b>1.</b> Similar to humans, some animals have <select name="r_q1"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option></select></p>
+                <p><b>2.</b> This similarity was discovered when the sled dogs had <select name="r_q2"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option></select></p>
+                <p><b>3.</b> One researcher wants to find out if the canine's ability to adjust had <select name="r_q3"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option></select></p>
+            </div>
+
+            <div class="question-block">
+                <h4>Questions 4-9</h4>
+                <p>Complete the sentences below. Choose NO MORE THAN ONE WORD from the text.</p>
+                <p><b>4.</b> As mentioned in the study, researchers put <input type="text" name="r_q4"> on the dogs to check their movements.</p>
+                <p><b>5.</b> The study was conducted in Haliburton Forest Wildlife <input type="text" name="r_q5"></p>
+                <p><b>6.</b> Dogs were active an hour <input type="text" name="r_q6"> than usual.</p>
+            </div>
+
+            <!-- TEXT 2 -->
+            <h3>Text 2: The Container Trade</h3>
+            <div class="text-passage">
+                <p>The shipping container is one of the mainstays of international trade. The globalised modern economy depends on the rapid and efficient movement of goods that containerisation allows. In many ways it was the advent of the container that allowed this globalised economy to develop.</p>
+                <p>Invented during World War two as an efficient method of moving equipment to the front lines, there are now at any one time up to 15 million containers being used to transport goods on land and sea or waiting to be filled at factories and ports. They are vital in the supply chain and have allowed the added efficiency of "just in time" inventory management...</p>
+            </div>
+
+            <div class="question-block">
+                <h4>Questions 1 and 2 (Wybierz 2)</h4>
+                <p>The invention of containers...</p>
+                <label><input type="checkbox" name="r_q1_2" value="A"> A resulted from the efficient movement of goods.</label><br>
+                <label><input type="checkbox" name="r_q1_2" value="B"> B led to more global trade.</label><br>
+                <label><input type="checkbox" name="r_q1_2" value="C"> C was initially for military purposes.</label><br>
+                <label><input type="checkbox" name="r_q1_2" value="D"> D came just in time for many managers.</label><br>
+                <label><input type="checkbox" name="r_q1_2" value="E"> E relied on the ability to receive orders quickly.</label>
+            </div>
+
+            <div class="question-block">
+                <h4>Questions 3 and 4 (Wybierz 2)</h4>
+                <p>Containers are important because they...</p>
+                <label><input type="checkbox" name="r_q3_4" value="A"> A prevent the need for companies to hold large amounts of stock.</label><br>
+                <label><input type="checkbox" name="r_q3_4" value="B"> B increase the amount of business inventory.</label><br>
+                <label><input type="checkbox" name="r_q3_4" value="C"> C make trade between countries on different sides of the world easier.</label><br>
+                <label><input type="checkbox" name="r_q3_4" value="D"> D regularly supply manufactures in Canada.</label><br>
+                <label><input type="checkbox" name="r_q3_4" value="E"> E reduce the amount of out sourcing needed by companies.</label>
+            </div>
+            
+            <div class="question-block">
+                <h4>Questions 5 and 6 (Wybierz 2)</h4>
+                <p>The Trans-Pacific trade route...</p>
+                <label><input type="checkbox" name="r_q5_6" value="A"> A has nearly double the amount of trade as that of the Europe-Far East trade route.</label><br>
+                <label><input type="checkbox" name="r_q5_6" value="B"> B had its container fleet increase by 12%.</label><br>
+                <label><input type="checkbox" name="r_q5_6" value="C"> C sparked the boom years of the 1990s.</label><br>
+                <label><input type="checkbox" name="r_q5_6" value="D"> D usually carried around 600 TEU.</label><br>
+                <label><input type="checkbox" name="r_q5_6" value="E"> E has witnessed a substantial decrease in container trade.</label>
+            </div>
+
+            <div class="question-block">
+                <h4>Questions 7 - 10</h4>
+                <p>Complete the table below. Use NO MORE THAN THREE WORDS.</p>
+                <table style="width:100%; border-collapse: collapse; text-align: left;" border="1" cellpadding="5">
+                    <tr style="background:#f2f2f2;"><th>CAUSE</th><th>EFFECT</th></tr>
+                    <tr><td>a sharp fall in container trade</td><td>shipping alliances <b>(7)</b> <input type="text" name="r_q7"> ships</td></tr>
+                    <tr><td>originally difficult to get into containers</td><td>A drop in <b>(8)</b> <input type="text" name="r_q8"></td></tr>
+                    <tr><td>vast numbers of containers, which are relatively secure</td><td>Concerns over <b>(9)</b> <input type="text" name="r_q9"></td></tr>
+                    <tr><td>Containers must pass through many countries and involve a vast amount of paperwork.</td><td>Containers are... <b>(10)</b> <input type="text" name="r_q10"></td></tr>
+                </table>
+            </div>
+
+            <div class="question-block">
+                <h4>Questions 11 - 12</h4>
+                <p>Use NO MORE THAN THREE WORDS for each answer.</p>
+                <p><b>11.</b> The benefits of searching containers would be outweighed by the negative impacts on worldwide trade and industry due to the <input type="text" name="r_q11"></p>
+                <p><b>12.</b> The inventors must never have imagined that containers would <input type="text" name="r_q12"></p>
+            </div>
+
+            <!-- TEXT 3 -->
+            <h3>Text 3: Air Rage</h3>
+            <div class="text-passage">
+                <p>(A) The first recorded case of an airline passenger turning seriously violent during a flight, a phenomenon now widely known as “air rage”, happened in 1947 on a flight from Havana to Miami. A drunk man assaulted another passenger and bit a flight attendant. However, the man escaped punishment because it was not then clear under whose legal control a crime committed on plane was...</p>
+                <p>(B) The frequency of air rage has expanded out of proportion to the growth of air travel. Until recently few statistics were gathered about air rage, but those...</p>
+            </div>
+
+            <div class="question-block">
+                <h4>Questions 1 - 8</h4>
+                <p>Choose the most suitable headings for B - I.</p>
+                <div style="background:#eee; padding:10px; margin-bottom:15px; font-size:14px; display: grid; grid-template-columns: 1fr 1fr;">
+                    <div>i. A decline in the tolerance of passengers.</div>
+                    <div>ii. Disproportionate growth.</div>
+                    <div>iii. Pilots and aircrew cooperate.</div>
+                    <div>iv. Additional action.</div>
+                    <div>v. Smaller seats are the norm.</div>
+                    <div>vi. Laying the blame with the airlines</div>
+                    <div>vii. Origins.</div>
+                    <div>viii. A major threat to travel.</div>
+                    <div>ix. Demands for change.</div>
+                    <div>x. Business people fly more.</div>
+                    <div>xi. New research pinpoints the causes.</div>
+                    <div>xii. The pace of life.</div>
+                    <div>xiii. Passenger at the root of the problems.</div>
+                    <div>xiv. Personal experience.</div>
+                </div>
+                <p>Paragraph B <input type="text" name="r_q13" size="5"> | Paragraph C <input type="text" name="r_q14" size="5"> | Paragraph D <input type="text" name="r_q15" size="5"> | Paragraph E <input type="text" name="r_q16" size="5"></p>
+                <p>Paragraph F <input type="text" name="r_q17" size="5"> | Paragraph G <input type="text" name="r_q18" size="5"> | Paragraph H <input type="text" name="r_q19" size="5"> | Paragraph I <input type="text" name="r_q20" size="5"></p>
+            </div>
+
+            <div class="question-block">
+                <h4>Questions 9 - 14</h4>
+                <p>Do the following statements agree with the information? (TRUE / FALSE / NOT GIVEN)</p>
+                <p><b>9.</b> In the first case of air rage, one of the reasons the man was not punished was because the plane was not registered. <select name="r_q21"><option value=""></option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></p>
+                <p><b>10.</b> The statistics on air rage were collected by private monitoring groups. <select name="r_q22"><option value=""></option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></p>
+                <p><b>11.</b> The second most common catalyst for incidents is problems with seating. <select name="r_q23"><option value=""></option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></p>
+                <p><b>12.</b> The environment in a plane makes disagreements more likely to become serious problems. <select name="r_q24"><option value=""></option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></p>
+                <p><b>13.</b> Airlines have been encouraging passengers to bring more items onboard as carry-on luggage. <select name="r_q25"><option value=""></option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></p>
+                <p><b>14.</b> There have been no attempts to ban passengers with a history of air rage. <select name="r_q26"><option value=""></option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></p>
+            </div>
+
+            <button type="button" class="btn btn-blue" onclick="submitReading()">Zakończ Reading i przejdź do Listening</button>
+        </form>
     </div>
 
     <!-- SEKCJA LISTENING -->
     <div id="listening-section" class="section">
-        <h2>Moduł 2: Listening</h2>
-        <p>Odsłuchaj nagrania do każdej z sekcji i uzupełnij poniższe pola. Używaj maksymalnie liczby słów wskazanej w poleceniach.</p>
+        <h2>Moduł 2: Listening (30 minut)</h2>
+        <div class="info-box">Uwaga: Odsłuchaj główny plik z nagraniem (zawiera wszystkie sekcje). Możesz go odtworzyć tylko raz, zgodnie z zasadami testu.</div>
         
+        <!-- TYLKO JEDEN PLIK AUDIO DLA CAŁEJ SEKCJI LISTENING -->
+        <div class="audio-wrapper">
+            <p><b>Główne Nagranie Egzaminacyjne (Listening Part 1-4)</b></p>
+            <audio id="main-audio-player" controls style="width: 100%;">
+                <source src="/static/test1-s1.mp3.mpeg" type="audio/mpeg">
+                Twoja przeglądarka nie obsługuje elementu audio.
+            </audio>
+        </div>
+
         <form id="listening-form">
-            
             <!-- SECTION 1 -->
             <h3>Section 1: Notes on Sports Club</h3>
-            <div class="audio-wrapper">
-                <p><b>Nagranie dla Części 1:</b></p>
-                <audio controls style="width: 100%;">
-                    <source src="/static/test1-s1.mp3.mpeg" type="audio/mpeg">
-                    Twoja przeglądarka nie obsługuje elementu audio.
-                </audio>
-            </div>
             <div class="question-block">
                 <p><b>Facilities available:</b> Golf, <b>1.</b> <input type="text" name="q1">, <b>2.</b> <input type="text" name="q2"></p>
                 <p><b>Classes available:</b> Kick-boxing, <b>3.</b> <input type="text" name="q3"></p>
                 <p><b>Additional facility:</b> <b>4.</b> <input type="text" name="q4"> (restaurant opening soon)</p>
-            </div>
-            <div class="question-block">
-                <p><b>Membership Schemes:</b></p>
                 <p>GOLD: Annual subscription fee <b>5.</b> £ <input type="text" name="q5" size="5"></p>
                 <p>SILVER: Cost of classes <b>6.</b> £ <input type="text" name="q6" size="5"> | Times: From <b>7.</b> <input type="text" name="q7"></p>
                 <p>BRONZE: Annual subscription fee <b>8.</b> £ <input type="text" name="q8" size="5"></p>
-            </div>
-            <div class="question-block">
                 <p><b>9.</b> To join the centre, you need to book an instructor's <input type="text" name="q9"></p>
                 <p><b>10.</b> To book a trial session, speak to David <input type="text" name="q10"></p>
             </div>
 
             <!-- SECTION 2 -->
             <h3>Section 2: Rivenden City Theatre</h3>
-            <div class="audio-wrapper">
-                <p><b>Nagranie dla Części 2:</b></p>
-                <audio controls style="width: 100%;">
-                    <source src="/static/test1-s2.mp3.mpeg" type="audio/mpeg">
-                    Twoja przeglądarka nie obsługuje elementu audio.
-                </audio>
-            </div>
             <div class="question-block">
                 <p>Choose the correct letter, A-G, next to questions 11-16.</p>
                 <b>11.</b> box office <select name="q11"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select><br>
@@ -113,9 +222,7 @@
                 <b>14.</b> seats for wheelchair users <select name="q14"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select><br>
                 <b>15.</b> lifts <select name="q15"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select><br>
                 <b>16.</b> dressing room <select name="q16"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select>
-            </div>
-            <div class="question-block">
-                <p><b>Royal Hunt of the Sun</b></p>
+                
                 <p>Dates: October 13th to <b>17.</b> <input type="text" name="q17"></p>
                 <p>Starting time: <b>18.</b> <input type="text" name="q18" size="5"> pm</p>
                 <p>Tickets available: For <b>19.</b> <input type="text" name="q19"></p>
@@ -124,29 +231,16 @@
 
             <!-- SECTION 3 -->
             <h3>Section 3: College Facility</h3>
-            <div class="audio-wrapper">
-                <p><b>Nagranie dla Części 3:</b></p>
-                <audio controls style="width: 100%;">
-                    <source src="/static/test1-s3.mp3.mpeg" type="audio/mpeg">
-                    Twoja przeglądarka nie obsługuje elementu audio.
-                </audio>
-            </div>
             <div class="question-block">
                 <p><b>21.</b> What is Brian going to do before the course starts?</p>
                 <label><input type="radio" name="q21" value="A"> A. attend a class</label><br>
                 <label><input type="radio" name="q21" value="B"> B. write a report</label><br>
                 <label><input type="radio" name="q21" value="C"> C. read a book</label>
-            </div>
             
-            <div class="question-block">
                 <p>Refectory: inform them <b>22.</b> <input type="text" name="q22"> about special dietary requirements.</p>
                 <p><b>23.</b> <input type="text" name="q23">: long waiting list, apply now.</p>
                 <p>Fitness centre: reduced <b>24.</b> <input type="text" name="q24"> for students.</p>
                 <p>Computers: ask your <b>25.</b> <input type="text" name="q25"> to arrange a password.</p>
-            </div>
-            
-            <div class="question-block">
-                <p>Business Centre:</p>
                 <p>It is possible to hire <b>26.</b> <input type="text" name="q26"> and <b>27.</b> <input type="text" name="q27">.</p>
                 <p>Materials for working on study skills (e.g. <b>28.</b> <input type="text" name="q28">) and other subjects include finance and <b>29.</b> <input type="text" name="q29">.</p>
                 <p><b>30.</b> <input type="text" name="q30"> membership costs £50 per year.</p>
@@ -154,25 +248,18 @@
 
             <!-- SECTION 4 -->
             <h3>Section 4: Social History of the East End of London</h3>
-            <div class="audio-wrapper">
-                <p><b>Nagranie dla Części 4:</b></p>
-                <audio controls style="width: 100%;">
-                    <source src="/static/test1-s4.mp3.mpeg" type="audio/mpeg">
-                    Twoja przeglądarka nie obsługuje elementu audio.
-                </audio>
-            </div>
             <div class="question-block">
-                <p>1st-4th centuries: Produce from the area was used to <b>31.</b> <input type="text" name="q31"> the people of London.</p>
-                <p>5th-10th centuries: New technology allowed the production of goods made of <b>32.</b> <input type="text" name="q32">.</p>
-                <p>11th century: Lack of <b>33.</b> <input type="text" name="q33"> in the East End encouraged the growth of businesses.</p>
-                <p>16th century: Construction of facilities for the building of <b>34.</b> <input type="text" name="q34"> stimulated international trade.</p>
-                <p>16th century: Agricultural workers came from other parts of <b>35.</b> <input type="text" name="q35"> to look for work.</p>
-                <p>17th century: Marshes were drained to provide land that could be <b>36.</b> <input type="text" name="q36"> on.</p>
-                <p>19th century: Inhabitants lived in conditions of great <b>37.</b> <input type="text" name="q37"> with very poor sanitation.</p>
+                <p>1st-4th c.: Produce from the area was used to <b>31.</b> <input type="text" name="q31"> the people.</p>
+                <p>5th-10th c.: New technology allowed goods made of <b>32.</b> <input type="text" name="q32">.</p>
+                <p>11th c.: Lack of <b>33.</b> <input type="text" name="q33"> encouraged the growth of businesses.</p>
+                <p>16th c.: Construction of facilities for the building of <b>34.</b> <input type="text" name="q34"> stimulated trade.</p>
+                <p>16th c.: Agricultural workers came from other parts of <b>35.</b> <input type="text" name="q35">.</p>
+                <p>17th c.: Marshes were drained to provide land that could be <b>36.</b> <input type="text" name="q36"> on.</p>
+                <p>19th c.: Inhabitants lived in conditions of great <b>37.</b> <input type="text" name="q37"> with poor sanitation.</p>
             </div>
             
             <div class="question-block">
-                <p>Which THREE problems are mentioned in connection with 20th century housing? (Choose 3)</p>
+                <p>Which THREE problems are mentioned in connection with 20th century housing?</p>
                 <label><input type="checkbox" name="q38" value="A"> A. unclean water</label><br>
                 <label><input type="checkbox" name="q38" value="B"> B. unsympathetic landlords</label><br>
                 <label><input type="checkbox" name="q38" value="C"> C. heating problems</label><br>
@@ -182,70 +269,81 @@
                 <label><input type="checkbox" name="q38" value="G"> G. houses catching fire</label>
             </div>
 
-            <button type="button" class="btn" onclick="submitListening()">Zakończ Listening i przejdź do Writing</button>
+            <button type="button" class="btn" onclick="submitListening()">Zakończ Listening i sprawdź wyniki</button>
         </form>
-    </div>
-
-    <!-- SEKCJA WRITING -->
-    <div id="writing-section" class="section">
-        <h2>Moduł 3: Writing</h2>
-        <p>Tutaj znajdzie się moduł Writing.</p>
-        <button class="btn btn-blue" onclick="startModule('finish-section')">Zakończ Writing</button>
-    </div>
-
-    <!-- SEKCJA SPEAKING -->
-    <div id="speaking-section" class="section">
-        <h2>Moduł 4: Speaking</h2>
-        <div class="question-block">
-            <h3>Informacja dla studenta</h3>
-            <p>Ta część egzaminu odbywa się na żywo w formie ustnej konwersacji z egzaminatorem. Proszę czekać na wyznaczenie terminu spotkania online lub bezpośredniego.</p>
-        </div>
-        <button class="btn" onclick="startModule('dashboard-section')">Wróć do Panelu</button>
     </div>
     
     <!-- EKRAN KOŃCOWY -->
     <div id="finish-section" class="section">
-        <h2>Część pisemna zakończona</h2>
-        <p>Twoje odpowiedzi zostały przesłane do weryfikacji. Dziękujemy!</p>
+        <h2>Część testowa zakończona</h2>
+        <p>Twoje odpowiedzi z Reading oraz Listening zostały przesłane do weryfikacji. Dziękujemy!</p>
         <div id="results-container" style="display: none;">
-            <h3>Wynik z modułu Listening: <span id="score-text"></span> punktów</h3>
-            <p>Wyniki z testu są zapisane w bazie dla nauczyciela.</p>
+            <h3>Podsumowanie wyników:</h3>
+            <p style="font-size: 18px;">Wynik z modułu Reading: <b id="score-reading"></b> punktów</p>
+            <p style="font-size: 18px;">Wynik z modułu Listening: <b id="score-listening"></b> punktów</p>
+            <p style="margin-top:20px; color:#555;">Wyniki z testu zostały zapisane. Wkrótce zostaniesz poproszony o realizację części Writing oraz Speaking.</p>
         </div>
-        <button class="btn" onclick="startModule('dashboard-section')">Wróć do Panelu Głównego</button>
+        <button class="btn btn-blue" onclick="startModule('dashboard-section')">Wróć do Panelu Głównego</button>
     </div>
 </div>
 
 <script>
-    // Funkcja zarządzająca widokiem sekcji
     function startModule(sectionId) {
         document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
         document.getElementById(sectionId).classList.add('active');
         window.scrollTo(0, 0);
     }
 
-    // Przejście Reading -> Listening
-    function finishReading() {
-        // Tu można by wysłać formularz czytania do bazy
-        startModule('listening-section');
+    // Wysłanie formularza Reading i odblokowanie Listening
+    async function submitReading() {
+        const formData = new FormData(document.getElementById('reading-form'));
+        const payload = Object.fromEntries(formData.entries());
+        
+        // Zbieranie checkoboxów z części Reading
+        const checkboxes1_2 = document.querySelectorAll('input[name="r_q1_2"]:checked');
+        payload.r_q1_2 = Array.from(checkboxes1_2).map(cb => cb.value);
+        
+        const checkboxes3_4 = document.querySelectorAll('input[name="r_q3_4"]:checked');
+        payload.r_q3_4 = Array.from(checkboxes3_4).map(cb => cb.value);
+        
+        const checkboxes5_6 = document.querySelectorAll('input[name="r_q5_6"]:checked');
+        payload.r_q5_6 = Array.from(checkboxes5_6).map(cb => cb.value);
+
+        const btn = document.querySelector('#reading-form .btn');
+        btn.innerText = "Zapisywanie..."; btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/lcca/submit-reading', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            
+            // Zapisanie wyniku żeby wyświetlić go na końcu
+            sessionStorage.setItem('lcca_reading_score', `${result.score} / ${result.max_score}`);
+            
+            // Przejście do Listening
+            document.getElementById('card-listening').classList.remove('locked');
+            document.getElementById('card-listening').onclick = function() { startModule('listening-section'); };
+            startModule('listening-section');
+        } catch (error) {
+            alert("Błąd połączenia.");
+        }
     }
 
-    // Wysłanie Listening i przejście do Writing
+    // Wysłanie formularza Listening i przejście na ekran końcowy
     async function submitListening() {
         const formData = new FormData(document.getElementById('listening-form'));
         const payload = Object.fromEntries(formData.entries());
         
-        // Zebranie wszystkich zaznaczonych checkboxów do tablicy (pytania 38-40)
         const checkboxes = document.querySelectorAll('input[name="q38"]:checked');
         payload.q38_40 = Array.from(checkboxes).map(cb => cb.value);
 
-        // Tymczasowa zmiana przycisku podczas wysyłania
         const btn = document.querySelector('#listening-form .btn');
-        const oldText = btn.innerText;
-        btn.innerText = "Wysyłanie...";
-        btn.disabled = true;
+        btn.innerText = "Zapisywanie..."; btn.disabled = true;
 
         try {
-            // Wysłanie do API
             const response = await fetch('/api/lcca/submit-listening', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -253,26 +351,23 @@
             });
             const result = await response.json();
             
-            // Przygotowanie widoku końcowego
-            document.getElementById('score-text').innerText = `${result.score} / ${result.max_score}`;
+            // Odczyt zapisanego Reading Score i wstawienie obu wyników
+            const readScore = sessionStorage.getItem('lcca_reading_score') || "Brak danych";
+            document.getElementById('score-reading').innerText = readScore;
+            document.getElementById('score-listening').innerText = `${result.score} / ${result.max_score}`;
             document.getElementById('results-container').style.display = 'block';
             
-            // Przejście do następnego modułu (Writing)
-            startModule('writing-section');
+            // Zatrzymanie audio i przejście dalej
+            document.getElementById('main-audio-player').pause();
+            startModule('finish-section');
         } catch (error) {
-            console.error("Błąd połączenia z serwerem:", error);
-            alert("Nie udało się wysłać odpowiedzi. Sprawdź połączenie z serwerem.");
-        } finally {
-            btn.innerText = oldText;
-            btn.disabled = false;
+            alert("Błąd połączenia z serwerem.");
         }
     }
 
-    // Blokada natywnego przycisku "Wstecz" w przeglądarce, aby zapobiec oszustwom
+    // Blokada natywnego "Wstecz"
     history.pushState(null, null, location.href);
-    window.onpopstate = function () {
-        history.go(1);
-    };
+    window.onpopstate = function () { history.go(1); };
 </script>
 
 </body>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platforma Egzaminacyjna LCCA</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; color: #333; line-height: 1.6; }
+        .container { max-width: 800px; margin: 40px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.5s; }
+        h1, h2, h3 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        .btn { background: #3498db; color: #fff; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 20px; width: 100%; font-weight: bold; }
+        .btn:hover { background: #2980b9; }
+        .question-block { margin-bottom: 20px; padding: 15px; background: #fdfdfd; border-left: 4px solid #3498db; }
+        input[type="text"] { padding: 5px; margin: 0 5px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; }
+        select { padding: 5px; margin: 0 5px; border-radius: 3px; }
+        #results-container { margin-top: 20px; padding: 15px; background: #e8f8f5; border: 1px solid #1abc9c; border-radius: 5px; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- SEKCJA READING -->
+    <div id="reading-section" class="section active">
+        <h2>Moduł 1: Reading</h2>
+        <p>Rozwiąż zadania z sekcji Reading. Po przejściu dalej powrót do tego modułu będzie <b>niemożliwy</b>.</p>
+        <button class="btn" onclick="nextSection('listening-section')">Zakończ Reading i rozpocznij Listening</button>
+    </div>
+
+    <!-- SEKCJA LISTENING -->
+    <div id="listening-section" class="section">
+        <h2>Moduł 2: Listening</h2>
+        <p>Odsłuchaj nagranie i uzupełnij poniższe pola. Używaj maksymalnie liczby słów wskazanej w poleceniach.</p>
+        
+        <!-- Zaktualizowana ścieżka do folderu static -->
+        <audio controls style="width: 100%; margin-bottom: 20px;">
+            <source src="/static/test1-s1.mp3.mpeg" type="audio/mpeg">
+            Twoja przeglądarka nie obsługuje elementu audio.
+        </audio>
+
+        <form id="listening-form">
+            <!-- Part 1 -->
+            <h3>Section 1: Notes on Sports Club</h3>
+            <div class="question-block">
+                <p><b>Facilities available:</b> Golf, <b>1.</b> <input type="text" name="q1">, <b>2.</b> <input type="text" name="q2"></p>
+                <p><b>Classes available:</b> Kick-boxing, <b>3.</b> <input type="text" name="q3"></p>
+                <p><b>Additional facility:</b> <b>4.</b> <input type="text" name="q4"> (restaurant opening soon)</p>
+            </div>
+            <div class="question-block">
+                <p><b>Membership Schemes:</b></p>
+                <p>GOLD: Annual subscription fee <b>5.</b> £ <input type="text" name="q5" size="5"></p>
+                <p>SILVER: Cost of classes <b>6.</b> £ <input type="text" name="q6" size="5"> | Times: From <b>7.</b> <input type="text" name="q7"></p>
+                <p>BRONZE: Annual subscription fee <b>8.</b> £ <input type="text" name="q8" size="5"></p>
+            </div>
+            <div class="question-block">
+                <p><b>9.</b> To join the centre, you need to book an instructor's <input type="text" name="q9"></p>
+                <p><b>10.</b> To book a trial session, speak to David <input type="text" name="q10"></p>
+            </div>
+
+            <!-- Part 2 -->
+            <h3>Section 2: Rivenden City Theatre</h3>
+            <div class="question-block">
+                <p>Choose the correct letter, A-G, next to questions 11-16.</p>
+                <b>11.</b> box office <select name="q11"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select><br>
+                <b>12.</b> shop <select name="q12"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select><br>
+                <b>13.</b> ordinary seats <select name="q13"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select><br>
+                <b>14.</b> seats for wheelchair users <select name="q14"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select><br>
+                <b>15.</b> lifts <select name="q15"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select><br>
+                <b>16.</b> dressing room <select name="q16"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select>
+            </div>
+            <div class="question-block">
+                <p><b>Royal Hunt of the Sun</b></p>
+                <p>Dates: October 13th to <b>17.</b> <input type="text" name="q17"></p>
+                <p>Starting time: <b>18.</b> <input type="text" name="q18" size="5"> pm</p>
+                <p>Tickets available: For <b>19.</b> <input type="text" name="q19"></p>
+                <p>Price: <b>20.</b> £ <input type="text" name="q20" size="5"></p>
+            </div>
+
+            <!-- Part 3 -->
+            <h3>Section 3: College Facility</h3>
+            <div class="question-block">
+                <p><b>21.</b> What is Brian going to do before the course starts?</p>
+                <label><input type="radio" name="q21" value="A"> A. attend a class</label><br>
+                <label><input type="radio" name="q21" value="B"> B. write a report</label><br>
+                <label><input type="radio" name="q21" value="C"> C. read a book</label>
+            </div>
+            
+            <div class="question-block">
+                <p>Refectory: inform them <b>22.</b> <input type="text" name="q22"> about special dietary requirements.</p>
+                <p><b>23.</b> <input type="text" name="q23">: long waiting list, apply now.</p>
+                <p>Fitness centre: reduced <b>24.</b> <input type="text" name="q24"> for students.</p>
+                <p>Computers: ask your <b>25.</b> <input type="text" name="q25"> to arrange a password.</p>
+            </div>
+            
+            <div class="question-block">
+                <p>Business Centre:</p>
+                <p>It is possible to hire <b>26.</b> <input type="text" name="q26"> and <b>27.</b> <input type="text" name="q27">.</p>
+                <p>Materials for working on study skills (e.g. <b>28.</b> <input type="text" name="q28">) and other subjects include finance and <b>29.</b> <input type="text" name="q29">.</p>
+                <p><b>30.</b> <input type="text" name="q30"> membership costs £50 per year.</p>
+            </div>
+
+            <!-- Part 4 -->
+            <h3>Section 4: Social History of the East End of London</h3>
+            <div class="question-block">
+                <p>1st-4th centuries: Produce from the area was used to <b>31.</b> <input type="text" name="q31"> the people of London.</p>
+                <p>5th-10th centuries: New technology allowed the production of goods made of <b>32.</b> <input type="text" name="q32">.</p>
+                <p>11th century: Lack of <b>33.</b> <input type="text" name="q33"> in the East End encouraged the growth of businesses.</p>
+                <p>16th century: Construction of facilities for the building of <b>34.</b> <input type="text" name="q34"> stimulated international trade.</p>
+                <p>16th century: Agricultural workers came from other parts of <b>35.</b> <input type="text" name="q35"> to look for work.</p>
+                <p>17th century: Marshes were drained to provide land that could be <b>36.</b> <input type="text" name="q36"> on.</p>
+                <p>19th century: Inhabitants lived in conditions of great <b>37.</b> <input type="text" name="q37"> with very poor sanitation.</p>
+            </div>
+            
+            <div class="question-block">
+                <p>Which THREE problems are mentioned in connection with 20th century housing? (Choose 3)</p>
+                <label><input type="checkbox" name="q38" value="C"> C. heating problems</label><br>
+                <label><input type="checkbox" name="q39" value="E"> E. overcrowding</label><br>
+                <label><input type="checkbox" name="q40" value="F"> F. poor standards of building</label>
+            </div>
+
+            <button type="button" class="btn" onclick="submitExam()">Zakończ Egzamin</button>
+        </form>
+    </div>
+    
+    <!-- EKRAN KOŃCOWY -->
+    <div id="finish-section" class="section">
+        <h2>Egzamin zakończony</h2>
+        <p>Twoje odpowiedzi zostały przesłane do weryfikacji.</p>
+        <div id="results-container" style="display: none;">
+            <h3>Twój wynik: <span id="score-text"></span></h3>
+        </div>
+    </div>
+</div>
+
+<script>
+    function nextSection(sectionId) {
+        document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+        document.getElementById(sectionId).classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    async function submitExam() {
+        const formData = new FormData(document.getElementById('listening-form'));
+        const payload = Object.fromEntries(formData.entries());
+        
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+        payload.q38_40 = Array.from(checkboxes).map(cb => cb.value);
+
+        try {
+            // Zmieniony endpoint, żeby pasował do głównego app.py
+            const response = await fetch('/api/lcca/submit-listening', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            
+            document.getElementById('score-text').innerText = `${result.score} / ${result.max_score}`;
+            document.getElementById('results-container').style.display = 'block';
+            
+            nextSection('finish-section');
+        } catch (error) {
+            console.error("Błąd połączenia z serwerem:", error);
+            alert("Nie udało się wysłać odpowiedzi.");
+        }
+    }
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.go(1);
+    };
+</script>
+
+</body>
+</html>

@@ -4,7 +4,7 @@ import unicodedata
 import uuid
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
@@ -17,7 +17,7 @@ app.secret_key = "Open196!_System_Rozprawek_2024"
 
 # --- KONFIGURACJA BREVO API ---
 BREVO_API_KEY = "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" 
-BREVO_SENDER_EMAIL = "kuba@openukstudy.com"
+BREVO_SENDER_EMAIL = "kuba@openukstudy.com" # Wymuszony adres e-mail nadawcy
 # ------------------------------
 
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
@@ -196,6 +196,22 @@ class Notification(db.Model):
 
 
 # ---------------- FUNKCJE POCZTOWE (BREVO REST API - HTML) ----------------
+
+POLISH_DAYS = {
+    0: "Poniedziałek", 1: "Wtorek", 2: "Środa",
+    3: "Czwartek", 4: "Piątek", 5: "Sobota", 6: "Niedziela"
+}
+
+def format_pl_date(date_str):
+    if not date_str:
+        return ""
+    try:
+        dt = datetime.strptime(date_str.replace("T", " "), "%Y-%m-%d %H:%M")
+        day_name = POLISH_DAYS[dt.weekday()]
+        return f"{day_name}, {dt.day}.{dt.month:02d} o godzinie {dt.strftime('%H:%M')}"
+    except ValueError:
+        return date_str
+
 def send_email_api(sender_email, sender_name, recipient_email, subject, body):
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
@@ -220,31 +236,48 @@ def send_email_api(sender_email, sender_name, recipient_email, subject, body):
     except Exception as e:
         return False, f"Błąd połączenia z siecią: {str(e)}"
 
-def trigger_welcome_email(teacher, student, request_host, termin1, termin2):
+def trigger_welcome_email(teacher, student, request_host, termin1_raw, termin2_raw):
     if not student.email:
         return False, "Nie podano adresu e-mail studenta."
         
-    sender_email = teacher.smtp_email if teacher.smtp_email else BREVO_SENDER_EMAIL
-    sender_name = teacher.username
+    sender_email = BREVO_SENDER_EMAIL
+    sender_name = "Kuba" 
     
-    template = student.university.email_template if student.university and student.university.email_template else None
+    # NAPRAWA: Zawsze wymuszamy Twój indywidualny szablon w pierwszej kolejności!
+    template = teacher.email_template
     if not template:
-        template = teacher.email_template
+        template = student.university.email_template if student.university and student.university.email_template else None
     if not template:
-        template = "<p>Witaj {imie}!</p><p>Oto Twój link do panelu:<br><a href='{link}'>{link}</a></p><p>Termin 1: {termin1}<br>Termin 2: {termin2}</p><p>Pozdrawiamy!</p>"
+        template = "<p>Witaj {imie}!</p><p>Oto Twój link do panelu:<br><a href='{link}'>{link}</a></p><p>Proponowany termin spotkania: {terminy}</p><p>Pozdrawiamy!</p>"
         
     link = f"https://{request_host}/student/{student.url_slug}"
     
+    t1_fmt = format_pl_date(termin1_raw)
+    t2_fmt = format_pl_date(termin2_raw)
+    
+    # Inteligentne formatowanie dat
+    if t1_fmt and t2_fmt:
+        terminy_str = f"{t1_fmt} lub {t2_fmt}"
+    elif t1_fmt:
+        terminy_str = t1_fmt
+    elif t2_fmt:
+        terminy_str = t2_fmt
+    else:
+        terminy_str = "Zostanie ustalony wkrótce."
+
     body = template
     replacements = {
         "{imie}": student.name,
         "{link}": link,
-        "{termin1}": termin1,
-        "{termin2}": termin2
+        "{terminy}": terminy_str
     }
     
     for tag, value in replacements.items():
         body = body.replace(tag, value)
+    
+    # Zabezpieczenie, jeśli szablon ma wciąż stare tagi, by nie wyświetlał błędów/luk
+    body = body.replace("{termin1}", t1_fmt)
+    body = body.replace("{termin2}", "")
     
     subject = "Twój dostęp do platformy edukacyjnej"
     success, msg = send_email_api(sender_email, sender_name, student.email, subject, body)
@@ -396,8 +429,6 @@ def panel_add_student():
     
     raw_t1 = request.form.get('termin1', '')
     raw_t2 = request.form.get('termin2', '')
-    termin1 = raw_t1.replace('T', ' ') if raw_t1 else 'Brak'
-    termin2 = raw_t2.replace('T', ' ') if raw_t2 else 'Brak'
     
     if not university_id and len(user.universities) == 1: university_id = user.universities[0].id
     if not name or not university_id: return redirect(url_for('panel_dashboard'))
@@ -424,7 +455,7 @@ def panel_add_student():
     db.session.commit()
     
     if email:
-        email_sent, msg = trigger_welcome_email(user, new_student, request.host, termin1, termin2)
+        email_sent, msg = trigger_welcome_email(user, new_student, request.host, raw_t1, raw_t2)
         if email_sent:
             flash(f"Student {name} dodany pomyślnie. E-mail w drodze na adres: {email}", "success")
         else:
@@ -540,7 +571,6 @@ def panel_database():
     gbs_majors = GbsMajor.query.all()
     qa_majors = QaMajor.query.all()
     
-    # Przekazywanie archiwum przefiltrowanego dla widocznych uczelni
     archived_students = Student.query.filter_by(is_archived=True).filter(Student.university_id.in_([u.id for u in universities])).order_by(Student.name.asc()).all()
     
     return render_template('panel_database.html', universities=universities, qa_topics=qa_topics, exam_topics=exam_topics, math_questions=math_questions, gbs_majors=gbs_majors, qa_majors=qa_majors, archived_students=archived_students, user=user)
@@ -845,99 +875,6 @@ def auto_save(essay_id):
         db.session.add(Notification(message=f"<a href='/admin/student/{essay.student_id}' class='notif-link'><b>{essay.student.name}</b> ukończył/a: '{essay.title[:30]}'</a>", recipient_id=essay.student.creator_id, student_id=essay.student_id))
         db.session.commit()
     return jsonify({"status": "success"})
-
-
-# =========================================================================
-# LCCA EXAM MODULE (READING & LISTENING)
-# =========================================================================
-
-# --- Klucz odpowiedzi LISTENING ---
-ANSWER_KEY_LISTENING = {
-    "q1": ["keep-fit", "keep-fit studio", "keep fit", "keep fit studio", "a keep-fit studio"],
-    "q2": ["swimming"],
-    "q3": ["yoga", "yoga classes"],
-    "q4": ["salad bar", "a salad bar"],
-    "q5": ["500"], "q6": ["1"],
-    "q7": ["10/10:00 am, 4:30 pm", "10, 4:30", "10am, 4:30pm", "10:00, 4:30", "10.00, 4.30"],
-    "q8": ["180"], "q9": ["assessment"], "q10": ["kynchley"],
-    "q11": ["b"], "q12": ["g"], "q13": ["c"], "q14": ["a"], "q15": ["e"], "q16": ["d"],
-    "q17": ["19th", "october 19th", "the 19th", "october the 19th"],
-    "q18": ["7", "7:00"],
-    "q19": ["monday, thursday", "monday and thursday", "monday thursday"],
-    "q20": ["18"], "q21": ["a"], "q22": ["in advance"], "q23": ["nursery"], "q24": ["annual fee"],
-    "q25": ["tutor"], "q26": ["laptops", "printers"], "q27": ["printers", "laptops"], 
-    "q28": ["report writing"], "q29": ["marketing"], "q30": ["individual"],
-    "q31": ["feed"], "q32": ["metal", "leather", "metal / leather", "leather / metal", "metal and leather"],
-    "q33": ["restrictions"], "q34": ["ships"], "q35": ["england"], "q36": ["built"], "q37": ["poverty"]
-}
-
-# --- Klucz odpowiedzi READING (na podstawie dostarczonych screenów) ---
-ANSWER_KEY_READING = {
-    # Text 1: Sled Dogs
-    "r_q1": ["d"], "r_q2": ["b"], "r_q3": ["e"],
-    "r_q4": ["sensors"], # Przewidywane z kontekstu: "Researchers put movement sensors on the dogs"
-    # Text 2: Containers
-    "r_q7": ["old ships", "old"], "r_q8": ["freight rates"], "r_q9": ["security"], "r_q10": ["delayed"], 
-    "r_q11": ["disruption"], "r_q12": ["carry everything"],
-    # Text 3: Air Rage
-    "r_q13": ["ii"], "r_q14": ["viii"], "r_q15": ["xi"], "r_q16": ["xiii"],
-    "r_q17": ["vi"], "r_q18": ["i"], "r_q19": ["ix"], "r_q20": ["iv"],
-    "r_q21": ["false"], "r_q22": ["not given"], "r_q23": ["true"],
-    "r_q24": ["true"], "r_q25": ["not given"], "r_q26": ["false"]
-}
-
-@app.get("/lcca/exam")
-def lcca_exam_page():
-    """Zwraca widok z egzaminem zlokalizowany w templates/lcca/lcca_exam.html"""
-    return render_template("lcca/lcca_exam.html")
-
-@app.post("/api/lcca/submit-reading")
-def evaluate_reading():
-    payload = request.get_json()
-    score = 0
-    total_questions = 40
-    user_results = {}
-
-    # Sprawdzenie pytań standardowych
-    for key, correct_options in ANSWER_KEY_READING.items():
-        user_ans = str(payload.get(key, "")).lower().strip()
-        is_correct = any(opt in user_ans or user_ans == opt for opt in correct_options)
-        if is_correct: score += 1
-        user_results[key] = {"user_answer": user_ans, "correct": is_correct}
-
-    # Customowa weryfikacja checkboxów Text 2 (Pytania 1-2, 3-4, 5-6)
-    c1_2 = set(payload.get("r_q1_2", []))
-    if "B" in c1_2: score += 1
-    if "C" in c1_2: score += 1
-    
-    c3_4 = set(payload.get("r_q3_4", []))
-    if "A" in c3_4: score += 1
-    if "C" in c3_4: score += 1
-    
-    c5_6 = set(payload.get("r_q5_6", []))
-    if "A" in c5_6: score += 1
-    if "E" in c5_6: score += 1
-
-    return jsonify({"status": "success", "score": score, "max_score": total_questions, "details": user_results})
-
-@app.post("/api/lcca/submit-listening")
-def evaluate_listening():
-    payload = request.get_json()
-    score = 0
-    total_questions = 40
-    user_results = {}
-
-    for key, correct_options in ANSWER_KEY_LISTENING.items():
-        user_ans = str(payload.get(key, "")).lower().strip()
-        is_correct = any(opt in user_ans or user_ans == opt for opt in correct_options)
-        if is_correct: score += 1
-        user_results[key] = {"user_answer": user_ans, "correct": is_correct}
-
-    user_checkboxes = set(payload.get("q38_40", []))
-    for val in {"C", "E", "F"}:
-        if val in user_checkboxes: score += 1
-
-    return jsonify({"status": "success", "score": score, "max_score": total_questions, "details": user_results})
 
 if __name__ == '__main__':
     app.run(debug=True)

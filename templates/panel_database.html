@@ -2,10 +2,6 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <title>Baza Materiałów i Pytań</title>
     <style>
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; flex-wrap: wrap; }
@@ -14,246 +10,16 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .item-row { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Drag & drop styles dla QA topics */
         .qa-topic-item { cursor: grab; background: #fff; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
         .qa-topic-item.over { border: 2px dashed #007bff; background: #f0f8ff; }
         .drag-handle { font-size: 20px; color: #999; margin-right: 15px; cursor: grab; }
+        .form-control { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;}
     </style>
-
-    <style>
-        :root {
-            color-scheme: light;
-            --page-bg: #f5effc;
-            --page-glow-1: rgba(132, 82, 214, .18);
-            --page-glow-2: rgba(236, 99, 169, .12);
-            --surface: rgba(255,255,255,.93);
-            --surface-strong: #ffffff;
-            --surface-soft: #f9f6fd;
-            --text: #241b32;
-            --muted: #746b82;
-            --faint: #978fa2;
-            --border: rgba(69, 45, 91, .12);
-            --border-strong: rgba(69, 45, 91, .20);
-            --primary: #7447c5;
-            --primary-2: #9b5de5;
-            --primary-soft: rgba(116, 71, 197, .10);
-            --accent: #ef5da8;
-            --teal: #25b7ae;
-            --green: #35c98b;
-            --danger: #ef476f;
-            --warning: #ffc857;
-            --shadow: 0 18px 45px rgba(73, 42, 103, .10);
-            --shadow-sm: 0 8px 24px rgba(73, 42, 103, .08);
-            --input: #fbf9fe;
-        }
-        html[data-theme="dark"] {
-            color-scheme: dark;
-            --page-bg: #251238;
-            --page-glow-1: rgba(139, 82, 214, .22);
-            --page-glow-2: rgba(236, 99, 169, .11);
-            --surface: rgba(63, 36, 82, .88);
-            --surface-strong: #432757;
-            --surface-soft: #392049;
-            --text: #f8f3ff;
-            --muted: #c4b8cf;
-            --faint: #9f90ad;
-            --border: rgba(255,255,255,.10);
-            --border-strong: rgba(255,255,255,.18);
-            --primary: #a77bea;
-            --primary-2: #c08cf2;
-            --primary-soft: rgba(167, 123, 234, .14);
-            --accent: #ff78b8;
-            --teal: #35c6bd;
-            --green: #46d99b;
-            --danger: #ff5578;
-            --warning: #ffd36a;
-            --shadow: 0 20px 55px rgba(7, 1, 15, .28);
-            --shadow-sm: 0 10px 28px rgba(7, 1, 15, .20);
-            --input: rgba(255,255,255,.045);
-        }
-        * { box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        body {
-            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif !important;
-            max-width: 1180px !important;
-            min-height: 100vh;
-            margin: 0 auto !important;
-            padding: 28px clamp(16px, 3.2vw, 38px) 70px !important;
-            color: var(--text) !important;
-            background:
-                radial-gradient(circle at 10% -8%, var(--page-glow-1), transparent 38%),
-                radial-gradient(circle at 100% 0%, var(--page-glow-2), transparent 34%),
-                var(--page-bg) !important;
-            transition: background .25s ease, color .25s ease;
-        }
-        body > div:first-of-type {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            gap: 18px !important;
-            margin-bottom: 24px !important;
-            padding: 0 !important;
-        }
-        h1, h2, h3, h4 { color: var(--text) !important; letter-spacing: -.025em; }
-        h1 { font-size: clamp(26px, 4vw, 38px) !important; font-weight: 800 !important; }
-        h2 { font-weight: 800 !important; }
-        h3 { font-weight: 800 !important; }
-        p, small, label { color: var(--muted); }
-        a { color: var(--primary); }
-        body > div:first-of-type > a {
-            color: var(--text) !important;
-            background: var(--surface) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: 12px !important;
-            padding: 10px 14px !important;
-            box-shadow: var(--shadow-sm);
-            transition: transform .18s ease, border-color .18s ease;
-        }
-        body > div:first-of-type > a:hover { transform: translateY(-2px); border-color: var(--primary) !important; }
-        .theme-control { display:flex; align-items:center; gap:10px; margin-left:auto; }
-        .theme-label { font-size:12px; font-weight:800; color:var(--muted); white-space:nowrap; }
-        .theme-switch {
-            position:relative; width:54px; height:30px; border-radius:999px; border:1px solid var(--border-strong);
-            background:var(--surface); cursor:pointer; padding:0; box-shadow:var(--shadow-sm);
-        }
-        .theme-knob {
-            position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%;
-            display:grid; place-items:center; background:linear-gradient(135deg,var(--primary),var(--accent));
-            font-size:12px; transition:transform .22s ease; box-shadow:0 4px 12px rgba(116,71,197,.35);
-        }
-        html[data-theme="dark"] .theme-knob { transform:translateX(24px); }
-
-        body > div:nth-of-type(2),
-        .tab-content > div,
-        .item-row,
-        .qa-topic-item,
-        #exam-topics-list > div,
-        #qa-majors-section,
-        #gbs-majors-section {
-            background: var(--surface) !important;
-            color: var(--text) !important;
-            border: 1px solid var(--border) !important;
-            box-shadow: var(--shadow-sm) !important;
-            backdrop-filter: blur(12px);
-        }
-        body > div:nth-of-type(2) {
-            border-left: 4px solid var(--primary) !important;
-            border-radius: 16px !important;
-            padding: 18px 22px !important;
-            margin-bottom: 22px !important;
-            flex-wrap: wrap;
-        }
-        body > div:nth-of-type(2) select { min-width: min(100%, 360px); }
-
-        .tabs {
-            position: sticky; top: 10px; z-index: 40;
-            display: flex !important; gap: 8px !important; flex-wrap: wrap !important;
-            margin: 0 0 24px !important; padding: 10px !important;
-            border: 1px solid var(--border) !important; border-radius: 16px !important;
-            background: color-mix(in srgb, var(--surface) 92%, transparent) !important;
-            box-shadow: var(--shadow-sm); backdrop-filter: blur(18px);
-        }
-        .tab-btn {
-            border: 1px solid transparent !important;
-            border-radius: 11px !important;
-            padding: 10px 14px !important;
-            background: transparent !important;
-            color: var(--muted) !important;
-            font-family: inherit; font-size: 13px; font-weight: 800 !important;
-            transition: .18s ease;
-        }
-        .tab-btn:hover { background: var(--primary-soft) !important; color: var(--text) !important; }
-        .tab-btn.active {
-            background: linear-gradient(135deg,var(--primary),var(--primary-2)) !important;
-            color: #fff !important; box-shadow: 0 8px 20px rgba(116,71,197,.28);
-        }
-        .tab-content > div, #qa-majors-section, #gbs-majors-section {
-            border-radius: 18px !important; padding: clamp(20px,3vw,30px) !important; margin-bottom: 26px !important;
-        }
-        .item-row, .qa-topic-item, #exam-topics-list > div {
-            border-radius: 14px !important; padding: 16px 18px !important; margin-bottom: 12px !important;
-            transition: transform .16s ease, border-color .16s ease;
-        }
-        .item-row:hover, .qa-topic-item:hover, #exam-topics-list > div:hover { transform: translateY(-2px); border-color: var(--border-strong) !important; }
-        .material-row { border-left: 4px solid var(--teal) !important; }
-        .math-row { border-left: 4px solid var(--primary) !important; }
-        #exam-topics-list > div { border-left: 4px solid var(--accent) !important; }
-        #qa-majors-section { border-top: 4px solid var(--primary) !important; }
-        #gbs-majors-section { border-top: 4px solid var(--danger) !important; }
-        .qa-topic-item.over { border: 2px dashed var(--primary) !important; background: var(--primary-soft) !important; }
-        .drag-handle { color: var(--primary) !important; }
-
-        input, select, textarea {
-            width: auto;
-            min-height: 44px;
-            padding: 11px 13px !important;
-            border: 1px solid var(--border-strong) !important;
-            border-radius: 11px !important;
-            background: var(--input) !important;
-            color: var(--text) !important;
-            font: inherit !important;
-            outline: none;
-            transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
-        }
-        textarea { resize: vertical; line-height: 1.55; }
-        input:focus, select:focus, textarea:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 4px var(--primary-soft); }
-        input::placeholder, textarea::placeholder { color: var(--faint); }
-        input[type="file"] { border-style: dashed !important; background: var(--surface-soft) !important; }
-
-        button[type="submit"], .tab-content button:not(.tab-btn) {
-            min-height: 40px;
-            border: 0 !important;
-            border-radius: 10px !important;
-            padding: 9px 15px !important;
-            font-family: inherit !important;
-            font-weight: 800 !important;
-            cursor: pointer;
-            transition: transform .16s ease, filter .16s ease;
-        }
-        button[type="submit"]:hover, .tab-content button:not(.tab-btn):hover { transform: translateY(-1px); filter: brightness(1.04); }
-        button[style*="#dc3545"] { background: linear-gradient(135deg,#dc3556,var(--danger)) !important; color:#fff !important; }
-        button[style*="#007bff"], button[style*="#17a2b8"] { background: linear-gradient(135deg,var(--primary),var(--primary-2)) !important; color:#fff !important; }
-        button[style*="#28a745"] { background: linear-gradient(135deg,#25a875,var(--green)) !important; color:#08281c !important; }
-        button[style*="#6f42c1"] { background: linear-gradient(135deg,var(--primary),var(--accent)) !important; color:#fff !important; }
-        button[style*="#c8102e"] { background: linear-gradient(135deg,#c82d50,var(--danger)) !important; color:#fff !important; }
-        select option { background: var(--surface-strong); color: var(--text); }
-
-        .flash-message-modern {
-            padding: 14px 17px !important; border-radius: 12px !important; background: rgba(53,201,139,.12) !important;
-            color: var(--text) !important; border:1px solid rgba(53,201,139,.28) !important; margin-bottom:16px !important;
-        }
-        @media (max-width: 760px) {
-            body { padding: 18px 14px 48px !important; }
-            body > div:first-of-type { align-items:flex-start !important; flex-direction:column; }
-            .theme-control { margin-left:0; align-self:flex-end; }
-            body > div:nth-of-type(2) { align-items:stretch !important; }
-            body > div:nth-of-type(2) label { width:100%; }
-            body > div:nth-of-type(2) select { width:100% !important; }
-            .tabs { position:relative; top:auto; overflow-x:auto; flex-wrap:nowrap !important; justify-content:flex-start; }
-            .tab-btn { white-space:nowrap; }
-            .item-row, .qa-topic-item, #exam-topics-list > div { align-items:flex-start !important; flex-direction:column !important; gap:14px; }
-            .item-row form, .qa-topic-item form, #exam-topics-list form { width:100%; margin:0 !important; }
-            .item-row button, .qa-topic-item button, #exam-topics-list button { width:100%; }
-            form[style*="display:flex"][style*="gap:10px"] { flex-direction:column !important; }
-            form[style*="display: flex"][style*="gap:10px"] { flex-direction:column !important; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after { transition:none !important; animation:none !important; scroll-behavior:auto !important; }
-        }
-    </style>
-
 </head>
 <body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto;" onload="applyUniFilter()">
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h1 style="color: #17a2b8; margin: 0;">🗄️ Baza Wiedzy i Ustawienia</h1>
-        <div class="theme-control">
-            <span class="theme-label" id="themeLabel">Tryb jasny</span>
-            <button class="theme-switch" type="button" onclick="toggleTheme()" aria-label="Zmień motyw" aria-pressed="false">
-                <span class="theme-knob" id="themeKnob">☀️</span>
-            </button>
-        </div>
         <a href="/panel" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć do panelu</a>
     </div>
 
@@ -267,53 +33,55 @@
         </select>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="flash-message-modern">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div style="padding:15px; background:#d4edda; color:#155724; font-weight:bold; margin-bottom:15px; border-radius:5px;">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
 
     <div class="tabs">
         <button class="tab-btn active" onclick="showTab('mat')">📁 Pliki i Linki</button>
         <button class="tab-btn" id="tab-majors" onclick="showTab('majors')">🎓 Kierunki</button>
         <button class="tab-btn" id="tab-qa" onclick="showTab('qa')">✍️ Tematy Rozprawek</button>
         <button class="tab-btn" id="tab-exam" onclick="showTab('exam')">📝 Tematy Egzaminu</button>
-        <button class="tab-btn" onclick="showTab('math')">🔢 Pytania Matematyczne</button>
+        <button class="tab-btn" onclick="showTab('math')">🔢 Test z Matematyki (V2)</button>
         <button class="tab-btn" onclick="showTab('email')">✉️ Twój Szablon E-mail</button>
+        <button class="tab-btn" onclick="showTab('archive')">🗃️ Archiwum</button>
     </div>
 
     <!-- ZAKŁADKA 1: MATERIAŁY -->
     <div id="mat" class="tab-content active">
+        <!-- Zostawiamy tak samo jak wcześniej -->
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
             <h3>Dodaj materiał edukacyjny dla wybranej uczelni</h3>
             <form method="POST" action="{{ url_for('panel_database') }}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 15px;">
                 <input type="hidden" name="action" value="add_material">
                 <input type="hidden" name="university_id" class="dynamic-uni-id">
                 
-                <input type="text" name="title" placeholder="Tytuł pliku / materiału" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <input type="text" name="title" placeholder="Tytuł pliku / materiału" required class="form-control">
 
-                <select name="category" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <select name="category" class="form-control">
                     <option value="interview">Kategoria: Interview / Materiały Ogólne</option>
                     <option value="essay">Kategoria: Pomoce do Rozprawek</option>
                     <option value="math_test">Kategoria: Przygotowanie do testu matematycznego</option>
                 </select>
 
                 <div id="matGbsMajor" style="display:none;">
-                    <select name="gbs_major_id" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%;">
+                    <select name="gbs_major_id" class="form-control">
                         <option value="" selected>Dla wszystkich studentów GBS (Opcjonalnie wybierz kierunek)</option>
                         {% for m in gbs_majors %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
                     </select>
                 </div>
                 <div id="matQaMajor" style="display:none;">
-                    <select name="qa_major_id" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%;">
+                    <select name="qa_major_id" class="form-control">
                         <option value="" selected>Dla wszystkich studentów QA (Opcjonalnie wybierz kierunek)</option>
                         {% for m in qa_majors %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
                     </select>
                 </div>
 
-                <select id="typeSelect" onchange="toggleType()" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <select id="typeSelect" onchange="toggleType()" class="form-control">
                     <option value="link">Podaj link zewnętrzny</option>
                     <option value="pdf">Wgraj plik (HTML, PDF, Video)</option>
                 </select>
 
-                <input type="url" name="link_url" id="linkInput" placeholder="https://..." style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                <input type="file" name="pdf_file" id="pdfInput" accept=".pdf,.html,.mp4,.mov,.avi" style="padding: 10px; background: #f8f9fa; display: none;">
+                <input type="url" name="link_url" id="linkInput" placeholder="https://..." class="form-control">
+                <input type="file" name="pdf_file" id="pdfInput" accept=".pdf,.html,.mp4,.mov,.avi" class="form-control" style="background: #f8f9fa; display: none;">
                 
                 <button type="submit" style="padding: 10px; background: #17a2b8; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz materiał</button>
             </form>
@@ -341,7 +109,6 @@
 
     <!-- ZAKŁADKA 2: KIERUNKI (MAJORS) -->
     <div id="majors" class="tab-content">
-        <!-- QA KIERUNKI -->
         <div id="qa-majors-section" style="background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #007bff; display:none;">
             <h3 style="margin-top:0;">Kierunki QA</h3>
             <form method="POST" action="{{ url_for('panel_database') }}" style="display:flex; gap:10px; margin-bottom:15px;">
@@ -360,8 +127,6 @@
                 </div>
             {% endfor %}
         </div>
-
-        <!-- GBS KIERUNKI -->
         <div id="gbs-majors-section" style="background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #c8102e; display:none;">
             <h3 style="margin-top:0;">Kierunki GBS</h3>
             <form method="POST" action="{{ url_for('panel_database') }}" style="display:flex; gap:10px; margin-bottom:15px;">
@@ -385,19 +150,15 @@
     <!-- ZAKŁADKA 3: ROZPRAWKI QA (DRAG & DROP) -->
     <div id="qa" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
-            <h3>Dodaj nowy temat do Bazy Rozprawek QA (Zwykłych)</h3>
+            <h3>Dodaj nowy temat do Bazy Rozprawek QA</h3>
             <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px;">
                 <input type="hidden" name="action" value="add_qa_topic">
-                <input type="text" name="title" placeholder="Krótki tytuł" required style="padding: 10px; border: 1px solid #ccc;">
-                <textarea name="topic_full" placeholder="Pełna treść tematu..." rows="4" required style="padding: 10px; border: 1px solid #ccc;"></textarea>
+                <input type="text" name="title" placeholder="Krótki tytuł" required class="form-control">
+                <textarea name="topic_full" placeholder="Pełna treść tematu..." rows="4" required class="form-control"></textarea>
                 <input type="hidden" name="order_index" value="0">
                 <button type="submit" style="padding: 10px; background: #007bff; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz temat</button>
             </form>
         </div>
-        
-        <h3 style="margin-bottom: 5px;">Zarządzaj tematami (Złap i przeciągnij, aby zmienić kolejność)</h3>
-        <p style="font-size: 13px; color: #666;">Kolejność zapisuje się automatycznie po upuszczeniu.</p>
-        
         <div id="qa-topics-list">
             {% for t in qa_topics %}
             <div class="qa-topic-item" draggable="true" data-id="{{ t.id }}">
@@ -424,13 +185,11 @@
             <h3>Dodaj temat do Egzaminu Próbnego</h3>
             <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px;">
                 <input type="hidden" name="action" value="add_exam_topic">
-                <input type="text" name="title" placeholder="Krótki tytuł (np. Temat 3)" required style="padding: 10px; border: 1px solid #ccc;">
-                <textarea name="topic_full" placeholder="Pełna treść tematu egzaminacyjnego..." rows="4" required style="padding: 10px; border: 1px solid #ccc;"></textarea>
+                <input type="text" name="title" placeholder="Krótki tytuł (np. Temat 3)" required class="form-control">
+                <textarea name="topic_full" placeholder="Pełna treść tematu egzaminacyjnego..." rows="4" required class="form-control"></textarea>
                 <button type="submit" style="padding: 10px; background: #007bff; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz temat egzaminu</button>
             </form>
         </div>
-        
-        <h3>Baza tematów egzaminacyjnych:</h3>
         <div id="exam-topics-list">
             {% for t in exam_topics %}
             <div style="background: #fff; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #007bff;">
@@ -448,40 +207,92 @@
         </div>
     </div>
 
-    <!-- ZAKŁADKA 4: MATEMATYKA -->
+    <!-- ZAKŁADKA 4: MATEMATYKA V2 (Zdjęcia, Edycja, Wersje) -->
     <div id="math" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
-            <h3>Dodaj pytanie matematyczne do tej uczelni</h3>
-            <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 10px;">
+            <h3>➕ Dodaj pytanie matematyczne</h3>
+            <form method="POST" action="{{ url_for('panel_database') }}" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="add_math_q">
                 <input type="hidden" name="university_id" class="dynamic-uni-id">
                 
-                <textarea name="text" placeholder="Treść zadania..." rows="3" required style="padding: 10px; border: 1px solid #ccc;"></textarea>
-                <input type="text" name="opt_a" placeholder="Opcja A" required style="padding: 10px; border: 1px solid #ccc;">
-                <input type="text" name="opt_b" placeholder="Opcja B" required style="padding: 10px; border: 1px solid #ccc;">
-                <input type="text" name="opt_c" placeholder="Opcja C" required style="padding: 10px; border: 1px solid #ccc;">
-                <input type="text" name="opt_d" placeholder="Opcja D" required style="padding: 10px; border: 1px solid #ccc;">
+                <label>Wersja testu (np. Wersja 1, Wersja A):</label>
+                <input type="text" name="test_version" value="Wersja 1" required class="form-control" style="background:#e9ecef; font-weight:bold;">
+
+                <label>Treść pytania:</label>
+                <textarea name="text" placeholder="Treść zadania..." rows="3" required class="form-control"></textarea>
                 
-                <select name="answer" required style="padding: 10px; border: 1px solid #ccc;">
-                    <option value="" disabled selected>Poprawna odpowiedź...</option>
+                <label>Zdjęcie do zadania (Opcjonalnie):</label>
+                <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif" class="form-control" style="background: #f8f9fa;">
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <input type="text" name="opt_a" placeholder="Opcja A" required class="form-control">
+                    <input type="text" name="opt_b" placeholder="Opcja B" required class="form-control">
+                    <input type="text" name="opt_c" placeholder="Opcja C" required class="form-control">
+                    <input type="text" name="opt_d" placeholder="Opcja D" required class="form-control">
+                </div>
+                
+                <select name="answer" required class="form-control" style="border: 2px solid #6f42c1;">
+                    <option value="" disabled selected>Zaznacz poprawną odpowiedź...</option>
                     <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
                 </select>
-                <button type="submit" style="padding: 10px; background: #6f42c1; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz pytanie</button>
+                <button type="submit" style="width:100%; padding: 12px; background: #6f42c1; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top:10px;">Zapisz pytanie</button>
             </form>
         </div>
 
-        <h3>Pytania testowe dla tej uczelni:</h3>
+        <h3>Baza pytań testowych:</h3>
         {% for q in math_questions %}
-            <div class="item-row math-row" data-uni="{{ q.university_id }}" style="border-left: 4px solid #6f42c1;">
-                <div style="flex:1;">
-                    <strong>{{ q.text }}</strong><br>
-                    <small style="color: #666;">A: {{q.opt_a}} | B: {{q.opt_b}} | C: {{q.opt_c}} | D: {{q.opt_d}} <br><b>Poprawna: {{ q.answer|upper }}</b></small>
+            <div class="item-row math-row" data-uni="{{ q.university_id }}" style="border-left: 4px solid #6f42c1; display:flex; flex-direction:column; align-items:stretch;">
+                <div style="display:flex; justify-content:space-between; width:100%;">
+                    <div style="flex:1;">
+                        <span style="background:#6f42c1; color:white; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:bold;">{{ q.test_version }}</span>
+                        <strong>{{ q.text }}</strong><br>
+                        {% if q.image_url %}
+                            <a href="{{ q.image_url }}" target="_blank" style="font-size:12px; color:#007bff;">ZOBACZ ZDJĘCIE 🖼️</a><br>
+                        {% endif %}
+                        <small style="color: #666;">A: {{q.opt_a}} | B: {{q.opt_b}} | C: {{q.opt_c}} | D: {{q.opt_d}} <br><b style="color:green;">Poprawna: {{ q.answer|upper }}</b></small>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        <button type="button" onclick="document.getElementById('edit-math-{{q.id}}').style.display='block'" style="background: #17a2b8; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Edytuj</button>
+                        <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
+                            <input type="hidden" name="action" value="del_math_q">
+                            <input type="hidden" name="question_id" value="{{ q.id }}">
+                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer; width:100%;">Usuń</button>
+                        </form>
+                    </div>
                 </div>
-                <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0; margin-left:15px;">
-                    <input type="hidden" name="action" value="del_math_q">
-                    <input type="hidden" name="question_id" value="{{ q.id }}">
-                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
-                </form>
+                
+                <!-- UKRYTY FORMULARZ EDYCJI -->
+                <div id="edit-math-{{q.id}}" style="display:none; background:#f8f9fa; padding:15px; border:1px solid #ccc; border-radius:5px; margin-top:15px;">
+                    <form method="POST" action="{{ url_for('panel_database') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="edit_math_q">
+                        <input type="hidden" name="question_id" value="{{q.id}}">
+                        
+                        <label>Wersja testu:</label>
+                        <input type="text" name="test_version" value="{{ q.test_version }}" required class="form-control">
+                        
+                        <label>Treść:</label>
+                        <textarea name="text" rows="2" required class="form-control">{{ q.text }}</textarea>
+                        
+                        <label>Wgraj nowe zdjęcie (Nadpisze stare jeśli istnieje):</label>
+                        <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif" class="form-control">
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
+                            <input type="text" name="opt_a" value="{{ q.opt_a }}" required class="form-control">
+                            <input type="text" name="opt_b" value="{{ q.opt_b }}" required class="form-control">
+                            <input type="text" name="opt_c" value="{{ q.opt_c }}" required class="form-control">
+                            <input type="text" name="opt_d" value="{{ q.opt_d }}" required class="form-control">
+                        </div>
+                        <select name="answer" required class="form-control">
+                            <option value="a" {% if q.answer == 'a' %}selected{% endif %}>A</option>
+                            <option value="b" {% if q.answer == 'b' %}selected{% endif %}>B</option>
+                            <option value="c" {% if q.answer == 'c' %}selected{% endif %}>C</option>
+                            <option value="d" {% if q.answer == 'd' %}selected{% endif %}>D</option>
+                        </select>
+                        
+                        <button type="submit" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">Zapisz Zmiany</button>
+                        <button type="button" onclick="document.getElementById('edit-math-{{q.id}}').style.display='none'" style="background:#6c757d; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Anuluj</button>
+                    </form>
+                </div>
             </div>
         {% endfor %}
     </div>
@@ -490,24 +301,44 @@
     <div id="email" class="tab-content">
         <div style="background: white; padding: 25px; border-radius: 8px;">
             <h2 style="margin-top:0;">Twój indywidualny szablon e-mail</h2>
-            <p style="font-size: 13px; color: #666;">
-                Używaj tych znaczników, a system automatycznie podmieni je na prawdziwe dane:<br> 
-                <b>{imie}</b> - Imię ucznia,<br> 
-                <b>{link}</b> - Osobisty link do panelu ucznia,<br>
-                <b>{terminy}</b> - Inteligentnie wyświetli jeden lub oba terminy spotkań.
-            </p>
             <form method="POST" action="/panel/database">
                 <input type="hidden" name="action" value="save_teacher_template">
-                <textarea name="email_template" rows="12" style="width: 100%; padding: 15px; font-family: sans-serif; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px;">{{ user.email_template if user.email_template else "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nProponowany termin spotkania: {terminy}\n\nPozdrawiam!" }}</textarea>
+                <textarea name="email_template" rows="12" class="form-control">{{ user.email_template if user.email_template else "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nProponowany termin spotkania: {terminy}\n\nPozdrawiam!" }}</textarea>
                 <div style="margin-top: 15px;">
                     <button type="submit" style="background: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Zapisz Mój Szablon</button>
                 </div>
             </form>
         </div>
     </div>
+    
+    <!-- ZAKŁADKA 6: ARCHIWUM -->
+    <div id="archive" class="tab-content">
+        <div style="background: white; padding: 25px; border-radius: 8px;">
+            <h2 style="margin-top:0; color:#dc3545;">🗃️ Archiwum usuniętych kont</h2>
+            <p>Zarchiwizowane konta studentów. Możesz je przywrócić lub trwale usunąć.</p>
+            
+            {% for s in archived_students %}
+            <div style="border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd;">
+                <div>
+                    <strong>{{ s.name }}</strong><br>
+                    <small>Uczelnia: {{ s.university.name if s.university else 'Brak' }}</small>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <form method="POST" action="/admin/student/{{ s.id }}/restore" style="margin: 0;">
+                        <button type="submit" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight:bold; cursor:pointer;">Przywróć</button>
+                    </form>
+                    <form method="POST" action="/admin/student/{{ s.id }}/delete_forever" style="margin: 0;" onsubmit="return confirm('To usunie ucznia bezpowrotnie. Jesteś pewien?');">
+                        <button type="submit" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń całkowicie</button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+                <p>Brak kont w archiwum.</p>
+            {% endfor %}
+        </div>
+    </div>
 
     <script>
-        // LOGIKA ZAKŁADEK I TYPÓW PLIKÓW
         function toggleType() {
             let val = document.getElementById('typeSelect').value;
             document.getElementById('linkInput').style.display = (val === 'link') ? 'block' : 'none';
@@ -520,7 +351,6 @@
             event.currentTarget.classList.add('active');
         }
 
-        // LOGIKA FILTROWANIA PO UCZELNI
         function applyUniFilter() {
             let sel = document.getElementById('activeUniSelector');
             if(!sel) return;
@@ -530,84 +360,52 @@
             let isGbs = uniName.includes('GBS');
             let isQa = uniName.includes('QA');
 
-            // 1. Zmiana ukrytych inputów w formularzach
-            document.querySelectorAll('.dynamic-uni-id').forEach(input => {
-                input.value = uniId;
-            });
+            document.querySelectorAll('.dynamic-uni-id').forEach(input => { input.value = uniId; });
 
-            // 2. Widoczność zakładek (Tabs)
             document.getElementById('tab-majors').style.display = (isGbs || isQa) ? 'inline-block' : 'none';
             document.getElementById('tab-qa').style.display = isQa ? 'inline-block' : 'none';
             document.getElementById('tab-exam').style.display = isQa ? 'inline-block' : 'none';
 
-            // 3. Widoczność sekcji Kierunków wewnątrz zakładki
             document.getElementById('qa-majors-section').style.display = isQa ? 'block' : 'none';
             document.getElementById('gbs-majors-section').style.display = isGbs ? 'block' : 'none';
-
-            // 4. Rozwijane listy kierunków w formularzu dodawania Materiałów
             document.getElementById('matQaMajor').style.display = isQa ? 'block' : 'none';
             document.getElementById('matGbsMajor').style.display = isGbs ? 'block' : 'none';
 
-            // 5. Filtrowanie wierszy w listach (Materiały i Pytania matematyczne)
-            document.querySelectorAll('.material-row').forEach(row => {
-                row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none';
-            });
-            document.querySelectorAll('.math-row').forEach(row => {
-                row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none';
-            });
+            document.querySelectorAll('.material-row').forEach(row => { row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none'; });
+            document.querySelectorAll('.math-row').forEach(row => { row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none'; });
             
-            // Jeśli ukryto obecną zakładkę, wróć do pierwszej
             if((document.getElementById('tab-qa').classList.contains('active') || document.getElementById('tab-exam').classList.contains('active')) && !isQa) {
                 showTab('mat');
             }
         }
 
-        // LOGIKA DRAG & DROP DLA ROZPRAWK QA
         let dragSrcEl = null;
-
         function handleDragStart(e) {
             dragSrcEl = this;
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/html', this.innerHTML);
             this.style.opacity = '0.4';
         }
-
-        function handleDragOver(e) {
-            if (e.preventDefault) { e.preventDefault(); }
-            e.dataTransfer.dropEffect = 'move';
-            return false;
-        }
-
+        function handleDragOver(e) { if (e.preventDefault) { e.preventDefault(); } e.dataTransfer.dropEffect = 'move'; return false; }
         function handleDragEnter(e) { this.classList.add('over'); }
         function handleDragLeave(e) { this.classList.remove('over'); }
-
         function handleDrop(e) {
             if (e.stopPropagation) { e.stopPropagation(); }
-            if (dragSrcEl != this) {
-                this.parentNode.insertBefore(dragSrcEl, this.nextSibling || this);
-            }
+            if (dragSrcEl != this) { this.parentNode.insertBefore(dragSrcEl, this.nextSibling || this); }
             return false;
         }
-
         function handleDragEnd(e) {
             this.style.opacity = '1';
             let items = document.querySelectorAll('.qa-topic-item');
             items.forEach(function (item) { item.classList.remove('over'); });
-
-            // Zbierz nową kolejność ID
             let newOrder = [];
-            items.forEach((el) => {
-                newOrder.push(el.getAttribute('data-id'));
-            });
-
-            // Wyślij nową kolejność do backendu
+            items.forEach((el) => { newOrder.push(el.getAttribute('data-id')); });
             fetch('/api/reorder_qa', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({order: newOrder})
             });
         }
-
         let items = document.querySelectorAll('.qa-topic-item');
         items.forEach(function(item) {
             item.addEventListener('dragstart', handleDragStart, false);
@@ -617,40 +415,6 @@
             item.addEventListener('drop', handleDrop, false);
             item.addEventListener('dragend', handleDragEnd, false);
         });
-
-    
-
-        function applyTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            const knob = document.getElementById('themeKnob');
-            const label = document.getElementById('themeLabel');
-            const button = document.querySelector('.theme-switch');
-            if (theme === 'dark') {
-                if (knob) knob.textContent = '🌙';
-                if (label) label.textContent = 'Tryb ciemny';
-                if (button) button.setAttribute('aria-pressed', 'true');
-            } else {
-                if (knob) knob.textContent = '☀️';
-                if (label) label.textContent = 'Tryb jasny';
-                if (button) button.setAttribute('aria-pressed', 'false');
-            }
-        }
-        function toggleTheme() {
-            const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-            const next = current === 'dark' ? 'light' : 'dark';
-            localStorage.setItem('openuk-theme', next);
-            applyTheme(next);
-        }
-        (function initTheme() {
-            const saved = localStorage.getItem('openuk-theme');
-            const media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-            applyTheme(saved || (media && media.matches ? 'dark' : 'light'));
-            if (media) {
-                media.addEventListener('change', function(e) {
-                    if (!localStorage.getItem('openuk-theme')) applyTheme(e.matches ? 'dark' : 'light');
-                });
-            }
-        })();
-</script>
+    </script>
 </body>
 </html>

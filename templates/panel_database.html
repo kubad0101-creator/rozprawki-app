@@ -1,420 +1,907 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <title>Baza Materiałów i Pytań</title>
-    <style>
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; flex-wrap: wrap; }
-        .tab-btn { padding: 10px 20px; border: none; background: #e2e3e5; color: #333; font-weight: bold; border-radius: 5px; cursor: pointer; }
-        .tab-btn.active { background: #17a2b8; color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .item-row { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .qa-topic-item { cursor: grab; background: #fff; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .qa-topic-item.over { border: 2px dashed #007bff; background: #f0f8ff; }
-        .drag-handle { font-size: 20px; color: #999; margin-right: 15px; cursor: grab; }
-        .form-control { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;}
-    </style>
-</head>
-<body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto;" onload="applyUniFilter()">
-
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h1 style="color: #17a2b8; margin: 0;">🗄️ Baza Wiedzy i Ustawienia</h1>
-        <a href="/panel" style="color: #007bff; font-weight: bold; text-decoration: none;">⬅ Wróć do panelu</a>
-    </div>
-
-    <!-- KONTEKST UCZELNI -->
-    <div style="background: white; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #17a2b8; display: flex; align-items: center; gap: 15px;">
-        <label style="font-weight: bold; font-size: 16px;">Wybierz uczelnię do modyfikacji:</label>
-        <select id="activeUniSelector" onchange="applyUniFilter()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; flex: 1;">
-            {% for u in universities %}
-                <option value="{{ u.id }}" data-name="{{ u.name }}">{{ u.name }}</option>
-            {% endfor %}
-        </select>
-    </div>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div style="padding:15px; background:#d4edda; color:#155724; font-weight:bold; margin-bottom:15px; border-radius:5px;">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
-
-    <div class="tabs">
-        <button class="tab-btn active" onclick="showTab('mat')">📁 Pliki i Linki</button>
-        <button class="tab-btn" id="tab-majors" onclick="showTab('majors')">🎓 Kierunki</button>
-        <button class="tab-btn" id="tab-qa" onclick="showTab('qa')">✍️ Tematy Rozprawek</button>
-        <button class="tab-btn" id="tab-exam" onclick="showTab('exam')">📝 Tematy Egzaminu</button>
-        <button class="tab-btn" onclick="showTab('math')">🔢 Test z Matematyki (V2)</button>
-        <button class="tab-btn" onclick="showTab('email')">✉️ Twój Szablon E-mail</button>
-        <button class="tab-btn" onclick="showTab('archive')">🗃️ Archiwum</button>
-    </div>
-
-    <!-- ZAKŁADKA 1: MATERIAŁY -->
-    <div id="mat" class="tab-content active">
-        <!-- Zostawiamy tak samo jak wcześniej -->
-        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
-            <h3>Dodaj materiał edukacyjny dla wybranej uczelni</h3>
-            <form method="POST" action="{{ url_for('panel_database') }}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 15px;">
-                <input type="hidden" name="action" value="add_material">
-                <input type="hidden" name="university_id" class="dynamic-uni-id">
-                
-                <input type="text" name="title" placeholder="Tytuł pliku / materiału" required class="form-control">
-
-                <select name="category" class="form-control">
-                    <option value="interview">Kategoria: Interview / Materiały Ogólne</option>
-                    <option value="essay">Kategoria: Pomoce do Rozprawek</option>
-                    <option value="math_test">Kategoria: Przygotowanie do testu matematycznego</option>
-                </select>
-
-                <div id="matGbsMajor" style="display:none;">
-                    <select name="gbs_major_id" class="form-control">
-                        <option value="" selected>Dla wszystkich studentów GBS (Opcjonalnie wybierz kierunek)</option>
-                        {% for m in gbs_majors %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
-                    </select>
-                </div>
-                <div id="matQaMajor" style="display:none;">
-                    <select name="qa_major_id" class="form-control">
-                        <option value="" selected>Dla wszystkich studentów QA (Opcjonalnie wybierz kierunek)</option>
-                        {% for m in qa_majors %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
-                    </select>
-                </div>
-
-                <select id="typeSelect" onchange="toggleType()" class="form-control">
-                    <option value="link">Podaj link zewnętrzny</option>
-                    <option value="pdf">Wgraj plik (HTML, PDF, Video)</option>
-                </select>
-
-                <input type="url" name="link_url" id="linkInput" placeholder="https://..." class="form-control">
-                <input type="file" name="pdf_file" id="pdfInput" accept=".pdf,.html,.mp4,.mov,.avi" class="form-control" style="background: #f8f9fa; display: none;">
-                
-                <button type="submit" style="padding: 10px; background: #17a2b8; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz materiał</button>
-            </form>
-        </div>
-        
-        <h3>Materiały dla tej uczelni:</h3>
-        {% for uni in universities %}
-            {% for mat in uni.materials %}
-            <div class="item-row material-row" data-uni="{{ uni.id }}" style="border-left: 4px solid #17a2b8;">
-                <div>
-                    <strong>{{ mat.title }}</strong><br>
-                    <small>Kategoria: {{ mat.category }}<br>
-                    Przypisany kierunek: <b>{% if mat.qa_major %}{{ mat.qa_major.name }} (QA){% elif mat.gbs_major %}{{ mat.gbs_major.name }} (GBS){% else %}Wszyscy studenci{% endif %}</b>
-                    </small>
-                </div>
-                <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
-                    <input type="hidden" name="action" value="del_material">
-                    <input type="hidden" name="material_id" value="{{ mat.id }}">
-                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
-                </form>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Baza Materiałów i Pytań</title>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap");
+            :root {
+                --bg: #f5f0fb;
+                --text: #241b35;
+                --muted: #746b82;
+                --card: rgba(255, 255, 255, 0.94);
+                --soft: #f8f5fc;
+                --line: rgba(52, 34, 73, 0.12);
+                --line2: rgba(52, 34, 73, 0.2);
+                --purple: #6840bc;
+                --purple2: #8b5bd6;
+                --blue: #4266e8;
+                --green: #32c98a;
+                --red: #ed4057;
+                --amber: #ffc85b;
+                --teal: #22b8b0;
+                --shadow: 0 18px 45px rgba(76, 46, 112, 0.12);
+                --glow1: rgba(139, 91, 214, 0.18);
+                --glow2: rgba(229, 111, 220, 0.13);
+                --input: #fff;
+            }
+            html[data-theme="dark"] {
+                --bg: #251334;
+                --text: #f7f1fb;
+                --muted: #c0b5ca;
+                --card: rgba(66, 39, 82, 0.88);
+                --soft: rgba(255, 255, 255, 0.05);
+                --line: rgba(255, 255, 255, 0.1);
+                --line2: rgba(255, 255, 255, 0.18);
+                --shadow: 0 18px 45px rgba(0, 0, 0, 0.26);
+                --glow1: rgba(129, 71, 189, 0.22);
+                --glow2: rgba(227, 94, 207, 0.12);
+                --input: rgba(255, 255, 255, 0.045);
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html {
+                color-scheme: light;
+            }
+            html[data-theme="dark"] {
+                color-scheme: dark;
+            }
+            body {
+                margin: 0 !important;
+                min-height: 100vh;
+                padding: 28px clamp(16px, 3vw, 38px) 60px !important;
+                font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif !important;
+                color: var(--text) !important;
+                background: radial-gradient(circle at 10% -10%, var(--glow1), transparent 38%), radial-gradient(circle at 100% 0, var(--glow2), transparent 36%), var(--bg) !important;
+                transition:
+                    0.25s background,
+                    0.25s color;
+            }
+            .shell {
+                max-width: 1180px;
+                margin: auto;
+            }
+            .theme-row {
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                gap: 10px;
+                margin: 0 0 14px;
+                color: var(--muted);
+                font-size: 12px;
+                font-weight: 800;
+            }
+            .switch {
+                width: 54px;
+                height: 29px;
+                border-radius: 999px;
+                border: 1px solid var(--line2);
+                background: var(--soft);
+                position: relative;
+                cursor: pointer;
+            }
+            .knob {
+                position: absolute;
+                width: 21px;
+                height: 21px;
+                left: 3px;
+                top: 3px;
+                border-radius: 50%;
+                display: grid;
+                place-items: center;
+                font-size: 11px;
+                background: linear-gradient(135deg, #7b4bdd, #d95bc6);
+                box-shadow: 0 4px 12px rgba(105, 64, 188, 0.35);
+                transition: 0.25s transform;
+            }
+            .switch[data-on="true"] .knob {
+                transform: translateX(25px);
+            }
+            a {
+                color: inherit;
+            }
+            h1,
+            h2,
+            h3,
+            h4 {
+                letter-spacing: -0.025em;
+            }
+            h1 {
+                font-size: clamp(25px, 3vw, 35px) !important;
+                color: var(--text) !important;
+            }
+            h2 {
+                color: var(--text) !important;
+            }
+            .dashboard-container,
+            .container {
+                max-width: 1180px !important;
+                margin: auto !important;
+                background: transparent !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+            }
+            .header-bar,
+            .add-student-box,
+            .uni-section > div,
+            .question-box,
+            .item-row,
+            .qa-topic-item,
+            .tab-content > div,
+            .cardlike {
+                background: var(--card) !important;
+                border: 1px solid var(--line) !important;
+                border-radius: 20px !important;
+                box-shadow: var(--shadow) !important;
+                backdrop-filter: blur(12px);
+            }
+            .header-bar {
+                padding: 20px 24px !important;
+                border-top: 0 !important;
+                margin-bottom: 22px !important;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+            .header-bar h1 {
+                font-size: clamp(20px, 2.5vw, 28px) !important;
+            }
+            .header-bar > div {
+                display: flex;
+                gap: 9px;
+                flex-wrap: wrap;
+            }
+            .add-student-box {
+                padding: 26px !important;
+            }
+            .btn,
+            button[type="submit"],
+            button[type="button"] {
+                border: 0 !important;
+                border-radius: 11px !important;
+                padding: 11px 16px !important;
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                text-decoration: none !important;
+                font: 800 13px inherit !important;
+                cursor: pointer;
+                transition:
+                    0.18s transform,
+                    0.18s filter,
+                    0.18s box-shadow;
+            }
+            .btn:hover,
+            button:hover {
+                transform: translateY(-2px);
+                filter: brightness(1.04);
+            }
+            .btn-blue {
+                background: linear-gradient(135deg, #3959ce, #577bf4) !important;
+                color: #fff !important;
+            }
+            .btn-green {
+                background: linear-gradient(135deg, #20a870, #3fd39a) !important;
+                color: #082b20 !important;
+            }
+            .btn-dark,
+            .btn-gray {
+                background: var(--soft) !important;
+                color: var(--text) !important;
+                border: 1px solid var(--line2) !important;
+            }
+            .btn-red,
+            [style*="background: #dc3545"],
+            [style*="background:#dc3545"] {
+                background: linear-gradient(135deg, #d93650, #f04b62) !important;
+                color: #fff !important;
+            }
+            .form-grid {
+                gap: 17px !important;
+            }
+            .form-control,
+            input[type="text"],
+            input[type="email"],
+            input[type="password"],
+            input[type="url"],
+            input[type="datetime-local"],
+            input[type="file"],
+            select,
+            textarea {
+                width: 100%;
+                min-height: 46px;
+                padding: 12px 14px !important;
+                border: 1px solid var(--line2) !important;
+                border-radius: 11px !important;
+                background: var(--input) !important;
+                color: var(--text) !important;
+                font: 600 14px inherit !important;
+                outline: none;
+                transition:
+                    0.18s border-color,
+                    0.18s box-shadow;
+            }
+            textarea {
+                min-height: 120px;
+                resize: vertical;
+            }
+            input:focus,
+            select:focus,
+            textarea:focus {
+                border-color: var(--purple2) !important;
+                box-shadow: 0 0 0 4px rgba(139, 91, 214, 0.14) !important;
+            }
+            label {
+                font-size: 13px;
+                font-weight: 750;
+                color: var(--text);
+            }
+            .uni-section {
+                margin-bottom: 28px !important;
+            }
+            .uni-header {
+                padding: 16px 20px !important;
+                border-radius: 18px 18px 0 0 !important;
+                background: linear-gradient(135deg, #6740bc, #8d58d4) !important;
+            }
+            .student-table {
+                border-collapse: separate !important;
+                border-spacing: 0 !important;
+                background: var(--card) !important;
+                color: var(--text) !important;
+                border: 1px solid var(--line) !important;
+                border-radius: 0 0 18px 18px !important;
+                overflow: hidden !important;
+                box-shadow: var(--shadow) !important;
+            }
+            .student-table th {
+                background: var(--soft) !important;
+                color: var(--muted) !important;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            .student-table th,
+            .student-table td {
+                border-bottom: 1px solid var(--line) !important;
+            }
+            .student-table tr:hover {
+                background: var(--soft) !important;
+            }
+            .badge {
+                background: rgba(139, 91, 214, 0.13) !important;
+                color: var(--purple2) !important;
+                border: 1px solid rgba(139, 91, 214, 0.2);
+            }
+            .tabs {
+                border: 0 !important;
+                padding: 7px !important;
+                background: var(--card) !important;
+                border: 1px solid var(--line) !important;
+                border-radius: 16px !important;
+                box-shadow: var(--shadow) !important;
+                gap: 7px !important;
+            }
+            .tab-btn {
+                background: transparent !important;
+                color: var(--muted) !important;
+                border-radius: 10px !important;
+            }
+            .tab-btn.active {
+                background: linear-gradient(135deg, #6740bc, #8d58d4) !important;
+                color: #fff !important;
+            }
+            .tab-content {
+                margin-top: 20px;
+            }
+            .tab-content > div {
+                padding: 24px !important;
+                margin-bottom: 22px !important;
+            }
+            .item-row,
+            .qa-topic-item {
+                padding: 17px 19px !important;
+                margin-bottom: 12px !important;
+            }
+            .qa-topic-item.over {
+                border: 2px dashed var(--purple2) !important;
+                background: rgba(139, 91, 214, 0.08) !important;
+            }
+            .drag-handle {
+                color: var(--purple2) !important;
+            }
+            .pulse-dot {
+                background: var(--red) !important;
+            }
+            .question-box {
+                padding: 22px !important;
+                margin-bottom: 18px !important;
+                border-left: 4px solid var(--purple2) !important;
+            }
+            .q-text {
+                font-size: 17px !important;
+            }
+            .opt-label {
+                display: flex !important;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 13px 14px !important;
+                margin-bottom: 9px !important;
+                background: var(--soft) !important;
+                border: 1px solid var(--line) !important;
+                border-radius: 11px !important;
+                color: var(--text) !important;
+            }
+            .opt-label:hover {
+                border-color: var(--purple2) !important;
+                background: rgba(139, 91, 214, 0.09) !important;
+            }
+            .opt-label input {
+                margin-top: 3px;
+                accent-color: var(--purple);
+            }
+            .version-btn {
+                border-radius: 12px !important;
+                background: linear-gradient(135deg, #6740bc, #8d58d4) !important;
+                box-shadow: 0 10px 20px rgba(104, 64, 188, 0.18);
+            }
+            .version-btn.disabled {
+                background: var(--soft) !important;
+                color: var(--muted) !important;
+                border: 1px solid var(--line2);
+            }
+            .btn-submit {
+                background: linear-gradient(135deg, #20a870, #3fd39a) !important;
+                color: #082b20 !important;
+                border-radius: 13px !important;
+            }
+            .q-img {
+                border-radius: 12px !important;
+                border: 1px solid var(--line) !important;
+            }
+            .flash-message {
+                padding: 14px 16px;
+                border-radius: 12px;
+                margin-bottom: 16px;
+                background: rgba(50, 201, 138, 0.14);
+                border: 1px solid rgba(50, 201, 138, 0.3);
+                font-weight: 700;
+            }
+            @media (max-width: 760px) {
+                body {
+                    padding: 16px 12px 40px !important;
+                }
+                .form-grid {
+                    grid-template-columns: 1fr !important;
+                }
+                .header-bar {
+                    align-items: flex-start !important;
+                }
+                .header-bar > div {
+                    width: 100%;
+                }
+                .header-bar .btn {
+                    flex: 1;
+                }
+                .student-table,
+                .student-table tbody,
+                .student-table tr,
+                .student-table td {
+                    display: block;
+                    width: 100%;
+                }
+                .student-table tr:first-child {
+                    display: none;
+                }
+                .student-table tr {
+                    padding: 14px;
+                    border-bottom: 1px solid var(--line);
+                }
+                .student-table td {
+                    padding: 7px 2px !important;
+                    border: 0 !important;
+                }
+                .student-table td[style*="display: flex"] {
+                    display: flex !important;
+                    flex-wrap: wrap;
+                }
+                .uni-header {
+                    flex-direction: column;
+                    align-items: flex-start !important;
+                    gap: 8px;
+                }
+                .tabs {
+                    overflow-x: auto;
+                    flex-wrap: nowrap !important;
+                }
+                .tab-btn {
+                    white-space: nowrap;
+                }
+                .item-row,
+                .qa-topic-item {
+                    align-items: flex-start !important;
+                    gap: 12px;
+                    flex-direction: column;
+                }
+                .question-box {
+                    padding: 18px !important;
+                }
+            }
+        </style>
+    </head>
+    <body style="font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 1000px; margin: auto" onload="applyUniFilter()">
+        <div class="shell">
+            <div class="theme-row">
+                <span id="themeLabel">Tryb systemowy</span>
+                <div class="switch" id="themeSwitch" role="button" tabindex="0" aria-label="Zmień motyw"><div class="knob" id="themeKnob">◐</div></div>
             </div>
-            {% endfor %}
-        {% endfor %}
-    </div>
 
-    <!-- ZAKŁADKA 2: KIERUNKI (MAJORS) -->
-    <div id="majors" class="tab-content">
-        <div id="qa-majors-section" style="background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #007bff; display:none;">
-            <h3 style="margin-top:0;">Kierunki QA</h3>
-            <form method="POST" action="{{ url_for('panel_database') }}" style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="hidden" name="action" value="add_qa_major">
-                <input type="text" name="name" placeholder="Nazwa kierunku QA" required style="flex:1; padding:8px;">
-                <button type="submit" style="background:#007bff; color:white; border:none; padding:8px 12px; border-radius:4px;">Dodaj kierunek</button>
-            </form>
-            {% for m in qa_majors %}
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:5px;">
-                    <span>{{ m.name }}</span>
-                    <form method="POST" action="{{ url_for('panel_database') }}" style="margin:0;">
-                        <input type="hidden" name="action" value="del_qa_major">
-                        <input type="hidden" name="major_id" value="{{ m.id }}">
-                        <button type="submit" style="background:#dc3545; color:white; border:none; padding:2px 6px; border-radius:4px; font-size:11px;">Usuń</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px">
+                <h1 style="color: #17a2b8; margin: 0">🗄️ Baza Wiedzy i Ustawienia</h1>
+                <a href="/panel" style="color: #007bff; font-weight: bold; text-decoration: none">⬅ Wróć do panelu</a>
+            </div>
+
+            <!-- KONTEKST UCZELNI -->
+            <div style="background: white; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #17a2b8; display: flex; align-items: center; gap: 15px">
+                <label style="font-weight: bold; font-size: 16px">Wybierz uczelnię do modyfikacji:</label>
+                <select id="activeUniSelector" onchange="applyUniFilter()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; flex: 1">
+                    {% for u in universities %}
+                    <option value="{{ u.id }}" data-name="{{ u.name }}">{{ u.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}
+            <div class="flash-message">{{ message }}</div>
+            {% endfor %}{% endif %}{% endwith %}
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('mat')">📁 Pliki i Linki</button>
+                <button class="tab-btn" id="tab-majors" onclick="showTab('majors')">🎓 Kierunki</button>
+                <button class="tab-btn" id="tab-qa" onclick="showTab('qa')">✍️ Tematy Rozprawek</button>
+                <button class="tab-btn" id="tab-exam" onclick="showTab('exam')">📝 Tematy Egzaminu</button>
+                <button class="tab-btn" onclick="showTab('math')">🔢 Test z Matematyki (V2)</button>
+                <button class="tab-btn" onclick="showTab('email')">✉️ Twój Szablon E-mail</button>
+                <button class="tab-btn" onclick="showTab('archive')">🗃️ Archiwum</button>
+            </div>
+
+            <!-- ZAKŁADKA 1: MATERIAŁY -->
+            <div id="mat" class="tab-content active">
+                <!-- Zostawiamy tak samo jak wcześniej -->
+                <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px">
+                    <h3>Dodaj materiał edukacyjny dla wybranej uczelni</h3>
+                    <form method="POST" action="{{ url_for('panel_database') }}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 15px">
+                        <input type="hidden" name="action" value="add_material" />
+                        <input type="hidden" name="university_id" class="dynamic-uni-id" />
+
+                        <input type="text" name="title" placeholder="Tytuł pliku / materiału" required class="form-control" />
+
+                        <select name="category" class="form-control">
+                            <option value="interview">Kategoria: Interview / Materiały Ogólne</option>
+                            <option value="essay">Kategoria: Pomoce do Rozprawek</option>
+                            <option value="math_test">Kategoria: Przygotowanie do testu matematycznego</option>
+                        </select>
+
+                        <div id="matGbsMajor" style="display: none">
+                            <select name="gbs_major_id" class="form-control">
+                                <option value="" selected>Dla wszystkich studentów GBS (Opcjonalnie wybierz kierunek)</option>
+                                {% for m in gbs_majors %}
+                                <option value="{{ m.id }}">{{ m.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="matQaMajor" style="display: none">
+                            <select name="qa_major_id" class="form-control">
+                                <option value="" selected>Dla wszystkich studentów QA (Opcjonalnie wybierz kierunek)</option>
+                                {% for m in qa_majors %}
+                                <option value="{{ m.id }}">{{ m.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <select id="typeSelect" onchange="toggleType()" class="form-control">
+                            <option value="link">Podaj link zewnętrzny</option>
+                            <option value="pdf">Wgraj plik (HTML, PDF, Video)</option>
+                        </select>
+
+                        <input type="url" name="link_url" id="linkInput" placeholder="https://..." class="form-control" />
+                        <input type="file" name="pdf_file" id="pdfInput" accept=".pdf,.html,.mp4,.mov,.avi" class="form-control" style="background: #f8f9fa; display: none" />
+
+                        <button type="submit" style="padding: 10px; background: #17a2b8; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer">Zapisz materiał</button>
                     </form>
                 </div>
-            {% endfor %}
-        </div>
-        <div id="gbs-majors-section" style="background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #c8102e; display:none;">
-            <h3 style="margin-top:0;">Kierunki GBS</h3>
-            <form method="POST" action="{{ url_for('panel_database') }}" style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="hidden" name="action" value="add_gbs_major">
-                <input type="text" name="name" placeholder="Nazwa kierunku GBS" required style="flex:1; padding:8px;">
-                <button type="submit" style="background:#c8102e; color:white; border:none; padding:8px 12px; border-radius:4px;">Dodaj kierunek</button>
-            </form>
-            {% for m in gbs_majors %}
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:5px;">
-                    <span>{{ m.name }}</span>
-                    <form method="POST" action="{{ url_for('panel_database') }}" style="margin:0;">
-                        <input type="hidden" name="action" value="del_gbs_major">
-                        <input type="hidden" name="major_id" value="{{ m.id }}">
-                        <button type="submit" style="background:#dc3545; color:white; border:none; padding:2px 6px; border-radius:4px; font-size:11px;">Usuń</button>
-                    </form>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
 
-    <!-- ZAKŁADKA 3: ROZPRAWKI QA (DRAG & DROP) -->
-    <div id="qa" class="tab-content">
-        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
-            <h3>Dodaj nowy temat do Bazy Rozprawek QA</h3>
-            <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px;">
-                <input type="hidden" name="action" value="add_qa_topic">
-                <input type="text" name="title" placeholder="Krótki tytuł" required class="form-control">
-                <textarea name="topic_full" placeholder="Pełna treść tematu..." rows="4" required class="form-control"></textarea>
-                <input type="hidden" name="order_index" value="0">
-                <button type="submit" style="padding: 10px; background: #007bff; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz temat</button>
-            </form>
-        </div>
-        <div id="qa-topics-list">
-            {% for t in qa_topics %}
-            <div class="qa-topic-item" draggable="true" data-id="{{ t.id }}">
-                <div style="display: flex; align-items: center;">
-                    <div class="drag-handle">☰</div>
+                <h3>Materiały dla tej uczelni:</h3>
+                {% for uni in universities %} {% for mat in uni.materials %}
+                <div class="item-row material-row" data-uni="{{ uni.id }}" style="border-left: 4px solid #17a2b8">
                     <div>
-                        <strong>{{ t.title }}</strong><br>
-                        <small style="color: #666;">{{ t.topic_full[:80] }}...</small>
+                        <strong>{{ mat.title }}</strong><br />
+                        <small
+                            >Kategoria: {{ mat.category }}<br />
+                            Przypisany kierunek: <b>{% if mat.qa_major %}{{ mat.qa_major.name }} (QA){% elif mat.gbs_major %}{{ mat.gbs_major.name }} (GBS){% else %}Wszyscy studenci{% endif %}</b>
+                        </small>
                     </div>
+                    <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0">
+                        <input type="hidden" name="action" value="del_material" />
+                        <input type="hidden" name="material_id" value="{{ mat.id }}" />
+                        <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer">Usuń</button>
+                    </form>
                 </div>
-                <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
-                    <input type="hidden" name="action" value="del_qa_topic">
-                    <input type="hidden" name="topic_id" value="{{ t.id }}">
-                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
-                </form>
+                {% endfor %} {% endfor %}
             </div>
-            {% endfor %}
-        </div>
-    </div>
 
-    <!-- ZAKŁADKA 3.5: TEMATY EGZAMINU QA -->
-    <div id="exam" class="tab-content">
-        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
-            <h3>Dodaj temat do Egzaminu Próbnego</h3>
-            <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px;">
-                <input type="hidden" name="action" value="add_exam_topic">
-                <input type="text" name="title" placeholder="Krótki tytuł (np. Temat 3)" required class="form-control">
-                <textarea name="topic_full" placeholder="Pełna treść tematu egzaminacyjnego..." rows="4" required class="form-control"></textarea>
-                <button type="submit" style="padding: 10px; background: #007bff; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer;">Zapisz temat egzaminu</button>
-            </form>
-        </div>
-        <div id="exam-topics-list">
-            {% for t in exam_topics %}
-            <div style="background: #fff; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #007bff;">
-                <div style="flex:1; margin-right: 15px;">
-                    <strong>{{ t.title }}</strong><br>
-                    <small style="color: #666;">{{ t.topic_full }}</small>
-                </div>
-                <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
-                    <input type="hidden" name="action" value="del_exam_topic">
-                    <input type="hidden" name="topic_id" value="{{ t.id }}">
-                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń</button>
-                </form>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- ZAKŁADKA 4: MATEMATYKA V2 (Zdjęcia, Edycja, Wersje) -->
-    <div id="math" class="tab-content">
-        <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
-            <h3>➕ Dodaj pytanie matematyczne</h3>
-            <form method="POST" action="{{ url_for('panel_database') }}" enctype="multipart/form-data">
-                <input type="hidden" name="action" value="add_math_q">
-                <input type="hidden" name="university_id" class="dynamic-uni-id">
-                
-                <label>Wersja testu (np. Wersja 1, Wersja A):</label>
-                <input type="text" name="test_version" value="Wersja 1" required class="form-control" style="background:#e9ecef; font-weight:bold;">
-
-                <label>Treść pytania:</label>
-                <textarea name="text" placeholder="Treść zadania..." rows="3" required class="form-control"></textarea>
-                
-                <label>Zdjęcie do zadania (Opcjonalnie):</label>
-                <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif" class="form-control" style="background: #f8f9fa;">
-
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <input type="text" name="opt_a" placeholder="Opcja A" required class="form-control">
-                    <input type="text" name="opt_b" placeholder="Opcja B" required class="form-control">
-                    <input type="text" name="opt_c" placeholder="Opcja C" required class="form-control">
-                    <input type="text" name="opt_d" placeholder="Opcja D" required class="form-control">
-                </div>
-                
-                <select name="answer" required class="form-control" style="border: 2px solid #6f42c1;">
-                    <option value="" disabled selected>Zaznacz poprawną odpowiedź...</option>
-                    <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
-                </select>
-                <button type="submit" style="width:100%; padding: 12px; background: #6f42c1; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top:10px;">Zapisz pytanie</button>
-            </form>
-        </div>
-
-        <h3>Baza pytań testowych:</h3>
-        {% for q in math_questions %}
-            <div class="item-row math-row" data-uni="{{ q.university_id }}" style="border-left: 4px solid #6f42c1; display:flex; flex-direction:column; align-items:stretch;">
-                <div style="display:flex; justify-content:space-between; width:100%;">
-                    <div style="flex:1;">
-                        <span style="background:#6f42c1; color:white; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:bold;">{{ q.test_version }}</span>
-                        <strong>{{ q.text }}</strong><br>
-                        {% if q.image_url %}
-                            <a href="{{ q.image_url }}" target="_blank" style="font-size:12px; color:#007bff;">ZOBACZ ZDJĘCIE 🖼️</a><br>
-                        {% endif %}
-                        <small style="color: #666;">A: {{q.opt_a}} | B: {{q.opt_b}} | C: {{q.opt_c}} | D: {{q.opt_d}} <br><b style="color:green;">Poprawna: {{ q.answer|upper }}</b></small>
+            <!-- ZAKŁADKA 2: KIERUNKI (MAJORS) -->
+            <div id="majors" class="tab-content">
+                <div id="qa-majors-section" style="background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #007bff; display: none">
+                    <h3 style="margin-top: 0">Kierunki QA</h3>
+                    <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; gap: 10px; margin-bottom: 15px">
+                        <input type="hidden" name="action" value="add_qa_major" />
+                        <input type="text" name="name" placeholder="Nazwa kierunku QA" required style="flex: 1; padding: 8px" />
+                        <button type="submit" style="background: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 4px">Dodaj kierunek</button>
+                    </form>
+                    {% for m in qa_majors %}
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px">
+                        <span>{{ m.name }}</span>
+                        <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0">
+                            <input type="hidden" name="action" value="del_qa_major" />
+                            <input type="hidden" name="major_id" value="{{ m.id }}" />
+                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 2px 6px; border-radius: 4px; font-size: 11px">Usuń</button>
+                        </form>
                     </div>
-                    <div style="display:flex; flex-direction:column; gap:5px;">
-                        <button type="button" onclick="document.getElementById('edit-math-{{q.id}}').style.display='block'" style="background: #17a2b8; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer;">Edytuj</button>
-                        <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0;">
-                            <input type="hidden" name="action" value="del_math_q">
-                            <input type="hidden" name="question_id" value="{{ q.id }}">
-                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight:bold; cursor:pointer; width:100%;">Usuń</button>
+                    {% endfor %}
+                </div>
+                <div id="gbs-majors-section" style="background: white; padding: 20px; border-radius: 8px; border-top: 4px solid #c8102e; display: none">
+                    <h3 style="margin-top: 0">Kierunki GBS</h3>
+                    <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; gap: 10px; margin-bottom: 15px">
+                        <input type="hidden" name="action" value="add_gbs_major" />
+                        <input type="text" name="name" placeholder="Nazwa kierunku GBS" required style="flex: 1; padding: 8px" />
+                        <button type="submit" style="background: #c8102e; color: white; border: none; padding: 8px 12px; border-radius: 4px">Dodaj kierunek</button>
+                    </form>
+                    {% for m in gbs_majors %}
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px">
+                        <span>{{ m.name }}</span>
+                        <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0">
+                            <input type="hidden" name="action" value="del_gbs_major" />
+                            <input type="hidden" name="major_id" value="{{ m.id }}" />
+                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 2px 6px; border-radius: 4px; font-size: 11px">Usuń</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- ZAKŁADKA 3: ROZPRAWKI QA (DRAG & DROP) -->
+            <div id="qa" class="tab-content">
+                <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px">
+                    <h3>Dodaj nowy temat do Bazy Rozprawek QA</h3>
+                    <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px">
+                        <input type="hidden" name="action" value="add_qa_topic" />
+                        <input type="text" name="title" placeholder="Krótki tytuł" required class="form-control" />
+                        <textarea name="topic_full" placeholder="Pełna treść tematu..." rows="4" required class="form-control"></textarea>
+                        <input type="hidden" name="order_index" value="0" />
+                        <button type="submit" style="padding: 10px; background: #007bff; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer">Zapisz temat</button>
+                    </form>
+                </div>
+                <div id="qa-topics-list">
+                    {% for t in qa_topics %}
+                    <div class="qa-topic-item" draggable="true" data-id="{{ t.id }}">
+                        <div style="display: flex; align-items: center">
+                            <div class="drag-handle">☰</div>
+                            <div>
+                                <strong>{{ t.title }}</strong><br />
+                                <small style="color: #666">{{ t.topic_full[:80] }}...</small>
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0">
+                            <input type="hidden" name="action" value="del_qa_topic" />
+                            <input type="hidden" name="topic_id" value="{{ t.id }}" />
+                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer">Usuń</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- ZAKŁADKA 3.5: TEMATY EGZAMINU QA -->
+            <div id="exam" class="tab-content">
+                <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px">
+                    <h3>Dodaj temat do Egzaminu Próbnego</h3>
+                    <form method="POST" action="{{ url_for('panel_database') }}" style="display: flex; flex-direction: column; gap: 15px">
+                        <input type="hidden" name="action" value="add_exam_topic" />
+                        <input type="text" name="title" placeholder="Krótki tytuł (np. Temat 3)" required class="form-control" />
+                        <textarea name="topic_full" placeholder="Pełna treść tematu egzaminacyjnego..." rows="4" required class="form-control"></textarea>
+                        <button type="submit" style="padding: 10px; background: #007bff; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer">Zapisz temat egzaminu</button>
+                    </form>
+                </div>
+                <div id="exam-topics-list">
+                    {% for t in exam_topics %}
+                    <div style="background: #fff; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #007bff">
+                        <div style="flex: 1; margin-right: 15px">
+                            <strong>{{ t.title }}</strong><br />
+                            <small style="color: #666">{{ t.topic_full }}</small>
+                        </div>
+                        <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0">
+                            <input type="hidden" name="action" value="del_exam_topic" />
+                            <input type="hidden" name="topic_id" value="{{ t.id }}" />
+                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer">Usuń</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- ZAKŁADKA 4: MATEMATYKA V2 (Zdjęcia, Edycja, Wersje) -->
+            <div id="math" class="tab-content">
+                <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px">
+                    <h3>➕ Dodaj pytanie matematyczne</h3>
+                    <form method="POST" action="{{ url_for('panel_database') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="add_math_q" />
+                        <input type="hidden" name="university_id" class="dynamic-uni-id" />
+
+                        <label>Wersja testu (np. Wersja 1, Wersja A):</label>
+                        <input type="text" name="test_version" value="Wersja 1" required class="form-control" style="background: #e9ecef; font-weight: bold" />
+
+                        <label>Treść pytania:</label>
+                        <textarea name="text" placeholder="Treść zadania..." rows="3" required class="form-control"></textarea>
+
+                        <label>Zdjęcie do zadania (Opcjonalnie):</label>
+                        <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif" class="form-control" style="background: #f8f9fa" />
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+                            <input type="text" name="opt_a" placeholder="Opcja A" required class="form-control" />
+                            <input type="text" name="opt_b" placeholder="Opcja B" required class="form-control" />
+                            <input type="text" name="opt_c" placeholder="Opcja C" required class="form-control" />
+                            <input type="text" name="opt_d" placeholder="Opcja D" required class="form-control" />
+                        </div>
+
+                        <select name="answer" required class="form-control" style="border: 2px solid #6f42c1">
+                            <option value="" disabled selected>Zaznacz poprawną odpowiedź...</option>
+                            <option value="a">A</option>
+                            <option value="b">B</option>
+                            <option value="c">C</option>
+                            <option value="d">D</option>
+                        </select>
+                        <button type="submit" style="width: 100%; padding: 12px; background: #6f42c1; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px">Zapisz pytanie</button>
+                    </form>
+                </div>
+
+                <h3>Baza pytań testowych:</h3>
+                {% for q in math_questions %}
+                <div class="item-row math-row" data-uni="{{ q.university_id }}" style="border-left: 4px solid #6f42c1; display: flex; flex-direction: column; align-items: stretch">
+                    <div style="display: flex; justify-content: space-between; width: 100%">
+                        <div style="flex: 1">
+                            <span style="background: #6f42c1; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold">{{ q.test_version }}</span>
+                            <strong>{{ q.text }}</strong><br />
+                            {% if q.image_url %}
+                            <a href="{{ q.image_url }}" target="_blank" style="font-size: 12px; color: #007bff">ZOBACZ ZDJĘCIE 🖼️</a><br />
+                            {% endif %}
+                            <small style="color: #666">A: {{q.opt_a}} | B: {{q.opt_b}} | C: {{q.opt_c}} | D: {{q.opt_d}} <br /><b style="color: green">Poprawna: {{ q.answer|upper }}</b></small>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 5px">
+                            <button type="button" onclick="document.getElementById('edit-math-{{q.id}}').style.display='block'" style="background: #17a2b8; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer">Edytuj</button>
+                            <form method="POST" action="{{ url_for('panel_database') }}" style="margin: 0">
+                                <input type="hidden" name="action" value="del_math_q" />
+                                <input type="hidden" name="question_id" value="{{ q.id }}" />
+                                <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%">Usuń</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- UKRYTY FORMULARZ EDYCJI -->
+                    <div id="edit-math-{{q.id}}" style="display: none; background: #f8f9fa; padding: 15px; border: 1px solid #ccc; border-radius: 5px; margin-top: 15px">
+                        <form method="POST" action="{{ url_for('panel_database') }}" enctype="multipart/form-data">
+                            <input type="hidden" name="action" value="edit_math_q" />
+                            <input type="hidden" name="question_id" value="{{q.id}}" />
+
+                            <label>Wersja testu:</label>
+                            <input type="text" name="test_version" value="{{ q.test_version }}" required class="form-control" />
+
+                            <label>Treść:</label>
+                            <textarea name="text" rows="2" required class="form-control">{{ q.text }}</textarea>
+
+                            <label>Wgraj nowe zdjęcie (Nadpisze stare jeśli istnieje):</label>
+                            <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif" class="form-control" />
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px">
+                                <input type="text" name="opt_a" value="{{ q.opt_a }}" required class="form-control" />
+                                <input type="text" name="opt_b" value="{{ q.opt_b }}" required class="form-control" />
+                                <input type="text" name="opt_c" value="{{ q.opt_c }}" required class="form-control" />
+                                <input type="text" name="opt_d" value="{{ q.opt_d }}" required class="form-control" />
+                            </div>
+                            <select name="answer" required class="form-control">
+                                <option value="a" {% if q.answer == 'a' %}selected{% endif %}>A</option>
+                                <option value="b" {% if q.answer == 'b' %}selected{% endif %}>B</option>
+                                <option value="c" {% if q.answer == 'c' %}selected{% endif %}>C</option>
+                                <option value="d" {% if q.answer == 'd' %}selected{% endif %}>D</option>
+                            </select>
+
+                            <button type="submit" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold">Zapisz Zmiany</button>
+                            <button type="button" onclick="document.getElementById('edit-math-{{q.id}}').style.display='none'" style="background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer">Anuluj</button>
                         </form>
                     </div>
                 </div>
-                
-                <!-- UKRYTY FORMULARZ EDYCJI -->
-                <div id="edit-math-{{q.id}}" style="display:none; background:#f8f9fa; padding:15px; border:1px solid #ccc; border-radius:5px; margin-top:15px;">
-                    <form method="POST" action="{{ url_for('panel_database') }}" enctype="multipart/form-data">
-                        <input type="hidden" name="action" value="edit_math_q">
-                        <input type="hidden" name="question_id" value="{{q.id}}">
-                        
-                        <label>Wersja testu:</label>
-                        <input type="text" name="test_version" value="{{ q.test_version }}" required class="form-control">
-                        
-                        <label>Treść:</label>
-                        <textarea name="text" rows="2" required class="form-control">{{ q.text }}</textarea>
-                        
-                        <label>Wgraj nowe zdjęcie (Nadpisze stare jeśli istnieje):</label>
-                        <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif" class="form-control">
+                {% endfor %}
+            </div>
 
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
-                            <input type="text" name="opt_a" value="{{ q.opt_a }}" required class="form-control">
-                            <input type="text" name="opt_b" value="{{ q.opt_b }}" required class="form-control">
-                            <input type="text" name="opt_c" value="{{ q.opt_c }}" required class="form-control">
-                            <input type="text" name="opt_d" value="{{ q.opt_d }}" required class="form-control">
+            <!-- ZAKŁADKA 5: SZABLON E-MAIL -->
+            <div id="email" class="tab-content">
+                <div style="background: white; padding: 25px; border-radius: 8px">
+                    <h2 style="margin-top: 0">Twój indywidualny szablon e-mail</h2>
+                    <form method="POST" action="/panel/database">
+                        <input type="hidden" name="action" value="save_teacher_template" />
+                        <textarea name="email_template" rows="12" class="form-control">{{ user.email_template if user.email_template else "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nProponowany termin spotkania: {terminy}\n\nPozdrawiam!" }}</textarea>
+                        <div style="margin-top: 15px">
+                            <button type="submit" style="background: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px">Zapisz Mój Szablon</button>
                         </div>
-                        <select name="answer" required class="form-control">
-                            <option value="a" {% if q.answer == 'a' %}selected{% endif %}>A</option>
-                            <option value="b" {% if q.answer == 'b' %}selected{% endif %}>B</option>
-                            <option value="c" {% if q.answer == 'c' %}selected{% endif %}>C</option>
-                            <option value="d" {% if q.answer == 'd' %}selected{% endif %}>D</option>
-                        </select>
-                        
-                        <button type="submit" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">Zapisz Zmiany</button>
-                        <button type="button" onclick="document.getElementById('edit-math-{{q.id}}').style.display='none'" style="background:#6c757d; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Anuluj</button>
                     </form>
                 </div>
             </div>
-        {% endfor %}
-    </div>
 
-    <!-- ZAKŁADKA 5: SZABLON E-MAIL -->
-    <div id="email" class="tab-content">
-        <div style="background: white; padding: 25px; border-radius: 8px;">
-            <h2 style="margin-top:0;">Twój indywidualny szablon e-mail</h2>
-            <form method="POST" action="/panel/database">
-                <input type="hidden" name="action" value="save_teacher_template">
-                <textarea name="email_template" rows="12" class="form-control">{{ user.email_template if user.email_template else "Witaj {imie}!\n\nZostało utworzone Twoje konto. Twój link to:\n{link}\n\nProponowany termin spotkania: {terminy}\n\nPozdrawiam!" }}</textarea>
-                <div style="margin-top: 15px;">
-                    <button type="submit" style="background: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">Zapisz Mój Szablon</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- ZAKŁADKA 6: ARCHIWUM -->
-    <div id="archive" class="tab-content">
-        <div style="background: white; padding: 25px; border-radius: 8px;">
-            <h2 style="margin-top:0; color:#dc3545;">🗃️ Archiwum usuniętych kont</h2>
-            <p>Zarchiwizowane konta studentów. Możesz je przywrócić lub trwale usunąć.</p>
-            
-            {% for s in archived_students %}
-            <div style="border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd;">
-                <div>
-                    <strong>{{ s.name }}</strong><br>
-                    <small>Uczelnia: {{ s.university.name if s.university else 'Brak' }}</small>
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <form method="POST" action="/admin/student/{{ s.id }}/restore" style="margin: 0;">
-                        <button type="submit" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight:bold; cursor:pointer;">Przywróć</button>
-                    </form>
-                    <form method="POST" action="/admin/student/{{ s.id }}/delete_forever" style="margin: 0;" onsubmit="return confirm('To usunie ucznia bezpowrotnie. Jesteś pewien?');">
-                        <button type="submit" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight:bold; cursor:pointer;">Usuń całkowicie</button>
-                    </form>
+            <!-- ZAKŁADKA 6: ARCHIWUM -->
+            <div id="archive" class="tab-content">
+                <div style="background: white; padding: 25px; border-radius: 8px">
+                    <h2 style="margin-top: 0; color: #dc3545">🗃️ Archiwum usuniętych kont</h2>
+                    <p>Zarchiwizowane konta studentów. Możesz je przywrócić lub trwale usunąć.</p>
+
+                    {% for s in archived_students %}
+                    <div style="border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd">
+                        <div>
+                            <strong>{{ s.name }}</strong><br />
+                            <small>Uczelnia: {{ s.university.name if s.university else 'Brak' }}</small>
+                        </div>
+                        <div style="display: flex; gap: 10px">
+                            <form method="POST" action="/admin/student/{{ s.id }}/restore" style="margin: 0">
+                                <button type="submit" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer">Przywróć</button>
+                            </form>
+                            <form method="POST" action="/admin/student/{{ s.id }}/delete_forever" style="margin: 0" onsubmit="return confirm('To usunie ucznia bezpowrotnie. Jesteś pewien?');">
+                                <button type="submit" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer">Usuń całkowicie</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p>Brak kont w archiwum.</p>
+                    {% endfor %}
                 </div>
             </div>
-            {% else %}
-                <p>Brak kont w archiwum.</p>
-            {% endfor %}
         </div>
-    </div>
 
-    <script>
-        function toggleType() {
-            let val = document.getElementById('typeSelect').value;
-            document.getElementById('linkInput').style.display = (val === 'link') ? 'block' : 'none';
-            document.getElementById('pdfInput').style.display = (val === 'pdf') ? 'block' : 'none';
-        }
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-
-        function applyUniFilter() {
-            let sel = document.getElementById('activeUniSelector');
-            if(!sel) return;
-            let uniId = sel.value;
-            let uniName = sel.options[sel.selectedIndex].getAttribute('data-name');
-
-            let isGbs = uniName.includes('GBS');
-            let isQa = uniName.includes('QA');
-
-            document.querySelectorAll('.dynamic-uni-id').forEach(input => { input.value = uniId; });
-
-            document.getElementById('tab-majors').style.display = (isGbs || isQa) ? 'inline-block' : 'none';
-            document.getElementById('tab-qa').style.display = isQa ? 'inline-block' : 'none';
-            document.getElementById('tab-exam').style.display = isQa ? 'inline-block' : 'none';
-
-            document.getElementById('qa-majors-section').style.display = isQa ? 'block' : 'none';
-            document.getElementById('gbs-majors-section').style.display = isGbs ? 'block' : 'none';
-            document.getElementById('matQaMajor').style.display = isQa ? 'block' : 'none';
-            document.getElementById('matGbsMajor').style.display = isGbs ? 'block' : 'none';
-
-            document.querySelectorAll('.material-row').forEach(row => { row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none'; });
-            document.querySelectorAll('.math-row').forEach(row => { row.style.display = (row.getAttribute('data-uni') === uniId) ? 'flex' : 'none'; });
-            
-            if((document.getElementById('tab-qa').classList.contains('active') || document.getElementById('tab-exam').classList.contains('active')) && !isQa) {
-                showTab('mat');
+        <script>
+            function toggleType() {
+                let val = document.getElementById("typeSelect").value;
+                document.getElementById("linkInput").style.display = val === "link" ? "block" : "none";
+                document.getElementById("pdfInput").style.display = val === "pdf" ? "block" : "none";
             }
-        }
+            function showTab(tabId) {
+                document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
+                document.querySelectorAll(".tab-btn").forEach((el) => el.classList.remove("active"));
+                document.getElementById(tabId).classList.add("active");
+                event.currentTarget.classList.add("active");
+            }
 
-        let dragSrcEl = null;
-        function handleDragStart(e) {
-            dragSrcEl = this;
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', this.innerHTML);
-            this.style.opacity = '0.4';
-        }
-        function handleDragOver(e) { if (e.preventDefault) { e.preventDefault(); } e.dataTransfer.dropEffect = 'move'; return false; }
-        function handleDragEnter(e) { this.classList.add('over'); }
-        function handleDragLeave(e) { this.classList.remove('over'); }
-        function handleDrop(e) {
-            if (e.stopPropagation) { e.stopPropagation(); }
-            if (dragSrcEl != this) { this.parentNode.insertBefore(dragSrcEl, this.nextSibling || this); }
-            return false;
-        }
-        function handleDragEnd(e) {
-            this.style.opacity = '1';
-            let items = document.querySelectorAll('.qa-topic-item');
-            items.forEach(function (item) { item.classList.remove('over'); });
-            let newOrder = [];
-            items.forEach((el) => { newOrder.push(el.getAttribute('data-id')); });
-            fetch('/api/reorder_qa', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({order: newOrder})
+            function applyUniFilter() {
+                let sel = document.getElementById("activeUniSelector");
+                if (!sel) return;
+                let uniId = sel.value;
+                let uniName = sel.options[sel.selectedIndex].getAttribute("data-name");
+
+                let isGbs = uniName.includes("GBS");
+                let isQa = uniName.includes("QA");
+
+                document.querySelectorAll(".dynamic-uni-id").forEach((input) => {
+                    input.value = uniId;
+                });
+
+                document.getElementById("tab-majors").style.display = isGbs || isQa ? "inline-block" : "none";
+                document.getElementById("tab-qa").style.display = isQa ? "inline-block" : "none";
+                document.getElementById("tab-exam").style.display = isQa ? "inline-block" : "none";
+
+                document.getElementById("qa-majors-section").style.display = isQa ? "block" : "none";
+                document.getElementById("gbs-majors-section").style.display = isGbs ? "block" : "none";
+                document.getElementById("matQaMajor").style.display = isQa ? "block" : "none";
+                document.getElementById("matGbsMajor").style.display = isGbs ? "block" : "none";
+
+                document.querySelectorAll(".material-row").forEach((row) => {
+                    row.style.display = row.getAttribute("data-uni") === uniId ? "flex" : "none";
+                });
+                document.querySelectorAll(".math-row").forEach((row) => {
+                    row.style.display = row.getAttribute("data-uni") === uniId ? "flex" : "none";
+                });
+
+                if ((document.getElementById("tab-qa").classList.contains("active") || document.getElementById("tab-exam").classList.contains("active")) && !isQa) {
+                    showTab("mat");
+                }
+            }
+
+            let dragSrcEl = null;
+            function handleDragStart(e) {
+                dragSrcEl = this;
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/html", this.innerHTML);
+                this.style.opacity = "0.4";
+            }
+            function handleDragOver(e) {
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                e.dataTransfer.dropEffect = "move";
+                return false;
+            }
+            function handleDragEnter(e) {
+                this.classList.add("over");
+            }
+            function handleDragLeave(e) {
+                this.classList.remove("over");
+            }
+            function handleDrop(e) {
+                if (e.stopPropagation) {
+                    e.stopPropagation();
+                }
+                if (dragSrcEl != this) {
+                    this.parentNode.insertBefore(dragSrcEl, this.nextSibling || this);
+                }
+                return false;
+            }
+            function handleDragEnd(e) {
+                this.style.opacity = "1";
+                let items = document.querySelectorAll(".qa-topic-item");
+                items.forEach(function (item) {
+                    item.classList.remove("over");
+                });
+                let newOrder = [];
+                items.forEach((el) => {
+                    newOrder.push(el.getAttribute("data-id"));
+                });
+                fetch("/api/reorder_qa", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ order: newOrder }),
+                });
+            }
+            let items = document.querySelectorAll(".qa-topic-item");
+            items.forEach(function (item) {
+                item.addEventListener("dragstart", handleDragStart, false);
+                item.addEventListener("dragenter", handleDragEnter, false);
+                item.addEventListener("dragover", handleDragOver, false);
+                item.addEventListener("dragleave", handleDragLeave, false);
+                item.addEventListener("drop", handleDrop, false);
+                item.addEventListener("dragend", handleDragEnd, false);
             });
-        }
-        let items = document.querySelectorAll('.qa-topic-item');
-        items.forEach(function(item) {
-            item.addEventListener('dragstart', handleDragStart, false);
-            item.addEventListener('dragenter', handleDragEnter, false);
-            item.addEventListener('dragover', handleDragOver, false);
-            item.addEventListener('dragleave', handleDragLeave, false);
-            item.addEventListener('drop', handleDrop, false);
-            item.addEventListener('dragend', handleDragEnd, false);
-        });
-    </script>
-</body>
+        </script>
+        <script>
+            (function () {
+                const root = document.documentElement,
+                    key = "openuk-theme";
+                const sw = document.getElementById("themeSwitch"),
+                    knob = document.getElementById("themeKnob"),
+                    label = document.getElementById("themeLabel");
+                function apply(theme) {
+                    root.setAttribute("data-theme", theme);
+                    if (sw) sw.dataset.on = theme === "dark" ? "true" : "false";
+                    if (knob) knob.textContent = theme === "dark" ? "🌙" : "☀️";
+                    if (label) label.textContent = theme === "dark" ? "Tryb ciemny" : "Tryb jasny";
+                }
+                const media = window.matchMedia("(prefers-color-scheme: dark)");
+                apply(localStorage.getItem(key) || (media.matches ? "dark" : "light"));
+                function toggle() {
+                    const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+                    localStorage.setItem(key, next);
+                    apply(next);
+                }
+                if (sw) {
+                    sw.addEventListener("click", toggle);
+                    sw.addEventListener("keydown", (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            toggle();
+                        }
+                    });
+                }
+                media.addEventListener?.("change", (e) => {
+                    if (!localStorage.getItem(key)) apply(e.matches ? "dark" : "light");
+                });
+            })();
+        </script>
+    </body>
 </html>

@@ -2,71 +2,114 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Math Test - {{ student.name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test z Matematyki</title>
     <style>
-        body { font-family: sans-serif; padding: 30px; background: #f4f6f9; max-width: 900px; margin: auto; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .q-box { margin-bottom: 25px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa; }
-        .study-box { margin-bottom: 30px; background: #e9ecef; padding: 20px; border-radius: 8px; border-left: 5px solid #17a2b8; }
-        label { display: block; margin-bottom: 8px; padding: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; transition: background 0.2s;}
-        label:hover { background: #eef2f5; }
-        button { background: #6f42c1; color: white; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap");
+:root{--bg:#f5f0fb;--text:#241b35;--muted:#746b82;--card:rgba(255,255,255,.94);--soft:#f8f5fc;--line:rgba(52,34,73,.12);--line2:rgba(52,34,73,.2);--purple:#6840bc;--purple2:#8b5bd6;--blue:#4266e8;--green:#32c98a;--red:#ed4057;--amber:#ffc85b;--teal:#22b8b0;--shadow:0 18px 45px rgba(76,46,112,.12);--glow1:rgba(139,91,214,.18);--glow2:rgba(229,111,220,.13);--input:#fff}
+html[data-theme="dark"]{--bg:#251334;--text:#f7f1fb;--muted:#c0b5ca;--card:rgba(66,39,82,.88);--soft:rgba(255,255,255,.05);--line:rgba(255,255,255,.1);--line2:rgba(255,255,255,.18);--shadow:0 18px 45px rgba(0,0,0,.26);--glow1:rgba(129,71,189,.22);--glow2:rgba(227,94,207,.12);--input:rgba(255,255,255,.045)}
+*{box-sizing:border-box}html{color-scheme:light}html[data-theme="dark"]{color-scheme:dark}body{margin:0!important;min-height:100vh;padding:28px clamp(16px,3vw,38px) 60px!important;font-family:"Plus Jakarta Sans","Segoe UI",sans-serif!important;color:var(--text)!important;background:radial-gradient(circle at 10% -10%,var(--glow1),transparent 38%),radial-gradient(circle at 100% 0,var(--glow2),transparent 36%),var(--bg)!important;transition:.25s background,.25s color}.shell{max-width:1180px;margin:auto}.theme-row{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:0 0 14px;color:var(--muted);font-size:12px;font-weight:800}.switch{width:54px;height:29px;border-radius:999px;border:1px solid var(--line2);background:var(--soft);position:relative;cursor:pointer}.knob{position:absolute;width:21px;height:21px;left:3px;top:3px;border-radius:50%;display:grid;place-items:center;font-size:11px;background:linear-gradient(135deg,#7b4bdd,#d95bc6);box-shadow:0 4px 12px rgba(105,64,188,.35);transition:.25s transform}.switch[data-on="true"] .knob{transform:translateX(25px)}
+a{color:inherit}h1,h2,h3,h4{letter-spacing:-.025em}h1{font-size:clamp(25px,3vw,35px)!important;color:var(--text)!important}h2{color:var(--text)!important}.dashboard-container,.container{max-width:1180px!important;margin:auto!important;background:transparent!important;padding:0!important;box-shadow:none!important}.header-bar,.add-student-box,.uni-section>div,.question-box,.item-row,.qa-topic-item,.tab-content>div,.cardlike{background:var(--card)!important;border:1px solid var(--line)!important;border-radius:20px!important;box-shadow:var(--shadow)!important;backdrop-filter:blur(12px)}.header-bar{padding:20px 24px!important;border-top:0!important;margin-bottom:22px!important;gap:16px;flex-wrap:wrap}.header-bar h1{font-size:clamp(20px,2.5vw,28px)!important}.header-bar>div{display:flex;gap:9px;flex-wrap:wrap}.add-student-box{padding:26px!important}.btn,button[type="submit"],button[type="button"]{border:0!important;border-radius:11px!important;padding:11px 16px!important;display:inline-flex!important;align-items:center;justify-content:center;gap:7px;text-decoration:none!important;font:800 13px inherit!important;cursor:pointer;transition:.18s transform,.18s filter,.18s box-shadow}.btn:hover,button:hover{transform:translateY(-2px);filter:brightness(1.04)}.btn-blue{background:linear-gradient(135deg,#3959ce,#577bf4)!important;color:#fff!important}.btn-green{background:linear-gradient(135deg,#20a870,#3fd39a)!important;color:#082b20!important}.btn-dark,.btn-gray{background:var(--soft)!important;color:var(--text)!important;border:1px solid var(--line2)!important}.btn-red,[style*="background: #dc3545"],[style*="background:#dc3545"]{background:linear-gradient(135deg,#d93650,#f04b62)!important;color:#fff!important}.form-grid{gap:17px!important}.form-control,input[type="text"],input[type="email"],input[type="password"],input[type="url"],input[type="datetime-local"],input[type="file"],select,textarea{width:100%;min-height:46px;padding:12px 14px!important;border:1px solid var(--line2)!important;border-radius:11px!important;background:var(--input)!important;color:var(--text)!important;font:600 14px inherit!important;outline:none;transition:.18s border-color,.18s box-shadow}textarea{min-height:120px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:var(--purple2)!important;box-shadow:0 0 0 4px rgba(139,91,214,.14)!important}label{font-size:13px;font-weight:750;color:var(--text)}.uni-section{margin-bottom:28px!important}.uni-header{padding:16px 20px!important;border-radius:18px 18px 0 0!important;background:linear-gradient(135deg,#6740bc,#8d58d4)!important}.student-table{border-collapse:separate!important;border-spacing:0!important;background:var(--card)!important;color:var(--text)!important;border:1px solid var(--line)!important;border-radius:0 0 18px 18px!important;overflow:hidden!important;box-shadow:var(--shadow)!important}.student-table th{background:var(--soft)!important;color:var(--muted)!important;font-size:12px;text-transform:uppercase;letter-spacing:.05em}.student-table th,.student-table td{border-bottom:1px solid var(--line)!important}.student-table tr:hover{background:var(--soft)!important}.badge{background:rgba(139,91,214,.13)!important;color:var(--purple2)!important;border:1px solid rgba(139,91,214,.2)}.tabs{border:0!important;padding:7px!important;background:var(--card)!important;border:1px solid var(--line)!important;border-radius:16px!important;box-shadow:var(--shadow)!important;gap:7px!important}.tab-btn{background:transparent!important;color:var(--muted)!important;border-radius:10px!important}.tab-btn.active{background:linear-gradient(135deg,#6740bc,#8d58d4)!important;color:#fff!important}.tab-content{margin-top:20px}.tab-content>div{padding:24px!important;margin-bottom:22px!important}.item-row,.qa-topic-item{padding:17px 19px!important;margin-bottom:12px!important}.qa-topic-item.over{border:2px dashed var(--purple2)!important;background:rgba(139,91,214,.08)!important}.drag-handle{color:var(--purple2)!important}.pulse-dot{background:var(--red)!important}.question-box{padding:22px!important;margin-bottom:18px!important;border-left:4px solid var(--purple2)!important}.q-text{font-size:17px!important}.opt-label{display:flex!important;align-items:flex-start;gap:10px;padding:13px 14px!important;margin-bottom:9px!important;background:var(--soft)!important;border:1px solid var(--line)!important;border-radius:11px!important;color:var(--text)!important}.opt-label:hover{border-color:var(--purple2)!important;background:rgba(139,91,214,.09)!important}.opt-label input{margin-top:3px;accent-color:var(--purple)}.version-btn{border-radius:12px!important;background:linear-gradient(135deg,#6740bc,#8d58d4)!important;box-shadow:0 10px 20px rgba(104,64,188,.18)}.version-btn.disabled{background:var(--soft)!important;color:var(--muted)!important;border:1px solid var(--line2)}.btn-submit{background:linear-gradient(135deg,#20a870,#3fd39a)!important;color:#082b20!important;border-radius:13px!important}.q-img{border-radius:12px!important;border:1px solid var(--line)!important}.flash-message{padding:14px 16px;border-radius:12px;margin-bottom:16px;background:rgba(50,201,138,.14);border:1px solid rgba(50,201,138,.3);font-weight:700}@media(max-width:760px){body{padding:16px 12px 40px!important}.form-grid{grid-template-columns:1fr!important}.header-bar{align-items:flex-start!important}.header-bar>div{width:100%}.header-bar .btn{flex:1}.student-table,.student-table tbody,.student-table tr,.student-table td{display:block;width:100%}.student-table tr:first-child{display:none}.student-table tr{padding:14px;border-bottom:1px solid var(--line)}.student-table td{padding:7px 2px!important;border:0!important}.student-table td[style*="display: flex"]{display:flex!important;flex-wrap:wrap}.uni-header{flex-direction:column;align-items:flex-start!important;gap:8px}.tabs{overflow-x:auto;flex-wrap:nowrap!important}.tab-btn{white-space:nowrap}.item-row,.qa-topic-item{align-items:flex-start!important;gap:12px;flex-direction:column}.question-box{padding:18px!important}}
+
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <h1 style="color: #6f42c1;">Test z Matematyki ({{ student.university.name }})</h1>
-        <p>Rozwiąż poniższy test, abyśmy mogli ocenić Twój poziom przed przystąpieniem do dalszych etapów.</p>
+<div class="shell">
+    <div class="theme-row"><span id="themeLabel">Tryb systemowy</span><div class="switch" id="themeSwitch" role="button" tabindex="0" aria-label="Zmień motyw"><div class="knob" id="themeKnob">◐</div></div></div>
+<div class="container cardlike" style="padding:clamp(20px,4vw,34px)!important;">
+    {% if not selected_version %}
+        <!-- WIDOK WYBORU WERSJI TESTU -->
+        <h1>Witaj, {{ student.name }}! Wybierz wersję testu.</h1>
+        <p>Wybierz jeden z dostępnych testów poniżej. Jeśli jakaś wersja została już przez Ciebie ukończona, nie będziesz mógł uruchomić jej ponownie.</p>
         
-        <!-- Sekcja z wgranymi materiałami "math_test" -->
-        {% if study_materials %}
-            <div class="study-box">
-                <h3 style="margin-top:0;">📚 Materiały pomocnicze</h3>
-                <p style="font-size: 14px; margin-bottom: 10px;">Zapoznaj się z tymi materiałami przed rozpoczęciem testu:</p>
-                <ul style="margin: 0; padding-left: 20px;">
-                    {% for mat in study_materials %}
-                        <li><a href="{{ mat.content_url }}" target="_blank" style="color: #007bff; font-weight: bold;">{{ mat.title }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-
-        <hr style="margin-bottom: 30px; border: 1px solid #eee;">
-
-        <form id="mathForm">
-            {% for q in questions %}
-                <div class="q-box">
-                    <p style="font-weight: bold; font-size: 16px; margin-top: 0;">{{ loop.index }}. {{ q.text }}</p>
-                    <label><input type="radio" name="{{ q.id }}" value="a"> A) {{ q.opt_a }}</label>
-                    <label><input type="radio" name="{{ q.id }}" value="b"> B) {{ q.opt_b }}</label>
-                    <label><input type="radio" name="{{ q.id }}" value="c"> C) {{ q.opt_c }}</label>
-                    <label><input type="radio" name="{{ q.id }}" value="d"> D) {{ q.opt_d }}</label>
-                </div>
+        <div style="margin-top: 30px;">
+            {% for v in available_versions %}
+                {% if v in taken_versions %}
+                    <div class="version-btn disabled">✅ {{ v }} (Ukończono)</div>
+                {% else %}
+                    <a href="?version={{ v }}" class="version-btn">▶ Rozpocznij: {{ v }}</a>
+                {% endif %}
             {% endfor %}
-            <button type="button" onclick="submitMath()">Wyślij odpowiedzi</button>
-        </form>
-    </div>
-
-    <script>
-        function submitMath() {
-            let data = {};
-            let formData = new FormData(document.getElementById('mathForm'));
-            formData.forEach((val, key) => data[key] = val);
             
-            fetch('/api/math/submit/{{ student.id }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            }).then(r => r.json()).then(res => {
-                if(res.status === 'success') {
-                    document.body.innerHTML = `<div style="text-align:center; padding:50px; font-family:sans-serif; background:white; border-radius:12px; margin-top:50px; max-width:600px; margin-left:auto; margin-right:auto; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
-                        <h2 style="color:#28a745;">Gratulacje, test został wysłany!</h2>
-                        <p>Twój wynik (widoczny tylko dla nauczyciela) został zapisany w systemie.</p>
-                        </div>`;
-                }
-            });
-        }
-    </script>
+            {% if available_versions|length == 0 %}
+                <p style="color:red; font-weight:bold;">Brak przypisanych pytań. Skontaktuj się z nauczycielem.</p>
+            {% endif %}
+        </div>
+    {% else %}
+        <!-- WIDOK ROZWIĄZYWANIA TESTU -->
+        <h1>Test z matematyki: {{ selected_version }}</h1>
+        <p>Po zakończeniu testu zatwierdź go przyciskiem na samym dole.</p>
+        
+        <form id="mathForm">
+            <!-- PRZEKAZUJEMY INFO DO API O WERSJI, KTÓRĄ AKTUALNIE ROBI UCZEŃ -->
+            <input type="hidden" name="test_version" id="test_version" value="{{ selected_version }}">
+            
+            {% for q in questions %}
+            <div class="question-box">
+                <div class="q-text">{{ loop.index }}. {{ q.text }}</div>
+                
+                {% if q.image_url %}
+                    <img src="{{ q.image_url }}" class="q-img" alt="Zdjęcie pomocnicze do pytania">
+                {% endif %}
+                
+                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="a"> A) {{ q.opt_a }}</label>
+                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="b"> B) {{ q.opt_b }}</label>
+                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="c"> C) {{ q.opt_c }}</label>
+                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="d"> D) {{ q.opt_d }}</label>
+            </div>
+            {% endfor %}
+            <button type="button" class="btn-submit" onclick="submitMath()">Zakończ i Prześlij Wyniki</button>
+        </form>
+
+        <div id="resultBox" style="display:none; text-align:center; padding:30px; background:#d4edda; border-radius:5px; margin-top:20px;">
+            <h2 style="color:#155724; border:none;">Wynik: <span id="scoreText"></span></h2>
+            <p>Twoje odpowiedzi zostały zapisane. Możesz zamknąć tę kartę.</p>
+        </div>
+    {% endif %}
+</div>
+
+
+</div>
+
+<script>
+    function submitMath() {
+        const form = document.getElementById('mathForm');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        
+        const btn = document.querySelector('.btn-submit');
+        btn.innerHTML = "Wysyłanie...";
+        btn.disabled = true;
+
+        fetch('/api/math/submit/{{ student.id }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(res => res.json()).then(res => {
+            form.style.display = 'none';
+            document.getElementById('resultBox').style.display = 'block';
+            document.getElementById('scoreText').innerText = res.score + " poprawnych";
+        }).catch(err => {
+            alert("Błąd połączenia. Spróbuj ponownie.");
+            btn.innerHTML = "Zakończ i Prześlij Wyniki";
+            btn.disabled = false;
+        });
+    }
+</script>
+<script>
+
+(function(){
+  const root=document.documentElement, key='openuk-theme';
+  const sw=document.getElementById('themeSwitch'), knob=document.getElementById('themeKnob'), label=document.getElementById('themeLabel');
+  function apply(theme){root.setAttribute('data-theme',theme); if(sw) sw.dataset.on=theme==='dark'?'true':'false'; if(knob) knob.textContent=theme==='dark'?'🌙':'☀️'; if(label) label.textContent=theme==='dark'?'Tryb ciemny':'Tryb jasny';}
+  const media=window.matchMedia('(prefers-color-scheme: dark)');
+  apply(localStorage.getItem(key)||(media.matches?'dark':'light'));
+  function toggle(){const next=root.getAttribute('data-theme')==='dark'?'light':'dark';localStorage.setItem(key,next);apply(next)}
+  if(sw){sw.addEventListener('click',toggle);sw.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}})}
+  media.addEventListener?.('change',e=>{if(!localStorage.getItem(key))apply(e.matches?'dark':'light')});
+})();
+
+</script>
 </body>
 </html>

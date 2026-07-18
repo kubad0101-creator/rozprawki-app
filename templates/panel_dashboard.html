@@ -429,6 +429,141 @@
                     padding: 18px !important;
                 }
             }
+        
+
+            /* === DOPRACOWANY UKŁAD PANELU === */
+            body {
+                max-width: none !important;
+                width: 100% !important;
+            }
+            .shell,
+            .dashboard-container {
+                width: min(100%, 1320px) !important;
+                max-width: 1320px !important;
+            }
+            .header-bar {
+                display: grid !important;
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center !important;
+                padding: 26px 28px !important;
+            }
+            .header-bar h1 {
+                margin: 0 !important;
+                line-height: 1.15;
+            }
+            form[action="/panel"] {
+                display: grid !important;
+                grid-template-columns: minmax(260px, 1.4fr) minmax(220px, .8fr) auto;
+                gap: 12px !important;
+                padding: 16px !important;
+                background: var(--card) !important;
+                border: 1px solid var(--line) !important;
+                border-radius: 18px !important;
+                box-shadow: var(--shadow) !important;
+            }
+            form[action="/panel"] .form-control {
+                max-width: none !important;
+                margin: 0 !important;
+            }
+            .add-student-box {
+                padding: 30px !important;
+            }
+            .add-student-box h2 {
+                margin: 0 0 24px !important;
+                padding-bottom: 18px !important;
+            }
+            .form-grid {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                column-gap: 22px !important;
+                row-gap: 18px !important;
+                align-items: end;
+            }
+            .form-grid > div {
+                min-width: 0;
+            }
+            .form-grid label {
+                display: block;
+                margin: 0 0 8px;
+                line-height: 1.35;
+            }
+            .hidden-field[style*="display: block"] {
+                display: block !important;
+            }
+            #addStudentForm > div:last-child {
+                margin-top: 24px !important;
+                padding-top: 22px !important;
+                gap: 18px;
+                flex-wrap: wrap;
+            }
+            .uni-section {
+                width: 100%;
+            }
+            .uni-header {
+                min-height: 64px;
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                gap: 16px;
+                padding: 18px 24px !important;
+            }
+            .student-table {
+                width: 100% !important;
+                table-layout: fixed;
+            }
+            .student-table th,
+            .student-table td {
+                padding: 17px 20px !important;
+                vertical-align: middle;
+            }
+            .student-table th:first-child,
+            .student-table td:first-child {
+                width: 30%;
+            }
+            .student-table th:last-child,
+            .student-table td:last-child {
+                width: 250px;
+            }
+            .student-table td[style*="display: flex"] {
+                display: flex !important;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 8px !important;
+                flex-wrap: wrap;
+            }
+            .student-table .btn {
+                white-space: nowrap;
+            }
+            @media (max-width: 900px) {
+                .header-bar {
+                    grid-template-columns: 1fr !important;
+                }
+                form[action="/panel"] {
+                    grid-template-columns: 1fr 1fr !important;
+                }
+                form[action="/panel"] button {
+                    grid-column: 1 / -1;
+                }
+                .student-table {
+                    table-layout: auto;
+                }
+            }
+            @media (max-width: 680px) {
+                .form-grid,
+                form[action="/panel"] {
+                    grid-template-columns: 1fr !important;
+                }
+                .add-student-box {
+                    padding: 22px 18px !important;
+                }
+                #addStudentForm > div:last-child {
+                    align-items: stretch !important;
+                }
+                #addStudentForm > div:last-child > * {
+                    width: 100%;
+                }
+            }
+
         </style>
     </head>
     <body>

@@ -1,552 +1,333 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pl">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Test z Matematyki</title>
-        <style>
-            @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap");
-            :root {
-                --bg: #f5f0fb;
-                --text: #241b35;
-                --muted: #746b82;
-                --card: rgba(255, 255, 255, 0.94);
-                --soft: #f8f5fc;
-                --line: rgba(52, 34, 73, 0.12);
-                --line2: rgba(52, 34, 73, 0.2);
-                --purple: #6840bc;
-                --purple2: #8b5bd6;
-                --blue: #4266e8;
-                --green: #32c98a;
-                --red: #ed4057;
-                --amber: #ffc85b;
-                --teal: #22b8b0;
-                --shadow: 0 18px 45px rgba(76, 46, 112, 0.12);
-                --glow1: rgba(139, 91, 214, 0.18);
-                --glow2: rgba(229, 111, 220, 0.13);
-                --input: #fff;
-            }
-            html[data-theme="dark"] {
-                --bg: #251334;
-                --text: #f7f1fb;
-                --muted: #c0b5ca;
-                --card: rgba(66, 39, 82, 0.88);
-                --soft: rgba(255, 255, 255, 0.05);
-                --line: rgba(255, 255, 255, 0.1);
-                --line2: rgba(255, 255, 255, 0.18);
-                --shadow: 0 18px 45px rgba(0, 0, 0, 0.26);
-                --glow1: rgba(129, 71, 189, 0.22);
-                --glow2: rgba(227, 94, 207, 0.12);
-                --input: rgba(255, 255, 255, 0.045);
-            }
-            * {
-                box-sizing: border-box;
-            }
-            html {
-                color-scheme: light;
-            }
-            html[data-theme="dark"] {
-                color-scheme: dark;
-            }
-            body {
-                margin: 0 !important;
-                min-height: 100vh;
-                padding: 28px clamp(16px, 3vw, 38px) 60px !important;
-                font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif !important;
-                color: var(--text) !important;
-                background: radial-gradient(circle at 10% -10%, var(--glow1), transparent 38%), radial-gradient(circle at 100% 0, var(--glow2), transparent 36%), var(--bg) !important;
-                transition:
-                    0.25s background,
-                    0.25s color;
-            }
-            .shell {
-                max-width: 1180px;
-                margin: auto;
-            }
-            .theme-row {
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-                gap: 10px;
-                margin: 0 0 14px;
-                color: var(--muted);
-                font-size: 12px;
-                font-weight: 800;
-            }
-            .switch {
-                width: 54px;
-                height: 29px;
-                border-radius: 999px;
-                border: 1px solid var(--line2);
-                background: var(--soft);
-                position: relative;
-                cursor: pointer;
-            }
-            .knob {
-                position: absolute;
-                width: 21px;
-                height: 21px;
-                left: 3px;
-                top: 3px;
-                border-radius: 50%;
-                display: grid;
-                place-items: center;
-                font-size: 11px;
-                background: linear-gradient(135deg, #7b4bdd, #d95bc6);
-                box-shadow: 0 4px 12px rgba(105, 64, 188, 0.35);
-                transition: 0.25s transform;
-            }
-            .switch[data-on="true"] .knob {
-                transform: translateX(25px);
-            }
-            a {
-                color: inherit;
-            }
-            h1,
-            h2,
-            h3,
-            h4 {
-                letter-spacing: -0.025em;
-            }
-            h1 {
-                font-size: clamp(25px, 3vw, 35px) !important;
-                color: var(--text) !important;
-            }
-            h2 {
-                color: var(--text) !important;
-            }
-            .dashboard-container,
-            .container {
-                max-width: 1180px !important;
-                margin: auto !important;
-                background: transparent !important;
-                padding: 0 !important;
-                box-shadow: none !important;
-            }
-            .header-bar,
-            .add-student-box,
-            .uni-section > div,
-            .question-box,
-            .item-row,
-            .qa-topic-item,
-            .tab-content > div,
-            .cardlike {
-                background: var(--card) !important;
-                border: 1px solid var(--line) !important;
-                border-radius: 20px !important;
-                box-shadow: var(--shadow) !important;
-                backdrop-filter: blur(12px);
-            }
-            .header-bar {
-                padding: 20px 24px !important;
-                border-top: 0 !important;
-                margin-bottom: 22px !important;
-                gap: 16px;
-                flex-wrap: wrap;
-            }
-            .header-bar h1 {
-                font-size: clamp(20px, 2.5vw, 28px) !important;
-            }
-            .header-bar > div {
-                display: flex;
-                gap: 9px;
-                flex-wrap: wrap;
-            }
-            .add-student-box {
-                padding: 26px !important;
-            }
-            .btn,
-            button[type="submit"],
-            button[type="button"] {
-                border: 0 !important;
-                border-radius: 11px !important;
-                padding: 11px 16px !important;
-                display: inline-flex !important;
-                align-items: center;
-                justify-content: center;
-                gap: 7px;
-                text-decoration: none !important;
-                font: 800 13px inherit !important;
-                cursor: pointer;
-                transition:
-                    0.18s transform,
-                    0.18s filter,
-                    0.18s box-shadow;
-            }
-            .btn:hover,
-            button:hover {
-                transform: translateY(-2px);
-                filter: brightness(1.04);
-            }
-            .btn-blue {
-                background: linear-gradient(135deg, #3959ce, #577bf4) !important;
-                color: #fff !important;
-            }
-            .btn-green {
-                background: linear-gradient(135deg, #20a870, #3fd39a) !important;
-                color: #082b20 !important;
-            }
-            .btn-dark,
-            .btn-gray {
-                background: var(--soft) !important;
-                color: var(--text) !important;
-                border: 1px solid var(--line2) !important;
-            }
-            .btn-red,
-            [style*="background: #dc3545"],
-            [style*="background:#dc3545"] {
-                background: linear-gradient(135deg, #d93650, #f04b62) !important;
-                color: #fff !important;
-            }
-            .form-grid {
-                gap: 17px !important;
-            }
-            .form-control,
-            input[type="text"],
-            input[type="email"],
-            input[type="password"],
-            input[type="url"],
-            input[type="datetime-local"],
-            input[type="file"],
-            select,
-            textarea {
-                width: 100%;
-                min-height: 46px;
-                padding: 12px 14px !important;
-                border: 1px solid var(--line2) !important;
-                border-radius: 11px !important;
-                background: var(--input) !important;
-                color: var(--text) !important;
-                font: 600 14px inherit !important;
-                outline: none;
-                transition:
-                    0.18s border-color,
-                    0.18s box-shadow;
-            }
-            textarea {
-                min-height: 120px;
-                resize: vertical;
-            }
-            input:focus,
-            select:focus,
-            textarea:focus {
-                border-color: var(--purple2) !important;
-                box-shadow: 0 0 0 4px rgba(139, 91, 214, 0.14) !important;
-            }
-            label {
-                font-size: 13px;
-                font-weight: 750;
-                color: var(--text);
-            }
-            .uni-section {
-                margin-bottom: 28px !important;
-            }
-            .uni-header {
-                padding: 16px 20px !important;
-                border-radius: 18px 18px 0 0 !important;
-                background: linear-gradient(135deg, #6740bc, #8d58d4) !important;
-            }
-            .student-table {
-                border-collapse: separate !important;
-                border-spacing: 0 !important;
-                background: var(--card) !important;
-                color: var(--text) !important;
-                border: 1px solid var(--line) !important;
-                border-radius: 0 0 18px 18px !important;
-                overflow: hidden !important;
-                box-shadow: var(--shadow) !important;
-            }
-            .student-table th {
-                background: var(--soft) !important;
-                color: var(--muted) !important;
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-            }
-            .student-table th,
-            .student-table td {
-                border-bottom: 1px solid var(--line) !important;
-            }
-            .student-table tr:hover {
-                background: var(--soft) !important;
-            }
-            .badge {
-                background: rgba(139, 91, 214, 0.13) !important;
-                color: var(--purple2) !important;
-                border: 1px solid rgba(139, 91, 214, 0.2);
-            }
-            .tabs {
-                border: 0 !important;
-                padding: 7px !important;
-                background: var(--card) !important;
-                border: 1px solid var(--line) !important;
-                border-radius: 16px !important;
-                box-shadow: var(--shadow) !important;
-                gap: 7px !important;
-            }
-            .tab-btn {
-                background: transparent !important;
-                color: var(--muted) !important;
-                border-radius: 10px !important;
-            }
-            .tab-btn.active {
-                background: linear-gradient(135deg, #6740bc, #8d58d4) !important;
-                color: #fff !important;
-            }
-            .tab-content {
-                margin-top: 20px;
-            }
-            .tab-content > div {
-                padding: 24px !important;
-                margin-bottom: 22px !important;
-            }
-            .item-row,
-            .qa-topic-item {
-                padding: 17px 19px !important;
-                margin-bottom: 12px !important;
-            }
-            .qa-topic-item.over {
-                border: 2px dashed var(--purple2) !important;
-                background: rgba(139, 91, 214, 0.08) !important;
-            }
-            .drag-handle {
-                color: var(--purple2) !important;
-            }
-            .pulse-dot {
-                background: var(--red) !important;
-            }
-            .question-box {
-                padding: 22px !important;
-                margin-bottom: 18px !important;
-                border-left: 4px solid var(--purple2) !important;
-            }
-            .q-text {
-                font-size: 17px !important;
-            }
-            .opt-label {
-                display: flex !important;
-                align-items: flex-start;
-                gap: 10px;
-                padding: 13px 14px !important;
-                margin-bottom: 9px !important;
-                background: var(--soft) !important;
-                border: 1px solid var(--line) !important;
-                border-radius: 11px !important;
-                color: var(--text) !important;
-            }
-            .opt-label:hover {
-                border-color: var(--purple2) !important;
-                background: rgba(139, 91, 214, 0.09) !important;
-            }
-            .opt-label input {
-                margin-top: 3px;
-                accent-color: var(--purple);
-            }
-            .version-btn {
-                border-radius: 12px !important;
-                background: linear-gradient(135deg, #6740bc, #8d58d4) !important;
-                box-shadow: 0 10px 20px rgba(104, 64, 188, 0.18);
-            }
-            .version-btn.disabled {
-                background: var(--soft) !important;
-                color: var(--muted) !important;
-                border: 1px solid var(--line2);
-            }
-            .btn-submit {
-                background: linear-gradient(135deg, #20a870, #3fd39a) !important;
-                color: #082b20 !important;
-                border-radius: 13px !important;
-            }
-            .q-img {
-                border-radius: 12px !important;
-                border: 1px solid var(--line) !important;
-            }
-            .flash-message {
-                padding: 14px 16px;
-                border-radius: 12px;
-                margin-bottom: 16px;
-                background: rgba(50, 201, 138, 0.14);
-                border: 1px solid rgba(50, 201, 138, 0.3);
-                font-weight: 700;
-            }
-            @media (max-width: 760px) {
-                body {
-                    padding: 16px 12px 40px !important;
-                }
-                .form-grid {
-                    grid-template-columns: 1fr !important;
-                }
-                .header-bar {
-                    align-items: flex-start !important;
-                }
-                .header-bar > div {
-                    width: 100%;
-                }
-                .header-bar .btn {
-                    flex: 1;
-                }
-                .student-table,
-                .student-table tbody,
-                .student-table tr,
-                .student-table td {
-                    display: block;
-                    width: 100%;
-                }
-                .student-table tr:first-child {
-                    display: none;
-                }
-                .student-table tr {
-                    padding: 14px;
-                    border-bottom: 1px solid var(--line);
-                }
-                .student-table td {
-                    padding: 7px 2px !important;
-                    border: 0 !important;
-                }
-                .student-table td[style*="display: flex"] {
-                    display: flex !important;
-                    flex-wrap: wrap;
-                }
-                .uni-header {
-                    flex-direction: column;
-                    align-items: flex-start !important;
-                    gap: 8px;
-                }
-                .tabs {
-                    overflow-x: auto;
-                    flex-wrap: nowrap !important;
-                }
-                .tab-btn {
-                    white-space: nowrap;
-                }
-                .item-row,
-                .qa-topic-item {
-                    align-items: flex-start !important;
-                    gap: 12px;
-                    flex-direction: column;
-                }
-                .question-box {
-                    padding: 18px !important;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="shell">
-            <div class="theme-row">
-                <span id="themeLabel">Tryb systemowy</span>
-                <div class="switch" id="themeSwitch" role="button" tabindex="0" aria-label="Zmień motyw"><div class="knob" id="themeKnob">◐</div></div>
-            </div>
-            <div class="container cardlike" style="padding: clamp(20px, 4vw, 34px) !important">
-                {% if not selected_version %}
-                <!-- WIDOK WYBORU WERSJI TESTU -->
-                <h1>Witaj, {{ student.name }}! Wybierz wersję testu.</h1>
-                <p>Wybierz jeden z dostępnych testów poniżej. Jeśli jakaś wersja została już przez Ciebie ukończona, nie będziesz mógł uruchomić jej ponownie.</p>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Test z matematyki · Open UK Study</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        (function(){
+            var t = localStorage.getItem('ous-theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+    <style>
+        :root{
+            --bg:#f6f1fa;
+            --bg-image:
+                radial-gradient(900px 520px at 12% -6%, rgba(168,85,247,.14), transparent 60%),
+                radial-gradient(820px 520px at 92% 8%, rgba(236,72,153,.11), transparent 60%),
+                radial-gradient(720px 520px at 50% 112%, rgba(56,189,248,.09), transparent 60%);
+            --surface:#ffffff;
+            --surface-2:#f7f4fb;
+            --text:#221d33;
+            --muted:#716b85;
+            --border:#e9e4f2;
+            --shadow:0 12px 32px rgba(84,60,140,.10);
+            --grad-main:linear-gradient(90deg,#8b5cf6,#ec4899);
+            --purple:#8b5cf6; --pink:#ec4899;
+            --success:#16a34a;
+        }
+        [data-theme="dark"]{
+            --bg:#121016;
+            --bg-image:
+                radial-gradient(900px 520px at 12% -6%, rgba(139,92,246,.18), transparent 60%),
+                radial-gradient(820px 520px at 92% 8%, rgba(236,72,153,.12), transparent 60%);
+            --surface:#1c1823;
+            --surface-2:#252030;
+            --text:#f1edf8;
+            --muted:#9c95b0;
+            --border:#2e2939;
+            --shadow:0 14px 36px rgba(0,0,0,.45);
+        }
+        *{ box-sizing:border-box; }
+        body{
+            margin:0; padding:28px 20px 90px;
+            font-family:'Plus Jakarta Sans','Segoe UI',Tahoma,sans-serif;
+            background-color:var(--bg); background-image:var(--bg-image); background-attachment:fixed;
+            color:var(--text); min-height:100vh;
+            transition:background-color .3s ease, color .3s ease;
+        }
+        .wrap{ max-width:820px; margin:0 auto; }
 
-                <div style="margin-top: 30px">
-                    {% for v in available_versions %} {% if v in taken_versions %}
-                    <div class="version-btn disabled">✅ {{ v }} (Ukończono)</div>
-                    {% else %}
-                    <a href="?version={{ v }}" class="version-btn">▶ Rozpocznij: {{ v }}</a>
-                    {% endif %} {% endfor %} {% if available_versions|length == 0 %}
-                    <p style="color: red; font-weight: bold">Brak przypisanych pytań. Skontaktuj się z nauczycielem.</p>
-                    {% endif %}
-                </div>
-                {% else %}
-                <!-- WIDOK ROZWIĄZYWANIA TESTU -->
-                <h1>Test z matematyki: {{ selected_version }}</h1>
-                <p>Po zakończeniu testu zatwierdź go przyciskiem na samym dole.</p>
+        .topbar{ display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:22px; }
+        .brand{ display:flex; align-items:center; gap:14px; }
+        .brand-logo{
+            width:52px; height:52px; border-radius:16px; background:var(--surface);
+            box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; font-size:24px;
+        }
+        .brand h1{ margin:0; font-size:22px; font-weight:800; letter-spacing:-.3px; }
+        .brand p{ margin:2px 0 0; font-size:13px; color:var(--muted); }
 
-                <form id="mathForm">
-                    <!-- PRZEKAZUJEMY INFO DO API O WERSJI, KTÓRĄ AKTUALNIE ROBI UCZEŃ -->
-                    <input type="hidden" name="test_version" id="test_version" value="{{ selected_version }}" />
+        .theme-toggle{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; }
+        .theme-toggle span.lbl{ font-size:13px; font-weight:700; color:var(--muted); }
+        .theme-toggle input{ display:none; }
+        .theme-toggle .track{
+            width:48px; height:26px; border-radius:99px; background:var(--surface);
+            border:1px solid var(--border); position:relative; box-shadow:inset 0 1px 3px rgba(0,0,0,.06);
+        }
+        .theme-toggle .knob{
+            position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%;
+            background:var(--grad-main); display:flex; align-items:center; justify-content:center;
+            font-size:11px; transition:left .25s ease;
+        }
+        .theme-toggle input:checked + .track .knob{ left:24px; }
 
-                    {% for q in questions %}
-                    <div class="question-box">
-                        <div class="q-text">{{ loop.index }}. {{ q.text }}</div>
+        .card{
+            position:relative; background:var(--surface); border-radius:20px;
+            box-shadow:var(--shadow); border:1px solid var(--border);
+            padding:28px; margin-bottom:22px; overflow:hidden;
+            transition:background .3s ease;
+        }
+        .card::before{
+            content:''; position:absolute; top:0; left:0; right:0; height:5px; background:var(--grad-main);
+        }
+        .card h2{ margin:0 0 8px; font-size:20px; font-weight:800; }
+        .card .sub{ margin:0 0 8px; font-size:14px; color:var(--muted); }
 
-                        {% if q.image_url %}
-                        <img src="{{ q.image_url }}" class="q-img" alt="Zdjęcie pomocnicze do pytania" />
-                        {% endif %}
+        /* ===== Wybór wersji ===== */
+        .version-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:14px; margin-top:20px; }
+        .version-btn{
+            display:flex; flex-direction:column; gap:6px; padding:20px;
+            border-radius:16px; text-decoration:none; font-weight:800; font-size:16px;
+            background:var(--grad-main); color:#fff; box-shadow:0 8px 22px rgba(168,85,247,.30);
+            transition:transform .15s, opacity .15s;
+        }
+        .version-btn small{ font-weight:600; font-size:12px; opacity:.85; }
+        .version-btn:hover{ transform:translateY(-2px); opacity:.95; }
+        .version-btn.disabled{
+            background:var(--surface-2); color:var(--muted); box-shadow:none;
+            border:1px dashed var(--border); cursor:not-allowed;
+        }
+        .empty-note{
+            border:1.5px dashed var(--border); border-radius:14px; padding:18px; text-align:center;
+            color:var(--muted); font-style:italic; font-size:14px; margin-top:20px;
+        }
 
-                        <label class="opt-label"><input type="radio" name="{{ q.id }}" value="a" /> A) {{ q.opt_a }}</label>
-                        <label class="opt-label"><input type="radio" name="{{ q.id }}" value="b" /> B) {{ q.opt_b }}</label>
-                        <label class="opt-label"><input type="radio" name="{{ q.id }}" value="c" /> C) {{ q.opt_c }}</label>
-                        <label class="opt-label"><input type="radio" name="{{ q.id }}" value="d" /> D) {{ q.opt_d }}</label>
-                    </div>
-                    {% endfor %}
-                    <button type="button" class="btn-submit" onclick="submitMath()">Zakończ i Prześlij Wyniki</button>
-                </form>
+        /* ===== Pasek postępu ===== */
+        .progress-bar{
+            position:sticky; top:10px; z-index:10;
+            background:var(--surface); border:1px solid var(--border); border-radius:14px;
+            box-shadow:var(--shadow); padding:12px 18px; margin-bottom:20px;
+            display:flex; align-items:center; gap:14px;
+        }
+        .progress-track{ flex:1; height:8px; border-radius:99px; background:var(--surface-2); overflow:hidden; }
+        .progress-fill{ height:100%; width:0%; border-radius:99px; background:var(--grad-main); transition:width .3s ease; }
+        .progress-label{ font-size:13px; font-weight:700; color:var(--muted); white-space:nowrap; }
 
-                <div id="resultBox" style="display: none; text-align: center; padding: 30px; background: #d4edda; border-radius: 5px; margin-top: 20px">
-                    <h2 style="color: #155724; border: none">Wynik: <span id="scoreText"></span></h2>
-                    <p>Twoje odpowiedzi zostały zapisane. Możesz zamknąć tę kartę.</p>
-                </div>
-                {% endif %}
+        /* ===== Pytania ===== */
+        .question-box{
+            background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--purple);
+            border-radius:16px; padding:22px; margin-bottom:18px; box-shadow:var(--shadow);
+            transition:border-color .2s;
+        }
+        .question-box.answered{ border-left-color:#22c55e; }
+        .q-text{ font-size:16px; font-weight:700; margin-bottom:15px; line-height:1.5; }
+        .q-num{
+            display:inline-flex; align-items:center; justify-content:center;
+            width:28px; height:28px; border-radius:9px; background:var(--grad-main); color:#fff;
+            font-size:13px; font-weight:800; margin-right:10px; flex-shrink:0;
+        }
+        .q-img{ max-width:100%; border-radius:12px; margin-bottom:15px; border:1px solid var(--border); display:block; }
+
+        .opt-label{
+            display:flex; align-items:center; gap:12px; margin-bottom:10px; cursor:pointer;
+            padding:13px 16px; background:var(--surface-2); border:1.5px solid var(--border);
+            border-radius:12px; font-size:14.5px; transition:border-color .15s, background .15s;
+        }
+        .opt-label:hover{ border-color:var(--purple); }
+        .opt-label:has(input:checked){
+            border-color:var(--purple);
+            background:rgba(139,92,246,.10);
+            font-weight:700;
+        }
+        .opt-label input{ accent-color:var(--purple); width:17px; height:17px; flex-shrink:0; }
+
+        .btn-submit{
+            display:block; width:100%; padding:16px; border:none; border-radius:14px;
+            background:var(--grad-main); color:#fff; font-family:inherit;
+            font-size:17px; font-weight:800; cursor:pointer; margin-top:24px;
+            box-shadow:0 10px 26px rgba(168,85,247,.35); transition:transform .15s, opacity .15s;
+        }
+        .btn-submit:hover:not(:disabled){ transform:translateY(-2px); opacity:.95; }
+        .btn-submit:disabled{ opacity:.6; cursor:wait; }
+
+        .result-box{
+            display:none; text-align:center; padding:40px 30px;
+            background:var(--surface); border:1px solid rgba(34,197,94,.4);
+            border-radius:20px; margin-top:20px; box-shadow:var(--shadow);
+        }
+        .result-box .big{ font-size:44px; margin-bottom:6px; }
+        .result-box h2{ margin:0 0 8px; font-size:24px; font-weight:800; color:var(--success); }
+        .result-box p{ margin:0; color:var(--muted); font-size:14.5px; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+
+    <!-- ===== NAGŁÓWEK ===== -->
+    <div class="topbar">
+        <div class="brand">
+            <div class="brand-logo">🧮</div>
+            <div>
+                <h1>Test z matematyki</h1>
+                <p>Open UK Study</p>
             </div>
         </div>
+        <label class="theme-toggle">
+            <span class="lbl" id="themeLabel">Tryb jasny</span>
+            <input type="checkbox" id="themeSwitch" onchange="toggleTheme(this.checked)">
+            <span class="track"><span class="knob" id="themeKnob">☀️</span></span>
+        </label>
+    </div>
 
-        <script>
-            function submitMath() {
-                const form = document.getElementById("mathForm");
-                const formData = new FormData(form);
-                const data = Object.fromEntries(formData.entries());
+    {% if not selected_version %}
+        <!-- ===== WIDOK WYBORU WERSJI TESTU ===== -->
+        <div class="card">
+            <h2>Witaj, {{ student.name }}! 👋</h2>
+            <p class="sub">Wybierz jeden z dostępnych testów poniżej. Ukończonej wersji nie można uruchomić ponownie.</p>
 
-                const btn = document.querySelector(".btn-submit");
-                btn.innerHTML = "Wysyłanie...";
-                btn.disabled = true;
+            <div class="version-grid">
+                {% for v in available_versions %}
+                    {% if v in taken_versions %}
+                        <div class="version-btn disabled">✅ {{ v }}<small>Ukończono</small></div>
+                    {% else %}
+                        <a href="?version={{ v }}" class="version-btn">▶ {{ v }}<small>Rozpocznij test</small></a>
+                    {% endif %}
+                {% endfor %}
+            </div>
 
-                fetch("/api/math/submit/{{ student.id }}", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
-                })
-                    .then((res) => res.json())
-                    .then((res) => {
-                        form.style.display = "none";
-                        document.getElementById("resultBox").style.display = "block";
-                        document.getElementById("scoreText").innerText = res.score + " poprawnych";
-                    })
-                    .catch((err) => {
-                        alert("Błąd połączenia. Spróbuj ponownie.");
-                        btn.innerHTML = "Zakończ i Prześlij Wyniki";
-                        btn.disabled = false;
-                    });
-            }
-        </script>
-        <script>
-            (function () {
-                const root = document.documentElement,
-                    key = "openuk-theme";
-                const sw = document.getElementById("themeSwitch"),
-                    knob = document.getElementById("themeKnob"),
-                    label = document.getElementById("themeLabel");
-                function apply(theme) {
-                    root.setAttribute("data-theme", theme);
-                    if (sw) sw.dataset.on = theme === "dark" ? "true" : "false";
-                    if (knob) knob.textContent = theme === "dark" ? "🌙" : "☀️";
-                    if (label) label.textContent = theme === "dark" ? "Tryb ciemny" : "Tryb jasny";
-                }
-                const media = window.matchMedia("(prefers-color-scheme: dark)");
-                apply(localStorage.getItem(key) || (media.matches ? "dark" : "light"));
-                function toggle() {
-                    const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-                    localStorage.setItem(key, next);
-                    apply(next);
-                }
-                if (sw) {
-                    sw.addEventListener("click", toggle);
-                    sw.addEventListener("keydown", (e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            toggle();
-                        }
-                    });
-                }
-                media.addEventListener?.("change", (e) => {
-                    if (!localStorage.getItem(key)) apply(e.matches ? "dark" : "light");
-                });
-            })();
-        </script>
-    </body>
+            {% if available_versions|length == 0 %}
+                <div class="empty-note">Brak przypisanych pytań. Skontaktuj się z nauczycielem.</div>
+            {% endif %}
+        </div>
+    {% else %}
+        <!-- ===== WIDOK ROZWIĄZYWANIA TESTU ===== -->
+        <div class="card">
+            <h2>{{ selected_version }}</h2>
+            <p class="sub">Zaznacz odpowiedzi przy każdym pytaniu, a na końcu zatwierdź test przyciskiem na dole strony. Powodzenia! 🍀</p>
+        </div>
+
+        <div class="progress-bar" id="progressBar">
+            <span class="progress-label" id="progressLabel">0 / 0 odpowiedzi</span>
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+
+        <form id="mathForm">
+            <!-- Informacja dla API, którą wersję rozwiązuje uczeń -->
+            <input type="hidden" name="test_version" id="test_version" value="{{ selected_version }}">
+
+            {% for q in questions %}
+            <div class="question-box">
+                <div class="q-text"><span class="q-num">{{ loop.index }}</span>{{ q.text }}</div>
+
+                {% if q.image_url %}
+                    <img src="{{ q.image_url }}" class="q-img" alt="Zdjęcie pomocnicze do pytania">
+                {% endif %}
+
+                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="a"> <span><b>A)</b> {{ q.opt_a }}</span></label>
+                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="b"> <span><b>B)</b> {{ q.opt_b }}</span></label>
+                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="c"> <span><b>C)</b> {{ q.opt_c }}</span></label>
+                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="d"> <span><b>D)</b> {{ q.opt_d }}</span></label>
+            </div>
+            {% endfor %}
+
+            <button type="button" class="btn-submit" onclick="submitMath()">Zakończ i prześlij wyniki</button>
+        </form>
+
+        <div id="resultBox" class="result-box">
+            <div class="big">🎉</div>
+            <h2>Wynik: <span id="scoreText"></span></h2>
+            <p>Twoje odpowiedzi zostały zapisane. Możesz zamknąć tę kartę.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    /* ===== Motyw jasny / ciemny ===== */
+    function syncThemeUI() {
+        var t = document.documentElement.getAttribute('data-theme');
+        var sw = document.getElementById('themeSwitch');
+        if (sw) sw.checked = (t === 'dark');
+        var lbl = document.getElementById('themeLabel');
+        if (lbl) lbl.textContent = (t === 'dark') ? 'Tryb ciemny' : 'Tryb jasny';
+        var knob = document.getElementById('themeKnob');
+        if (knob) knob.textContent = (t === 'dark') ? '🌙' : '☀️';
+    }
+    function toggleTheme(isDark) {
+        var t = isDark ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('ous-theme', t);
+        syncThemeUI();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        syncThemeUI();
+        updateProgress();
+
+        /* Aktualizuj postęp i podświetlenie pytania po każdej odpowiedzi */
+        document.querySelectorAll('#mathForm input[type="radio"]').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                var box = radio.closest('.question-box');
+                if (box) box.classList.add('answered');
+                updateProgress();
+            });
+        });
+    });
+
+    /* ===== Pasek postępu ===== */
+    function getProgress() {
+        var boxes = document.querySelectorAll('#mathForm .question-box');
+        var answered = 0;
+        boxes.forEach(function(box) {
+            if (box.querySelector('input[type="radio"]:checked')) answered++;
+        });
+        return { answered: answered, total: boxes.length };
+    }
+    function updateProgress() {
+        var form = document.getElementById('mathForm');
+        if (!form) return;
+        var p = getProgress();
+        var fill = document.getElementById('progressFill');
+        var label = document.getElementById('progressLabel');
+        if (fill) fill.style.width = (p.total ? (p.answered / p.total * 100) : 0) + '%';
+        if (label) label.textContent = p.answered + ' / ' + p.total + ' odpowiedzi';
+    }
+
+    /* ===== Wysyłka testu ===== */
+    function submitMath() {
+        var p = getProgress();
+        if (p.answered < p.total) {
+            var missing = p.total - p.answered;
+            var ok = confirm('Nie odpowiedziałeś jeszcze na ' + missing + ' pytań(nie). Czy na pewno chcesz zakończyć test?');
+            if (!ok) return;
+        }
+
+        var form = document.getElementById('mathForm');
+        var formData = new FormData(form);
+        var data = Object.fromEntries(formData.entries());
+
+        var btn = document.querySelector('.btn-submit');
+        btn.innerHTML = "Wysyłanie...";
+        btn.disabled = true;
+
+        fetch('/api/math/submit/{{ student.id }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(function(res){ return res.json(); }).then(function(res) {
+            form.style.display = 'none';
+            var bar = document.getElementById('progressBar');
+            if (bar) bar.style.display = 'none';
+            document.getElementById('resultBox').style.display = 'block';
+            document.getElementById('scoreText').innerText = res.score + " poprawnych";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }).catch(function(err) {
+            alert("Błąd połączenia. Spróbuj ponownie.");
+            btn.innerHTML = "Zakończ i prześlij wyniki";
+            btn.disabled = false;
+        });
+    }
+</script>
+</body>
 </html>

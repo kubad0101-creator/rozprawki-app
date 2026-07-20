@@ -205,7 +205,7 @@ class Notification(db.Model):
     student = db.relationship('Student')
 
 
-# ---------------- FUNKCJE POCZTOWE (BREVO REST API - HTML) ----------------
+# ---------------- FUNKCJE POCZTOWE ----------------
 
 POLISH_DAYS = {
     0: "Poniedziałek", 1: "Wtorek", 2: "Środa",
@@ -309,26 +309,11 @@ def trigger_welcome_email(teacher, student, request_host, termin1_raw, termin2_r
     subject = "Twój dostęp do platformy edukacyjnej Open UK Study"
     success, msg = send_email_api(sender_email, sender_name, student.email, subject, body, reply_to_email)
     return success, msg
-# ---------------------------------------------------------------
 
 
 # --- INITIAL DATA ---
 def setup_database():
     db.create_all()
-    queries = [
-        'CREATE TABLE IF NOT EXISTS qa_majors (id INTEGER PRIMARY KEY, name VARCHAR(200) NOT NULL)',
-        'CREATE TABLE IF NOT EXISTS exam_topics (id INTEGER PRIMARY KEY, title VARCHAR(200) NOT NULL, topic_full TEXT NOT NULL)',
-        'ALTER TABLE student_v5 ADD COLUMN qa_major_id INTEGER REFERENCES qa_majors(id)',
-        'ALTER TABLE materials ADD COLUMN qa_major_id INTEGER REFERENCES qa_majors(id)',
-        'ALTER TABLE materials ADD COLUMN gbs_major_id INTEGER REFERENCES gbs_majors(id)',
-        'ALTER TABLE math_questions ADD COLUMN test_version VARCHAR(50) DEFAULT \'Wersja 1\'',
-        'ALTER TABLE math_questions ADD COLUMN image_url VARCHAR(500)',
-        'ALTER TABLE math_test_results ADD COLUMN test_version VARCHAR(50) DEFAULT \'Wersja 1\''
-    ]
-    for q in queries:
-        try: db.session.execute(text(q)); db.session.commit()
-        except Exception: db.session.rollback()
-
     qa_uni = University.query.filter_by(name="QA Higher Education").first() or University(name="QA Higher Education")
     gbs_uni = University.query.filter_by(name="GBS").first() or University(name="GBS")
     lcca_uni = University.query.filter_by(name="LCCA").first() or University(name="LCCA")
@@ -341,7 +326,6 @@ def setup_database():
             
     if not User.query.filter_by(username="Admin Open UK Study").first(): 
         db.session.add(User(username="Admin Open UK Study", password_hash=generate_password_hash("Open196!"), role="admin"))
-    
     db.session.commit()
 
 with app.app_context(): setup_database()
@@ -395,6 +379,9 @@ def check_archived(student):
     return None
 
 # ----------------- ŚCIEŻKI AUTORYZACJI -----------------
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -410,6 +397,7 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
 
 # ----------------- PANEL KOORDYNACJI SYSTEMU PŁATFORMY (/panel) -----------------
 
@@ -982,82 +970,6 @@ def auto_save(essay_id):
         db.session.commit()
     return jsonify({"status": "success"})
 
-
-# =========================================================================
-# LCCA EXAM MODULE (READING & LISTENING)
-# =========================================================================
-
-ANSWER_KEY_LISTENING = {
-    "q1": ["keep-fit", "keep-fit studio", "keep fit", "keep fit studio", "a keep-fit studio"],
-    "q2": ["swimming"],
-    "q3": ["yoga", "yoga classes"],
-    "q4": ["salad bar", "a salad bar"],
-    "q5": ["500"], "q6": ["1"],
-    "q7": ["10/10:00 am, 4:30 pm", "10, 4:30", "10am, 4:30pm", "10:00, 4:30", "10.00, 4.30"],
-    "q8": ["180"], "q9": ["assessment"], "q10": ["kynchley"],
-    "q11": ["b"], "q12": ["g"], "q13": ["c"], "q14": ["a"], "q15": ["e"], "q16": ["d"],
-    "q17": ["19th", "october 19th", "the 19th", "october the 19th"],
-    "q18": ["7", "7:00"],
-    "q19": ["monday, thursday", "monday and thursday", "monday thursday"],
-    "q20": ["18"], "q21": ["a"], "q22": ["in advance"], "q23": ["nursery"], "q24": ["annual fee"],
-    "q25": ["tutor"], "q26": ["laptops", "printers"], "q27": ["printers", "laptops"], 
-    "q28": ["report writing"], "q29": ["marketing"], "q30": ["individual"],
-    "q31": ["feed"], "q32": ["metal", "leather", "metal / leather", "leather / metal", "metal and leather"],
-    "q33": ["restrictions"], "q34": ["ships"], "q35": ["england"], "q36": ["built"], "q37": ["poverty"]
-}
-
-ANSWER_KEY_READING = {
-    "r_q1": ["d"], "r_q2": ["b"], "r_q3": ["e"],
-    "r_q4": ["sensors"],
-    "r_q7": ["old ships", "old"], "r_q8": ["freight rates"], "r_q9": ["security"], "r_q10": ["delayed"], 
-    "r_q11": ["disruption"], "r_q12": ["carry everything"],
-    "r_q13": ["ii"], "r_q14": ["viii"], "r_q15": ["xi"], "r_q16": ["xiii"],
-    "r_q17": ["vi"], "r_q18": ["i"], "r_q19": ["ix"], "r_q20": ["iv"],
-    "r_q21": ["false"], "r_q22": ["not given"], "r_q23": ["true"],
-    "r_q24": ["true"], "r_q25": ["not given"], "r_q26": ["false"]
-}
-
-@app.get("/lcca/exam")
-def lcca_exam_page():
-    return render_template("lcca/lcca_exam.html")
-
-@app.post("/api/lcca/submit-reading")
-def evaluate_reading():
-    payload = request.get_json()
-    score = 0
-    total_questions = 40
-    user_results = {}
-    for key, correct_options in ANSWER_KEY_READING.items():
-        user_ans = str(payload.get(key, "")).lower().strip()
-        is_correct = any(opt in user_ans or user_ans == opt for opt in correct_options)
-        if is_correct: score += 1
-        user_results[key] = {"user_answer": user_ans, "correct": is_correct}
-    c1_2 = set(payload.get("r_q1_2", []))
-    if "B" in c1_2: score += 1
-    if "C" in c1_2: score += 1
-    c3_4 = set(payload.get("r_q3_4", []))
-    if "A" in c3_4: score += 1
-    if "C" in c3_4: score += 1
-    c5_6 = set(payload.get("r_q5_6", []))
-    if "A" in c5_6: score += 1
-    if "E" in c5_6: score += 1
-    return jsonify({"status": "success", "score": score, "max_score": total_questions, "details": user_results})
-
-@app.post("/api/lcca/submit-listening")
-def evaluate_listening():
-    payload = request.get_json()
-    score = 0
-    total_questions = 40
-    user_results = {}
-    for key, correct_options in ANSWER_KEY_LISTENING.items():
-        user_ans = str(payload.get(key, "")).lower().strip()
-        is_correct = any(opt in user_ans or user_ans == opt for opt in correct_options)
-        if is_correct: score += 1
-        user_results[key] = {"user_answer": user_ans, "correct": is_correct}
-    user_checkboxes = set(payload.get("q38_40", []))
-    for val in {"C", "E", "F"}:
-        if val in user_checkboxes: score += 1
-    return jsonify({"status": "success", "score": score, "max_score": total_questions, "details": user_results})
 
 if __name__ == '__main__':
     app.run(debug=True)

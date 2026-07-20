@@ -15,11 +15,13 @@ from sqlalchemy import text
 app = Flask(__name__)
 app.secret_key = "Open196!_System_Rozprawek_2024"
 
+# --- AUTOMATYCZNE PRZEKIEROWANIE NA WWW ---
 @app.before_request
 def enforce_www():
     host = request.host.lower()
     if host == "openukstudylearn.pl":
         return redirect(f"https://www.openukstudylearn.pl{request.full_path}", code=301)
+# ------------------------------------------------------------------------------------------
 
 # --- KONFIGURACJA BREVO API ---
 BREVO_API_KEY = "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" 
@@ -101,6 +103,14 @@ class ExamTopic(db.Model):
     title = db.Column(db.String(200), nullable=False)
     topic_full = db.Column(db.Text, nullable=False)
 
+# NOWY MODEL: Testy Matematyczne (Kategorie)
+class MathTest(db.Model):
+    __tablename__ = 'math_tests'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    university_id = db.Column(db.Integer, db.ForeignKey('universities.id', ondelete='CASCADE'), nullable=True)
+    questions = db.relationship('MathQuestion', backref='test', lazy=True, cascade="all, delete-orphan")
+
 class MathQuestion(db.Model):
     __tablename__ = 'math_questions'
     id = db.Column(db.Integer, primary_key=True)
@@ -111,7 +121,7 @@ class MathQuestion(db.Model):
     opt_d = db.Column(db.String(200), nullable=False)
     answer = db.Column(db.String(1), nullable=False)
     university_id = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=True)
-    test_version = db.Column(db.String(50), default="Wersja 1")
+    math_test_id = db.Column(db.Integer, db.ForeignKey('math_tests.id', ondelete='CASCADE'), nullable=True)
     image_url = db.Column(db.String(500), nullable=True)
 
 class GbsIntake(db.Model):
@@ -145,10 +155,10 @@ class MathTestResult(db.Model):
     __tablename__ = 'math_test_results'
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('student_v5.id', ondelete='CASCADE'))
+    math_test_id = db.Column(db.Integer, db.ForeignKey('math_tests.id', ondelete='CASCADE'), nullable=True)
     score = db.Column(db.Integer, default=0)
     total = db.Column(db.Integer, default=11)
     answers_json = db.Column(db.Text, default="{}")
-    test_version = db.Column(db.String(50), default="Wersja 1")
     submitted_at = db.Column(db.DateTime, default=datetime.now)
 
 class Student(db.Model):
@@ -174,6 +184,7 @@ class Student(db.Model):
     gbs_attempts = db.relationship('GbsAttempt', backref='student', lazy=True, cascade="all, delete-orphan")
     math_results = db.relationship('MathTestResult', backref='student', lazy=True, cascade="all, delete-orphan")
     
+    university = db.relationship('University')
     qa_major = db.relationship('QaMajor')
     gbs_major = db.relationship('GbsMajor')
     intake = db.relationship('GbsIntake')
@@ -205,7 +216,7 @@ class Notification(db.Model):
     student = db.relationship('Student')
 
 
-# ---------------- FUNKCJE POCZTOWE ----------------
+# ---------------- FUNKCJE POCZTOWE (BREVO REST API) ----------------
 
 POLISH_DAYS = {
     0: "Poniedziałek", 1: "Wtorek", 2: "Środa",
@@ -298,7 +309,7 @@ def trigger_welcome_email(teacher, student, request_host, termin1_raw, termin2_r
             <td style="font-family: Arial, sans-serif; font-size: 13px; color: #555555; line-height: 1.6;">
                 <strong style="font-size: 16px; color: #2c3e50;">{teacher.username}</strong><br>
                 Ekspert ds. Rekrutacji | <strong style="color: #007bff;">Open UK Study</strong><br>
-                ✉️ <a href="mailto:{teacher.smtp_email or BREVO_SENDER_EMAIL}" style="color: #007bff; text-decoration: none;">{teacher.smtp_email or BREVO_SENDER_EMAIL}</a><br>
+                ✉️ <a href="mailto:{reply_to_email}" style="color: #007bff; text-decoration: none;">{reply_to_email}</a><br>
                 🌐 <a href="https://openukstudy.com" style="color: #007bff; text-decoration: none;">www.openukstudy.com</a>
             </td>
         </tr>
@@ -314,18 +325,34 @@ def trigger_welcome_email(teacher, student, request_host, termin1_raw, termin2_r
 # --- INITIAL DATA ---
 def setup_database():
     db.create_all()
+    queries = [
+        'CREATE TABLE IF NOT EXISTS qa_majors (id INTEGER PRIMARY KEY, name VARCHAR(200) NOT NULL)',
+        'CREATE TABLE IF NOT EXISTS exam_topics (id INTEGER PRIMARY KEY, title VARCHAR(200) NOT NULL, topic_full TEXT NOT NULL)',
+        'CREATE TABLE IF NOT EXISTS math_tests (id INTEGER PRIMARY KEY, name VARCHAR(100) NOT NULL, university_id INTEGER REFERENCES universities(id))',
+        'ALTER TABLE student_v5 ADD COLUMN qa_major_id INTEGER REFERENCES qa_majors(id)',
+        'ALTER TABLE materials ADD COLUMN qa_major_id INTEGER REFERENCES qa_majors(id)',
+        'ALTER TABLE materials ADD COLUMN gbs_major_id INTEGER REFERENCES gbs_majors(id)',
+        'ALTER TABLE math_questions ADD COLUMN math_test_id INTEGER REFERENCES math_tests(id)',
+        'ALTER TABLE math_questions ADD COLUMN image_url VARCHAR(500)',
+        'ALTER TABLE math_test_results ADD COLUMN math_test_id INTEGER REFERENCES math_tests(id)'
+    ]
+    for q in queries:
+        try: db.session.execute(text(q)); db.session.commit()
+        except Exception: db.session.rollback()
+
     qa_uni = University.query.filter_by(name="QA Higher Education").first() or University(name="QA Higher Education")
     gbs_uni = University.query.filter_by(name="GBS").first() or University(name="GBS")
-    lcca_uni = University.query.filter_by(name="LCCA").first() or University(name="LCCA")
-    db.session.add_all([qa_uni, gbs_uni, lcca_uni])
+    db.session.add_all([qa_uni, gbs_uni])
     
     if not ExamTopic.query.first():
         db.session.add(ExamTopic(title="Egzamin 1", topic_full="Some people think it is beneficial for old people to learn something new..."))
+        db.session.add(ExamTopic(title="Egzamin 2", topic_full="Some people think that introducing children to team sports..."))
     
     db.session.commit()
             
     if not User.query.filter_by(username="Admin Open UK Study").first(): 
         db.session.add(User(username="Admin Open UK Study", password_hash=generate_password_hash("Open196!"), role="admin"))
+    
     db.session.commit()
 
 with app.app_context(): setup_database()
@@ -379,6 +406,7 @@ def check_archived(student):
     return None
 
 # ----------------- ŚCIEŻKI AUTORYZACJI -----------------
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -398,7 +426,6 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-
 # ----------------- PANEL KOORDYNACJI SYSTEMU PŁATFORMY (/panel) -----------------
 
 @app.route('/panel', methods=['GET', 'POST'])
@@ -411,7 +438,6 @@ def panel_dashboard():
     
     has_gbs = any("GBS" in u.name for u in universities)
     has_qa = any("QA" in u.name for u in universities)
-    has_lcca = any("LCCA" in u.name for u in universities)
     
     gbs_majors = GbsMajor.query.all()
     qa_majors = QaMajor.query.all()
@@ -432,13 +458,11 @@ def panel_dashboard():
     
     qa_students = [s for s in students if s.university and 'QA' in s.university.name]
     gbs_students = [s for s in students if s.university and 'GBS' in s.university.name]
-    lcca_students = [s for s in students if s.university and 'LCCA' in s.university.name]
     
     qa_notifications = [n for n in notifications if n.student and n.student.university and 'QA' in n.student.university.name]
     gbs_notifications = [n for n in notifications if n.student and n.student.university and 'GBS' in n.student.university.name]
-    lcca_notifications = [n for n in notifications if n.student and n.student.university and 'LCCA' in n.student.university.name]
     
-    return render_template('panel_dashboard.html', qa_students=qa_students, gbs_students=gbs_students, lcca_students=lcca_students, universities=universities, gbs_majors=gbs_majors, qa_majors=qa_majors, intakes=intakes, teacher_name=user.username, qa_notifications=qa_notifications, gbs_notifications=gbs_notifications, lcca_notifications=lcca_notifications, user=user, sort_by=sort_by, search_query=search_query, has_gbs=has_gbs, has_qa=has_qa, has_lcca=has_lcca)
+    return render_template('panel_dashboard.html', qa_students=qa_students, gbs_students=gbs_students, universities=universities, gbs_majors=gbs_majors, qa_majors=qa_majors, intakes=intakes, teacher_name=user.username, qa_notifications=qa_notifications, gbs_notifications=gbs_notifications, user=user, sort_by=sort_by, search_query=search_query, has_gbs=has_gbs, has_qa=has_qa)
 
 @app.route('/panel/student/add', methods=['POST'])
 @login_required
@@ -501,7 +525,6 @@ def panel_database():
             user.email_template = request.form.get('email_template')
             db.session.commit()
             flash("Twój szablon e-mail został zapisany!", "success")
-            return redirect(url_for('panel_database'))
             
         elif action == 'add_material':
             title = request.form.get('title')
@@ -574,10 +597,15 @@ def panel_database():
             t = ExamTopic.query.get(request.form.get('topic_id'))
             if t: db.session.delete(t); db.session.commit(); flash("Temat usunięty.", "success")
             
-        elif action == 'add_math_q':
-            uni_id = request.form.get('university_id')
-            if not uni_id and len(universities) == 1: uni_id = universities[0].id
+        elif action == 'add_math_test':
+            db.session.add(MathTest(name=request.form.get('name'), university_id=int(request.form.get('university_id'))))
+            db.session.commit(); flash("Nowy test matematyczny utworzony.", "success")
             
+        elif action == 'del_math_test':
+            mt = MathTest.query.get(request.form.get('test_id'))
+            if mt: db.session.delete(mt); db.session.commit(); flash("Test matematyczny usunięty.", "success")
+            
+        elif action == 'add_math_q':
             image_url = None
             file = request.files.get('image_file')
             if file and file.filename != '':
@@ -589,11 +617,11 @@ def panel_database():
                 text=request.form.get('text'), 
                 opt_a=request.form.get('opt_a'), opt_b=request.form.get('opt_b'), 
                 opt_c=request.form.get('opt_c'), opt_d=request.form.get('opt_d'), 
-                answer=request.form.get('answer'), university_id=int(uni_id),
-                test_version=request.form.get('test_version', 'Wersja 1'),
+                answer=request.form.get('answer'), 
+                math_test_id=int(request.form.get('math_test_id')),
                 image_url=image_url
             ))
-            db.session.commit(); flash("Pytanie matematyczne dodane.", "success")
+            db.session.commit(); flash("Pytanie matematyczne dodane do wybranego testu.", "success")
             
         elif action == 'edit_math_q':
             mq = MathQuestion.query.get(request.form.get('question_id'))
@@ -604,7 +632,6 @@ def panel_database():
                 mq.opt_c = request.form.get('opt_c')
                 mq.opt_d = request.form.get('opt_d')
                 mq.answer = request.form.get('answer')
-                mq.test_version = request.form.get('test_version', 'Wersja 1')
                 
                 file = request.files.get('image_file')
                 if file and file.filename != '':
@@ -622,13 +649,14 @@ def panel_database():
 
     qa_topics = QaTopic.query.order_by(QaTopic.order_index).all()
     exam_topics = ExamTopic.query.all()
+    math_tests = MathTest.query.all()
     math_questions = MathQuestion.query.all()
     gbs_majors = GbsMajor.query.all()
     qa_majors = QaMajor.query.all()
     
     archived_students = Student.query.filter_by(is_archived=True).filter(Student.university_id.in_([u.id for u in universities])).order_by(Student.name.asc()).all()
     
-    return render_template('panel_database.html', universities=universities, qa_topics=qa_topics, exam_topics=exam_topics, math_questions=math_questions, gbs_majors=gbs_majors, qa_majors=qa_majors, archived_students=archived_students, user=user)
+    return render_template('panel_database.html', universities=universities, qa_topics=qa_topics, exam_topics=exam_topics, math_tests=math_tests, math_questions=math_questions, gbs_majors=gbs_majors, qa_majors=qa_majors, archived_students=archived_students, user=user)
 
 @app.route('/api/reorder_qa', methods=['POST'])
 @login_required
@@ -663,9 +691,7 @@ def student_dashboard(url_slug):
         elif m.gbs_major_id and student.gbs_major_id and m.gbs_major_id == student.gbs_major_id:
             materials.append(m)
             
-    if student.university and "LCCA" in student.university.name:
-        return render_template('lcca/student.html', student=student)
-    elif student.university and "GBS" in student.university.name:
+    if student.university and "GBS" in student.university.name:
         return render_template('gbs/student_gbs_dashboard.html', student=student, materials=materials)
     
     essay_materials = [m for m in materials if m.category == 'essay']
@@ -702,6 +728,7 @@ def gbs_submit(student_id):
     db.session.commit()
     return jsonify({"status": "success"})
 
+# --- Routing GBS Math Test ---
 @app.route('/math/<url_slug>')
 def math_test(url_slug):
     student = Student.query.filter_by(url_slug=url_slug).first_or_404()
@@ -711,28 +738,26 @@ def math_test(url_slug):
     all_uni_materials = student.university.materials if student.university else []
     study_materials = [m for m in all_uni_materials if m.category == 'math_test']
     
-    taken_versions = [res.test_version for res in student.math_results]
-    all_questions = MathQuestion.query.filter_by(university_id=student.university_id).all()
-    available_versions = sorted(list(set([q.test_version for q in all_questions])))
+    taken_test_ids = [res.math_test_id for res in student.math_results if res.math_test_id]
+    all_tests = MathTest.query.filter_by(university_id=student.university_id).all()
+    selected_test_id = request.args.get('test_id', type=int)
     
-    selected_version = request.args.get('version')
-    
-    if not selected_version or selected_version in taken_versions or selected_version not in available_versions:
-        return render_template('gbs/math_test.html', student=student, available_versions=available_versions, taken_versions=taken_versions, study_materials=study_materials, selected_version=None)
+    if not selected_test_id or selected_test_id in taken_test_ids or selected_test_id not in [t.id for t in all_tests]:
+        return render_template('gbs/math_test.html', student=student, all_tests=all_tests, taken_test_ids=taken_test_ids, study_materials=study_materials, selected_test=None)
         
-    questions = [q for q in all_questions if q.test_version == selected_version]
-    return render_template('gbs/math_test.html', student=student, questions=questions, study_materials=study_materials, selected_version=selected_version)
+    selected_test = MathTest.query.get(selected_test_id)
+    return render_template('gbs/math_test.html', student=student, questions=selected_test.questions, study_materials=study_materials, selected_test=selected_test)
 
 @app.route('/api/math/submit/<int:student_id>', methods=['POST'])
 def math_submit(student_id):
     student = Student.query.get_or_404(student_id)
     data = request.get_json() 
-    version = data.get('test_version', 'Wersja 1')
-    questions = MathQuestion.query.filter_by(university_id=student.university_id, test_version=version).all()
+    test_id = data.get('math_test_id')
+    test = MathTest.query.get(test_id)
     
-    score = sum(1 for q in questions if data.get(str(q.id)) == q.answer)
-    db.session.add(MathTestResult(student_id=student.id, score=score, total=len(questions), answers_json=json.dumps(data), test_version=version))
-    db.session.add(Notification(message=f"<a href='/admin/student/{student.id}' class='notif-link'><b>{student.name}</b> ukończył/a test z matmy [{version}] ({score}/{len(questions)}).</a>", recipient_id=student.creator_id, student_id=student.id))
+    score = sum(1 for q in test.questions if data.get(str(q.id)) == q.answer)
+    db.session.add(MathTestResult(student_id=student.id, math_test_id=test_id, score=score, total=len(test.questions), answers_json=json.dumps(data)))
+    db.session.add(Notification(message=f"<a href='/admin/student/{student.id}' class='notif-link'><b>{student.name}</b> ukończył/a test matematyczny: {test.name} ({score}/{len(test.questions)}).</a>", recipient_id=student.creator_id, student_id=student.id))
     db.session.commit()
     return jsonify({"status": "success", "score": score})
 

@@ -184,7 +184,6 @@ class Student(db.Model):
     gbs_attempts = db.relationship('GbsAttempt', backref='student', lazy=True, cascade="all, delete-orphan")
     math_results = db.relationship('MathTestResult', backref='student', lazy=True, cascade="all, delete-orphan")
     
-    university = db.relationship('University')
     qa_major = db.relationship('QaMajor')
     gbs_major = db.relationship('GbsMajor')
     intake = db.relationship('GbsIntake')

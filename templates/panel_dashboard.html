@@ -7,7 +7,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
-        /* Ustaw motyw zanim strona się wyrenderuje (brak "mrugnięcia") */
         (function(){
             var t = localStorage.getItem('ous-theme') || 'light';
             document.documentElement.setAttribute('data-theme', t);
@@ -30,10 +29,9 @@
             --grad-main:linear-gradient(90deg,#8b5cf6,#ec4899);
             --grad-teal:linear-gradient(90deg,#14b8a6,#34d399);
             --grad-red:linear-gradient(90deg,#f43f5e,#fb7185);
-            --grad-amber:linear-gradient(90deg,#f59e0b,#fbbf24);
             --purple:#8b5cf6; --pink:#ec4899; --teal:#14b8a6;
             --danger:#e11d48; --success:#16a34a; --amber:#d97706;
-            --amber-bg:rgba(245,158,11,.10); --amber-border:rgba(245,158,11,.35);
+            --qa:#8b5cf6; --gbs:#f43f5e; --lcca:#14b8a6;
         }
         [data-theme="dark"]{
             --bg:#121016;
@@ -48,7 +46,6 @@
             --input-bg:#242030;
             --shadow:0 14px 36px rgba(0,0,0,.45);
             --amber:#fbbf24;
-            --amber-bg:rgba(245,158,11,.12); --amber-border:rgba(245,158,11,.30);
         }
         *{ box-sizing:border-box; }
         body{
@@ -58,13 +55,10 @@
             color:var(--text); min-height:100vh;
             transition:background-color .3s ease, color .3s ease;
         }
-        .wrap{ max-width:1200px; margin:0 auto; }
+        .wrap{ max-width:1350px; margin:0 auto; display:flex; flex-direction:column; gap:22px; }
 
         /* ===== Górny pasek ===== */
-        .topbar{
-            display:flex; justify-content:space-between; align-items:center; gap:16px;
-            flex-wrap:wrap; margin-bottom:26px;
-        }
+        .topbar{ display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
         .brand{ display:flex; align-items:center; gap:14px; }
         .brand-logo{
             width:52px; height:52px; border-radius:16px; background:var(--surface);
@@ -80,8 +74,7 @@
         .theme-toggle input{ display:none; }
         .theme-toggle .track{
             width:48px; height:26px; border-radius:99px; background:var(--surface);
-            border:1px solid var(--border); position:relative; transition:background .25s;
-            box-shadow:inset 0 1px 3px rgba(0,0,0,.06);
+            border:1px solid var(--border); position:relative; box-shadow:inset 0 1px 3px rgba(0,0,0,.06);
         }
         .theme-toggle .knob{
             position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%;
@@ -94,33 +87,34 @@
         .btn{
             display:inline-flex; align-items:center; gap:7px; padding:10px 18px;
             border:none; border-radius:12px; font-family:inherit; font-size:14px; font-weight:700;
-            cursor:pointer; text-decoration:none; color:#fff; transition:transform .15s, box-shadow .15s, opacity .15s;
+            cursor:pointer; text-decoration:none; color:#fff; transition:transform .15s, opacity .15s;
         }
         .btn:hover{ transform:translateY(-1px); opacity:.94; }
-        .btn:active{ transform:translateY(0); }
         .btn-grad{ background:var(--grad-main); box-shadow:0 6px 18px rgba(168,85,247,.35); }
         .btn-purple{ background:var(--purple); box-shadow:0 6px 16px rgba(139,92,246,.30); }
-        .btn-green{ background:linear-gradient(90deg,#16a34a,#22c55e); box-shadow:0 6px 16px rgba(34,197,94,.30); }
-        .btn-ghost{ background:var(--surface); color:var(--text); border:1px solid var(--border); box-shadow:none; }
+        .btn-green{ background:linear-gradient(90deg,#16a34a,#22c55e); }
+        .btn-teal{ background:var(--grad-teal); }
+        .btn-ghost{ background:var(--surface); color:var(--text); border:1px solid var(--border); }
         .btn-danger{ background:linear-gradient(90deg,#e11d48,#f43f5e); }
         .btn-sm{ padding:7px 12px; font-size:12.5px; border-radius:10px; }
+        .btn-xs{ padding:5px 10px; font-size:11.5px; border-radius:9px; }
+
+        /* ===== Layout dwukolumnowy ===== */
+        .layout-wrapper{ display:flex; gap:22px; align-items:flex-start; }
+        .main-content{ flex:1; min-width:0; display:flex; flex-direction:column; gap:22px; }
+        .sidebar{ width:330px; flex-shrink:0; display:flex; flex-direction:column; gap:16px; position:sticky; top:20px; }
+        @media(max-width:1050px){
+            .layout-wrapper{ flex-direction:column; }
+            .sidebar{ width:100%; position:static; }
+        }
 
         /* ===== Karty ===== */
         .card{
             position:relative; background:var(--surface); border-radius:20px;
             box-shadow:var(--shadow); border:1px solid var(--border);
-            padding:26px; margin-bottom:26px; overflow:hidden;
-            transition:background .3s ease;
+            padding:26px; overflow:hidden;
         }
-        .card::before{
-            content:''; position:absolute; top:0; left:0; right:0; height:5px;
-            background:var(--card-accent, var(--grad-main));
-        }
-        .card::after{
-            content:''; position:absolute; right:-70px; top:-70px; width:200px; height:200px;
-            border-radius:50%; background:var(--card-accent, var(--grad-main));
-            opacity:.07; filter:blur(6px); pointer-events:none;
-        }
+        .card::before{ content:''; position:absolute; top:0; left:0; right:0; height:5px; background:var(--card-accent, var(--grad-main)); }
         .icon-sq{
             width:44px; height:44px; border-radius:13px; background:var(--surface-2);
             display:inline-flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
@@ -135,38 +129,27 @@
         }
         .form-control:focus{ outline:none; border-color:var(--purple); box-shadow:0 0 0 3px rgba(139,92,246,.18); }
         .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-        @media(max-width:760px){
+        @media(max-width:640px){
             .form-grid{ grid-template-columns:1fr; }
             .termin-grid{ grid-template-columns:1fr !important; }
             .filter-form{ flex-direction:column; }
             .filter-form .form-control{ max-width:none !important; }
-            .student-table{ font-size:13px; }
         }
         .hidden-field{ display:none; }
+        .section-title{ margin:0 0 16px; font-size:19px; font-weight:800; display:flex; align-items:center; gap:12px; }
+        .form-footer{
+            margin-top:18px; border-top:1px solid var(--border); padding-top:18px;
+            display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;
+        }
+        .check-math{ cursor:pointer; font-weight:700; color:var(--purple); font-size:14px; display:flex; align-items:center; gap:8px; }
+        .check-math input{ accent-color:var(--purple); width:16px; height:16px; }
 
         /* ===== Wyszukiwarka ===== */
         .filter-title{ margin:0 0 14px; font-size:15px; font-weight:800; display:flex; align-items:center; gap:10px; }
         .filter-form{ display:flex; gap:10px; flex-wrap:wrap; }
         .filter-form .form-control{ margin:0; }
 
-        /* ===== Powiadomienia ===== */
-        .notif-box{
-            background:var(--amber-bg); border:1px solid var(--amber-border); border-left:4px solid var(--amber);
-            padding:16px 20px; margin-bottom:16px; border-radius:14px;
-        }
-        .notif-box h4{ margin:0 0 10px; color:var(--amber); font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:8px; }
-        .notif-box ul{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px; }
-        .notif-box li{ font-size:14px; line-height:1.4; display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-        .notif-time{ color:var(--muted); font-size:12px; }
-        .notif-box form{ margin:0; display:inline; }
-        .notif-dismiss{
-            background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px; font-weight:700;
-            padding:2px 4px; border-radius:6px;
-        }
-        .notif-dismiss:hover{ background:rgba(225,29,72,.10); }
-
         /* ===== Sekcje uczelni ===== */
-        .uni-section{ margin-bottom:26px; }
         .uni-card{ padding:0; }
         .uni-head{
             display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
@@ -180,8 +163,7 @@
         .student-table{ width:100%; border-collapse:collapse; }
         .student-table th{
             text-align:left; padding:10px 26px; font-size:11.5px; text-transform:uppercase;
-            letter-spacing:.6px; color:var(--muted); border-bottom:1px solid var(--border);
-            background:var(--surface-2);
+            letter-spacing:.6px; color:var(--muted); border-bottom:1px solid var(--border); background:var(--surface-2);
         }
         .student-table td{ padding:14px 26px; border-bottom:1px solid var(--border); font-size:14px; vertical-align:middle; }
         .student-table tr:last-child td{ border-bottom:none; }
@@ -199,33 +181,73 @@
             70%{ box-shadow:0 0 0 7px rgba(236,72,153,0); }
             100%{ box-shadow:0 0 0 0 rgba(236,72,153,0); }
         }
-        .pulse-dot{
-            display:inline-block; width:9px; height:9px; border-radius:50%;
-            background:var(--grad-main); animation:pulse 1.6s infinite; margin-right:6px;
-        }
+        .pulse-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--grad-main); animation:pulse 1.6s infinite; margin-right:6px; }
         .status-ok{ color:var(--success); font-size:13px; font-weight:600; }
         .status-alert{ color:var(--danger); font-size:13px; font-weight:700; }
 
         .flash{
             padding:14px 20px; border-radius:14px; font-weight:700; font-size:14px;
-            margin-bottom:16px; background:rgba(34,197,94,.12); color:var(--success);
-            border:1px solid rgba(34,197,94,.35);
+            background:rgba(34,197,94,.12); color:var(--success); border:1px solid rgba(34,197,94,.35);
         }
 
-        details.add-box > summary{
-            list-style:none; cursor:pointer; display:flex; align-items:center; gap:12px;
-            font-size:19px; font-weight:800;
+        /* ===== Przełącznik widoku QA ===== */
+        .qa-view-controls{
+            padding:12px 26px; background:var(--surface-2); border-bottom:1px solid var(--border);
+            display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
         }
-        details.add-box > summary::-webkit-details-marker{ display:none; }
-        details.add-box > summary .chev{ margin-left:auto; font-size:14px; color:var(--muted); transition:transform .2s; }
-        details.add-box[open] > summary .chev{ transform:rotate(180deg); }
-        details.add-box[open] > summary{ margin-bottom:18px; }
-        .form-footer{
-            margin-top:18px; border-top:1px solid var(--border); padding-top:18px;
-            display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;
+        .qa-view-controls .hint{ font-size:13px; color:var(--muted); }
+        .view-switch{ display:flex; gap:4px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:4px; }
+        .view-btn{
+            background:none; border:none; padding:6px 12px; border-radius:8px; cursor:pointer;
+            font-family:inherit; font-size:13px; font-weight:700; color:var(--muted); transition:.15s;
         }
-        .check-math{ cursor:pointer; font-weight:700; color:var(--purple); font-size:14px; display:flex; align-items:center; gap:8px; }
-        .check-math input{ accent-color:var(--purple); width:16px; height:16px; }
+        .view-btn.active{ background:var(--grad-main); color:#fff; }
+
+        /* ===== Kafelki QA ===== */
+        .qa-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px; padding:20px 26px; }
+        .qa-card{
+            position:relative; background:var(--surface); border:1px solid var(--border); border-radius:16px;
+            padding:18px; text-align:center; display:flex; flex-direction:column; justify-content:space-between; gap:14px;
+            transition:transform .15s, border-color .15s;
+        }
+        .qa-card:hover{ transform:translateY(-3px); border-color:var(--purple); }
+        .qa-card h4{ margin:0; font-size:15.5px; font-weight:800; }
+        .qa-card .stats{ font-size:13px; color:var(--muted); }
+        .qa-card .alert-badge{
+            position:absolute; top:-9px; right:-9px; background:var(--grad-main); color:#fff;
+            font-size:12px; font-weight:800; min-width:26px; height:26px; padding:0 6px; border-radius:99px;
+            display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(168,85,247,.5);
+            animation:pulse 1.6s infinite;
+        }
+        .qa-card-actions{ display:flex; gap:6px; justify-content:center; }
+
+        /* ===== Sidebar powiadomień ===== */
+        .notif-panel{
+            background:var(--surface); border-radius:16px; box-shadow:var(--shadow);
+            border:1px solid var(--border); overflow:hidden;
+        }
+        .notif-panel.qa{ border-top:4px solid var(--qa); }
+        .notif-panel.gbs{ border-top:4px solid var(--gbs); }
+        .notif-panel.lcca{ border-top:4px solid var(--lcca); }
+        .notif-header{
+            padding:14px 18px; font-weight:800; font-size:14.5px;
+            display:flex; justify-content:space-between; align-items:center; background:var(--surface-2);
+        }
+        .notif-panel.qa .notif-header{ color:var(--qa); }
+        .notif-panel.gbs .notif-header{ color:var(--gbs); }
+        .notif-panel.lcca .notif-header{ color:var(--lcca); }
+        .count-chip{ font-size:12px; font-weight:800; color:#fff; min-width:24px; height:24px; padding:0 8px; border-radius:99px; display:inline-flex; align-items:center; justify-content:center; }
+        .notif-panel.qa .count-chip{ background:var(--qa); }
+        .notif-panel.gbs .count-chip{ background:var(--gbs); }
+        .notif-panel.lcca .count-chip{ background:var(--lcca); }
+        .notif-list{ list-style:none; padding:0; margin:0; max-height:400px; overflow-y:auto; }
+        .notif-list li{ padding:14px 18px; border-bottom:1px solid var(--border); font-size:13.5px; line-height:1.5; position:relative; padding-right:38px; }
+        .notif-list li:last-child{ border-bottom:none; }
+        .notif-time{ display:block; color:var(--muted); font-size:11px; margin-top:4px; }
+        .notif-list form{ position:absolute; top:12px; right:14px; margin:0; }
+        .notif-del{ background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; border-radius:6px; padding:2px 5px; }
+        .notif-del:hover{ color:var(--danger); background:rgba(225,29,72,.10); }
+        .empty-notif{ padding:22px; text-align:center; color:var(--muted); font-size:13px; font-style:italic; }
     </style>
 </head>
 <body>
@@ -263,268 +285,314 @@
       {% endif %}
     {% endwith %}
 
-    <!-- ===== NOWY KANDYDAT ===== -->
-    <div class="card" style="--card-accent:var(--grad-main);">
-        <details class="add-box" open>
-            <summary>
-                <span class="icon-sq">➕</span>
-                Utwórz nowy profil kandydata
-                <span class="chev">▼</span>
-            </summary>
+    <div class="layout-wrapper">
 
-            <form method="POST" action="/panel/student/add" id="addStudentForm">
-                <div class="form-grid">
-                    <div>
-                        <label>Imię i nazwisko</label>
-                        <input type="text" name="name" class="form-control" required placeholder="np. Jan Kowalski">
-                    </div>
-                    <div>
-                        <label>Adres e-mail (link wyślemy automatycznie)</label>
-                        <input type="email" name="email" class="form-control" placeholder="jan@example.com">
-                    </div>
+        <!-- ===== LEWA KOLUMNA ===== -->
+        <div class="main-content">
 
-                    <div>
-                        <label>Uczelnia docelowa</label>
-                        <select name="university_id" id="uniSelector" class="form-control" onchange="toggleUniFields()" required>
-                            <option value="" disabled selected>— Wybierz uczelnię —</option>
-                            {% for u in universities %}
-                                <option value="{{ u.id }}" data-name="{{ u.name }}">{{ u.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div id="qaFields" class="hidden-field">
-                        <label>Kierunek QA</label>
-                        <select name="qa_major_id" class="form-control">
-                            <option value="">Wybierz kierunek (opcjonalnie)</option>
-                            {% for qm in qa_majors %}
-                                <option value="{{ qm.id }}">{{ qm.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div id="gbsFields" class="hidden-field">
-                        <label>Kierunek GBS</label>
-                        <select name="gbs_major_id" class="form-control">
-                            <option value="">Wybierz kierunek (opcjonalnie)</option>
-                            {% for gm in gbs_majors %}
-                                <option value="{{ gm.id }}">{{ gm.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- BLOK TERMINÓW (ukrywany dla QA) -->
-                    <div id="terminFields" class="termin-grid" style="grid-column:1 / -1; display:none; grid-template-columns:1fr 1fr; gap:16px;">
+            <!-- NOWY KANDYDAT -->
+            <div class="card" style="--card-accent:var(--grad-main);">
+                <h2 class="section-title"><span class="icon-sq">➕</span> Utwórz nowy profil kandydata</h2>
+                <form method="POST" action="/panel/student/add" id="addStudentForm">
+                    <div class="form-grid">
                         <div>
-                            <label>Proponowany termin 1 (opcjonalnie — puste = nie wysyłamy)</label>
-                            <input type="datetime-local" name="termin1" class="form-control" id="termin1Input">
+                            <label>Imię i nazwisko</label>
+                            <input type="text" name="name" class="form-control" required placeholder="np. Jan Kowalski">
                         </div>
                         <div>
-                            <label>Proponowany termin 2 (opcjonalnie)</label>
-                            <input type="datetime-local" name="termin2" class="form-control" id="termin2Input">
+                            <label>Adres e-mail (link wyślemy automatycznie)</label>
+                            <input type="email" name="email" class="form-control" placeholder="jan@example.com">
+                        </div>
+                        <div>
+                            <label>Uczelnia docelowa</label>
+                            <select name="university_id" id="uniSelector" class="form-control" onchange="toggleUniFields()" required>
+                                <option value="" disabled selected>— Wybierz uczelnię —</option>
+                                {% for u in universities %}
+                                    <option value="{{ u.id }}" data-name="{{ u.name }}">{{ u.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="qaFields" class="hidden-field">
+                            <label>Kierunek QA</label>
+                            <select name="qa_major_id" class="form-control">
+                                <option value="">Wybierz kierunek (opcjonalnie)</option>
+                                {% for qm in qa_majors %}
+                                    <option value="{{ qm.id }}">{{ qm.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="gbsFields" class="hidden-field">
+                            <label>Kierunek GBS</label>
+                            <select name="gbs_major_id" class="form-control">
+                                <option value="">Wybierz kierunek (opcjonalnie)</option>
+                                {% for gm in gbs_majors %}
+                                    <option value="{{ gm.id }}">{{ gm.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="terminFields" class="termin-grid" style="grid-column:1 / -1; display:none; grid-template-columns:1fr 1fr; gap:16px;">
+                            <div>
+                                <label>Proponowany termin 1 (wyczyść, aby nie wysyłać)</label>
+                                <input type="datetime-local" name="termin1" class="form-control" id="termin1Input">
+                            </div>
+                            <div>
+                                <label>Proponowany termin 2 (wyczyść, aby nie wysyłać)</label>
+                                <input type="datetime-local" name="termin2" class="form-control" id="termin2Input">
+                            </div>
                         </div>
                     </div>
-
-                </div>
-
-                <div class="form-footer">
-                    <label class="check-math" style="margin:0;">
-                        <input type="checkbox" name="has_math_test" value="1"> 🧮 Odblokuj test z matematyki dla tego ucznia
-                    </label>
-                    <button type="submit" class="btn btn-grad" style="font-size:15px; padding:13px 26px;">Zapisz kandydata i wyślij e-mail</button>
-                </div>
-            </form>
-        </details>
-    </div>
-
-    <!-- ===== WYSZUKIWARKA I FILTRY ===== -->
-    <div class="card" style="--card-accent:var(--grad-teal); padding:22px 26px;">
-        <h3 class="filter-title"><span class="icon-sq" style="width:36px; height:36px; font-size:16px;">🔍</span> Filtrowanie listy studentów</h3>
-        <form method="GET" action="/panel" class="filter-form">
-            <input type="text" name="q" value="{{ search_query }}" placeholder="Szukaj ucznia (imię i nazwisko)..." class="form-control" style="max-width:400px;">
-            <select name="sort" class="form-control" style="max-width:260px;">
-                <option value="alpha" {% if sort_by == 'alpha' %}selected{% endif %}>Sortuj: od A do Z</option>
-                <option value="alpha_desc" {% if sort_by == 'alpha_desc' %}selected{% endif %}>Sortuj: od Z do A</option>
-                <option value="pending" {% if sort_by == 'pending' %}selected{% endif %}>Priorytet: do sprawdzenia</option>
-            </select>
-            <button type="submit" class="btn btn-teal" style="background:var(--grad-teal);">Filtruj listę</button>
-        </form>
-    </div>
-
-    <!-- ===== STUDENCI QA ===== -->
-    {% if has_qa %}
-    <div class="uni-section">
-        {% if qa_notifications %}
-            <div class="notif-box">
-                <h4>⚠️ Najnowsze aktywności (QA)</h4>
-                <ul>
-                {% for n in qa_notifications %}
-                    <li>
-                        <span>{{ n.message|safe }}</span>
-                        <span class="notif-time">({{ n.created_at.strftime('%d.%m %H:%M') }})</span>
-                        <form method="POST" action="/admin/notif/delete/{{ n.id }}">
-                            <button type="submit" class="notif-dismiss">✕ Usuń</button>
-                        </form>
-                    </li>
-                {% endfor %}
-                </ul>
+                    <div class="form-footer">
+                        <label class="check-math" style="margin:0;">
+                            <input type="checkbox" name="has_math_test" value="1"> 🧮 Odblokuj test z matematyki dla tego ucznia
+                        </label>
+                        <button type="submit" class="btn btn-grad" style="font-size:15px; padding:13px 26px;">Zapisz kandydata i wyślij e-mail</button>
+                    </div>
+                </form>
             </div>
-        {% endif %}
 
-        {% set ns = namespace(total_qa_to_check = 0) %}
-        {% for s in qa_students %}
-            {% set ns.total_qa_to_check = ns.total_qa_to_check + (s.essays|selectattr("is_completed", "equalto", true)|selectattr("feedback", "none")|list|length) %}
-        {% endfor %}
-        <div class="card uni-card" style="--card-accent:var(--grad-main);">
-            <div class="uni-head">
-                <h3><span class="icon-sq">🎓</span> Studenci QA Higher Education</h3>
-                <span class="counter-pill">Rozprawki do sprawdzenia: {{ ns.total_qa_to_check }}</span>
+            <!-- WYSZUKIWARKA -->
+            <div class="card" style="--card-accent:var(--grad-teal); padding:22px 26px;">
+                <h3 class="filter-title"><span class="icon-sq" style="width:36px; height:36px; font-size:16px;">🔍</span> Globalne filtrowanie studentów</h3>
+                <form method="GET" action="/panel" class="filter-form">
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Szukaj ucznia..." class="form-control" style="max-width:400px;">
+                    <select name="sort" class="form-control" style="max-width:250px;">
+                        <option value="alpha" {% if sort_by == 'alpha' %}selected{% endif %}>Sortuj: od A do Z</option>
+                        <option value="alpha_desc" {% if sort_by == 'alpha_desc' %}selected{% endif %}>Sortuj: od Z do A</option>
+                        <option value="pending" {% if sort_by == 'pending' %}selected{% endif %}>Priorytet: do sprawdzenia</option>
+                    </select>
+                    <button type="submit" class="btn btn-teal">Zastosuj filtr</button>
+                </form>
             </div>
-            <table class="student-table">
-                <thead>
-                <tr>
-                    <th>Imię i nazwisko</th>
-                    <th>Kierunek</th>
-                    <th>Status rozprawek</th>
-                    <th>Akcje</th>
-                </tr>
-                </thead>
-                <tbody>
+
+            <!-- STUDENCI QA -->
+            {% if has_qa %}
+            <div class="card uni-card" style="--card-accent:var(--grad-main);">
+                {% set ns = namespace(total_qa_to_check = 0) %}
                 {% for s in qa_students %}
-                {% set essays_to_check = s.essays|selectattr("is_completed", "equalto", true)|selectattr("feedback", "none")|list|length %}
-                {% set essays_written = s.essays|selectattr("is_completed", "equalto", true)|list|length %}
-                <tr>
-                    <td>
-                        <strong>{{ s.name }}</strong><br>
-                        <span class="muted-sm">Napisane rozprawki: <b>{{ essays_written }}</b></span>
-                    </td>
-                    <td><span class="badge">{{ s.qa_major.name if s.qa_major else 'Brak przypisania' }}</span></td>
-                    <td>
+                    {% set ns.total_qa_to_check = ns.total_qa_to_check + (s.essays|selectattr("is_completed", "equalto", true)|selectattr("feedback", "none")|list|length) %}
+                {% endfor %}
+                <div class="uni-head">
+                    <h3><span class="icon-sq">🎓</span> Studenci QA Higher Education</h3>
+                    <span class="counter-pill">Rozprawki do sprawdzenia: {{ ns.total_qa_to_check }}</span>
+                </div>
+
+                <div class="qa-view-controls">
+                    <span class="hint">Wybierz układ wyświetlania kandydatów QA:</span>
+                    <div class="view-switch">
+                        <button class="view-btn active" id="btnList" onclick="setQaView('list')">☰ Tabela</button>
+                        <button class="view-btn" id="btnGrid" onclick="setQaView('grid')">🔲 Kafelki</button>
+                    </div>
+                </div>
+
+                <!-- WIDOK TABELI -->
+                <table class="student-table" id="qaTable">
+                    <thead>
+                    <tr>
+                        <th>Imię i nazwisko</th>
+                        <th>Kierunek</th>
+                        <th>Status rozprawek</th>
+                        <th>Akcje</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for s in qa_students %}
+                    {% set essays_to_check = s.essays|selectattr("is_completed", "equalto", true)|selectattr("feedback", "none")|list|length %}
+                    {% set essays_written = s.essays|selectattr("is_completed", "equalto", true)|list|length %}
+                    <tr>
+                        <td>
+                            <strong>{{ s.name }}</strong><br>
+                            <span class="muted-sm">Napisane rozprawki: <b>{{ essays_written }}</b></span>
+                        </td>
+                        <td><span class="badge">{{ s.qa_major.name if s.qa_major else 'Brak przypisania' }}</span></td>
+                        <td>
+                            {% if essays_to_check > 0 %}
+                                <span class="pulse-dot"></span>
+                                <span class="status-alert">{{ essays_to_check }} do sprawdzenia!</span>
+                            {% else %}
+                                <span class="status-ok">✓ Wszystko sprawdzone</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="actions-cell">
+                                <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-sm">Oceny i profil</a>
+                                <button class="btn btn-ghost btn-sm" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)">🔗 Kopiuj link</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- WIDOK KAFELKÓW -->
+                <div class="qa-grid" id="qaGrid" style="display:none;">
+                    {% for s in qa_students %}
+                    {% set essays_to_check = s.essays|selectattr("is_completed", "equalto", true)|selectattr("feedback", "none")|list|length %}
+                    {% set essays_written = s.essays|selectattr("is_completed", "equalto", true)|list|length %}
+                    <div class="qa-card">
                         {% if essays_to_check > 0 %}
-                            <span class="pulse-dot"></span>
-                            <span class="status-alert">{{ essays_to_check }} do sprawdzenia!</span>
-                        {% else %}
-                            <span class="status-ok">✓ Wszystko sprawdzone</span>
+                            <div class="alert-badge">{{ essays_to_check }}</div>
                         {% endif %}
-                    </td>
-                    <td>
-                        <div class="actions-cell">
-                            <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-sm">Oceny i profil</a>
-                            <button class="btn btn-ghost btn-sm" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)">🔗 Kopiuj link</button>
+                        <h4>{{ s.name }}</h4>
+                        <div class="stats">
+                            <div>Rozprawek napisanych: <b>{{ essays_written }}</b></div>
+                            {% if essays_to_check > 0 %}
+                                <div class="status-alert" style="margin-top:6px;">Do sprawdzenia: {{ essays_to_check }}</div>
+                            {% else %}
+                                <div class="status-ok" style="margin-top:6px;">✓ Wszystko ok</div>
+                            {% endif %}
                         </div>
-                    </td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% endif %}
+                        <div class="qa-card-actions">
+                            <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-xs">Profil</a>
+                            <button class="btn btn-ghost btn-xs" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)">Link</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
 
-    <!-- ===== STUDENCI GBS ===== -->
-    {% if has_gbs %}
-    <div class="uni-section">
-        {% if gbs_notifications %}
-            <div class="notif-box">
-                <h4>⚠️ Najnowsze aktywności (GBS)</h4>
-                <ul>
-                {% for n in gbs_notifications %}
+            <!-- STUDENCI GBS -->
+            {% if has_gbs %}
+            <div class="card uni-card" style="--card-accent:var(--grad-red);">
+                <div class="uni-head"><h3><span class="icon-sq">🏛️</span> Studenci GBS</h3></div>
+                <table class="student-table">
+                    <thead>
+                    <tr>
+                        <th>Imię i nazwisko</th>
+                        <th>Kierunek GBS</th>
+                        <th>Utworzono</th>
+                        <th>Akcje</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for s in gbs_students %}
+                    <tr>
+                        <td><strong>{{ s.name }}</strong></td>
+                        <td><span class="badge">{{ s.gbs_major.name if s.gbs_major else 'Brak przypisania' }}</span></td>
+                        <td class="muted-sm">{{ s.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <div class="actions-cell">
+                                <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-sm">Oceny i profil</a>
+                                <button class="btn btn-ghost btn-sm" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)">🔗 Kopiuj link</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- STUDENCI LCCA -->
+            {% if has_lcca %}
+            <div class="card uni-card" style="--card-accent:var(--grad-teal);">
+                <div class="uni-head"><h3><span class="icon-sq">🏫</span> Studenci LCCA</h3></div>
+                <table class="student-table">
+                    <thead>
+                    <tr>
+                        <th>Imię i nazwisko</th>
+                        <th>Utworzono</th>
+                        <th>Akcje</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for s in lcca_students %}
+                    <tr>
+                        <td><strong>{{ s.name }}</strong></td>
+                        <td class="muted-sm">{{ s.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <div class="actions-cell">
+                                <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-sm">Oceny i profil</a>
+                                <button class="btn btn-ghost btn-sm" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)">🔗 Kopiuj link</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+        </div><!-- /main-content -->
+
+        <!-- ===== PRAWY SIDEBAR: POWIADOMIENIA ===== -->
+        <div class="sidebar">
+
+            {% if has_qa %}
+            <div class="notif-panel qa">
+                <div class="notif-header">
+                    <span>🔔 Aktywność QA</span>
+                    <span class="count-chip">{{ qa_notifications|length }}</span>
+                </div>
+                {% if qa_notifications %}
+                <ul class="notif-list">
+                    {% for n in qa_notifications %}
                     <li>
-                        <span>{{ n.message|safe }}</span>
-                        <span class="notif-time">({{ n.created_at.strftime('%d.%m %H:%M') }})</span>
+                        {{ n.message|safe }}
+                        <span class="notif-time">{{ n.created_at.strftime('%d.%m %H:%M') }}</span>
                         <form method="POST" action="/admin/notif/delete/{{ n.id }}">
-                            <button type="submit" class="notif-dismiss">✕ Usuń</button>
+                            <button type="submit" class="notif-del">✖</button>
                         </form>
                     </li>
-                {% endfor %}
+                    {% endfor %}
                 </ul>
+                {% else %}
+                <div class="empty-notif">Brak nowych zdarzeń z tej uczelni.</div>
+                {% endif %}
             </div>
-        {% endif %}
+            {% endif %}
 
-        <div class="card uni-card" style="--card-accent:var(--grad-red);">
-            <div class="uni-head">
-                <h3><span class="icon-sq">🏛️</span> Studenci GBS</h3>
-            </div>
-            <table class="student-table">
-                <thead>
-                <tr>
-                    <th>Imię i nazwisko</th>
-                    <th>Kierunek GBS</th>
-                    <th>Utworzono</th>
-                    <th>Akcje</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for s in gbs_students %}
-                <tr>
-                    <td><strong>{{ s.name }}</strong></td>
-                    <td><span class="badge">{{ s.gbs_major.name if s.gbs_major else 'Brak przypisania' }}</span></td>
-                    <td class="muted-sm">{{ s.created_at.strftime('%Y-%m-%d') }}</td>
-                    <td>
-                        <div class="actions-cell">
-                            <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-sm">Oceny i profil</a>
-                            <button class="btn btn-ghost btn-sm" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)">🔗 Kopiuj link</button>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- ===== STUDENCI LCCA ===== -->
-    {% if has_lcca %}
-    <div class="uni-section">
-        {% if lcca_notifications %}
-            <div class="notif-box">
-                <h4>⚠️ Najnowsze aktywności (LCCA)</h4>
-                <ul>
-                {% for n in lcca_notifications %}
+            {% if has_gbs %}
+            <div class="notif-panel gbs">
+                <div class="notif-header">
+                    <span>🔔 Aktywność GBS</span>
+                    <span class="count-chip">{{ gbs_notifications|length }}</span>
+                </div>
+                {% if gbs_notifications %}
+                <ul class="notif-list">
+                    {% for n in gbs_notifications %}
                     <li>
-                        <span>{{ n.message|safe }}</span>
-                        <span class="notif-time">({{ n.created_at.strftime('%d.%m %H:%M') }})</span>
+                        {{ n.message|safe }}
+                        <span class="notif-time">{{ n.created_at.strftime('%d.%m %H:%M') }}</span>
                         <form method="POST" action="/admin/notif/delete/{{ n.id }}">
-                            <button type="submit" class="notif-dismiss">✕ Usuń</button>
+                            <button type="submit" class="notif-del">✖</button>
                         </form>
                     </li>
-                {% endfor %}
+                    {% endfor %}
                 </ul>
+                {% else %}
+                <div class="empty-notif">Brak nowych zdarzeń z tej uczelni.</div>
+                {% endif %}
             </div>
-        {% endif %}
+            {% endif %}
 
-        <div class="card uni-card" style="--card-accent:var(--grad-teal);">
-            <div class="uni-head">
-                <h3><span class="icon-sq">🏫</span> Studenci LCCA</h3>
+            {% if has_lcca %}
+            <div class="notif-panel lcca">
+                <div class="notif-header">
+                    <span>🔔 Aktywność LCCA</span>
+                    <span class="count-chip">{{ lcca_notifications|length }}</span>
+                </div>
+                {% if lcca_notifications %}
+                <ul class="notif-list">
+                    {% for n in lcca_notifications %}
+                    <li>
+                        {{ n.message|safe }}
+                        <span class="notif-time">{{ n.created_at.strftime('%d.%m %H:%M') }}</span>
+                        <form method="POST" action="/admin/notif/delete/{{ n.id }}">
+                            <button type="submit" class="notif-del">✖</button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-notif">Brak nowych zdarzeń z tej uczelni.</div>
+                {% endif %}
             </div>
-            <table class="student-table">
-                <thead>
-                <tr>
-                    <th>Imię i nazwisko</th>
-                    <th>Utworzono</th>
-                    <th>Akcje</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for s in lcca_students %}
-                <tr>
-                    <td><strong>{{ s.name }}</strong></td>
-                    <td class="muted-sm">{{ s.created_at.strftime('%Y-%m-%d') }}</td>
-                    <td>
-                        <div class="actions-cell">
-                            <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-sm">Oceny i profil</a>
-                            <button class="btn btn-ghost btn-sm" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)">🔗 Kopiuj link</button>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            {% endif %}
+
+        </div><!-- /sidebar -->
+
     </div>
-    {% endif %}
-
 </div>
 
 <script>
@@ -543,6 +611,14 @@
         document.documentElement.setAttribute('data-theme', t);
         localStorage.setItem('ous-theme', t);
         syncThemeUI();
+    }
+
+    /* ===== Domyślne daty terminów ===== */
+    function defaultDateTime(offsetDays) {
+        var d = new Date();
+        d.setHours(18, 0, 0, 0);
+        if (offsetDays) d.setDate(d.getDate() + offsetDays);
+        return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     }
 
     /* ===== Kopiowanie linku ucznia ===== */
@@ -571,13 +647,40 @@
         document.getElementById('qaFields').style.display  = uniName.includes('QA')  ? 'block' : 'none';
         document.getElementById('gbsFields').style.display = uniName.includes('GBS') ? 'block' : 'none';
 
-        /* Sekcja terminów jest całkowicie ukrywana dla uczelni QA (i czyszczona) */
         if (uniName.includes('QA')) {
             document.getElementById('terminFields').style.display = 'none';
             document.getElementById('termin1Input').value = "";
             document.getElementById('termin2Input').value = "";
         } else {
             document.getElementById('terminFields').style.display = 'grid';
+            /* Przywróć domyślne daty, jeśli zostały wyczyszczone przez QA */
+            if (!document.getElementById('termin1Input').value) {
+                document.getElementById('termin1Input').value = defaultDateTime(0);
+                document.getElementById('termin2Input').value = defaultDateTime(1);
+            }
+        }
+    }
+
+    /* ===== Przełącznik widoku QA (tabela / kafelki) ===== */
+    function setQaView(mode) {
+        var table = document.getElementById('qaTable');
+        var grid = document.getElementById('qaGrid');
+        var btnList = document.getElementById('btnList');
+        var btnGrid = document.getElementById('btnGrid');
+        if (!table || !grid) return;
+
+        if (mode === 'grid') {
+            table.style.display = 'none';
+            grid.style.display = 'grid';
+            btnGrid.classList.add('active');
+            btnList.classList.remove('active');
+            localStorage.setItem('qaViewMode', 'grid');
+        } else {
+            table.style.display = 'table';
+            grid.style.display = 'none';
+            btnList.classList.add('active');
+            btnGrid.classList.remove('active');
+            localStorage.setItem('qaViewMode', 'list');
         }
     }
 
@@ -585,11 +688,14 @@
         syncThemeUI();
 
         var sel = document.getElementById('uniSelector');
-        /* Autowybór dla nauczycieli z jedną uczelnią */
         if (sel && sel.options.length === 2) {
             sel.selectedIndex = 1;
             toggleUniFields();
         }
+
+        /* Pamięć widoku QA (tabela / kafelki) */
+        var savedQaView = localStorage.getItem('qaViewMode') || 'list';
+        setQaView(savedQaView);
     });
 </script>
 

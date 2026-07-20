@@ -27,7 +27,6 @@
             --purple:#8b5cf6; --pink:#ec4899; --teal:#14b8a6;
             --danger:#e11d48; --success:#16a34a;
             --qa:#8b5cf6; --gbs:#f43f5e;
-            --icon:#8b5cf6;
         }
         [data-theme="dark"]{
             --bg:#121016;
@@ -36,7 +35,6 @@
                 radial-gradient(820px 520px at 92% 8%, rgba(236,72,153,.12), transparent 60%);
             --surface:#1c1823; --surface-2:#252030; --text:#f1edf8; --muted:#9c95b0;
             --border:#2e2939; --input-bg:#242030; --shadow:0 14px 36px rgba(0,0,0,.45);
-            --icon:#b794f6;
         }
         *{ box-sizing:border-box; }
         body{
@@ -47,17 +45,12 @@
         }
         .wrap{ max-width:1350px; margin:0 auto; display:flex; flex-direction:column; gap:22px; }
 
-        /* ===== Ikony ===== */
-        .ico{ width:20px; height:20px; flex-shrink:0; stroke:currentColor; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round; }
-        .ico-sm{ width:16px; height:16px; }
-
         .topbar{ display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
         .brand{ display:flex; align-items:center; gap:14px; }
         .brand-logo{
-            width:52px; height:52px; border-radius:16px; background:var(--grad-main); color:#fff;
-            box-shadow:0 8px 20px rgba(168,85,247,.35); display:flex; align-items:center; justify-content:center;
+            width:52px; height:52px; border-radius:16px; background:var(--surface);
+            box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; font-size:24px;
         }
-        .brand-logo .ico{ width:26px; height:26px; }
         .brand h1{ margin:0; font-size:22px; font-weight:800; letter-spacing:-.3px; }
         .brand p{ margin:2px 0 0; font-size:13px; color:var(--muted); }
         .top-actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -72,9 +65,8 @@
         .theme-toggle .knob{
             position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%;
             background:var(--grad-main); display:flex; align-items:center; justify-content:center;
-            transition:left .25s ease; color:#fff;
+            font-size:11px; transition:left .25s ease;
         }
-        .theme-toggle .knob .ico{ width:12px; height:12px; }
         .theme-toggle input:checked + .track .knob{ left:24px; }
 
         .btn{
@@ -102,10 +94,9 @@
         }
         .card::before{ content:''; position:absolute; top:0; left:0; right:0; height:5px; background:var(--card-accent, var(--grad-main)); }
         .icon-sq{
-            width:44px; height:44px; border-radius:13px; background:var(--surface-2); color:var(--icon);
-            display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+            width:44px; height:44px; border-radius:13px; background:var(--surface-2);
+            display:inline-flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
         }
-        .icon-sq .ico{ width:22px; height:22px; }
 
         label{ font-size:13px; font-weight:600; color:var(--muted); display:block; margin-bottom:6px; }
         .form-control{
@@ -129,6 +120,8 @@
         }
         .check-math{ cursor:pointer; font-weight:700; color:var(--purple); font-size:14px; display:flex; align-items:center; gap:8px; }
         .check-math input{ accent-color:var(--purple); width:16px; height:16px; }
+        /* Wyróżniony blok terminów */
+        .termin-box{ background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:16px; margin-top:6px; }
 
         .filter-title{ margin:0 0 14px; font-size:15px; font-weight:800; display:flex; align-items:center; gap:10px; }
         .filter-form{ display:flex; gap:10px; flex-wrap:wrap; }
@@ -140,7 +133,6 @@
         .counter-pill{
             font-size:12.5px; font-weight:700; padding:6px 14px; border-radius:99px;
             background:var(--surface-2); color:var(--danger); border:1px solid var(--border);
-            display:inline-flex; align-items:center; gap:6px;
         }
         .student-table{ width:100%; border-collapse:collapse; }
         .student-table th{
@@ -164,13 +156,12 @@
             100%{ box-shadow:0 0 0 0 rgba(236,72,153,0); }
         }
         .pulse-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--grad-main); animation:pulse 1.6s infinite; margin-right:6px; }
-        .status-ok{ color:var(--success); font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:5px; }
+        .status-ok{ color:var(--success); font-size:13px; font-weight:600; }
         .status-alert{ color:var(--danger); font-size:13px; font-weight:700; }
 
         .flash{
             padding:14px 20px; border-radius:14px; font-weight:700; font-size:14px;
             background:rgba(34,197,94,.12); color:var(--success); border:1px solid rgba(34,197,94,.35);
-            display:flex; align-items:center; gap:10px;
         }
 
         .qa-view-controls{
@@ -180,8 +171,8 @@
         .qa-view-controls .hint{ font-size:13px; color:var(--muted); }
         .view-switch{ display:flex; gap:4px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:4px; }
         .view-btn{
-            display:inline-flex; align-items:center; gap:6px; background:none; border:none; padding:6px 12px; border-radius:8px;
-            cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; color:var(--muted); transition:.15s;
+            background:none; border:none; padding:6px 12px; border-radius:8px; cursor:pointer;
+            font-family:inherit; font-size:13px; font-weight:700; color:var(--muted); transition:.15s;
         }
         .view-btn.active{ background:var(--grad-main); color:#fff; }
 
@@ -208,7 +199,6 @@
             padding:14px 18px; font-weight:800; font-size:14.5px;
             display:flex; justify-content:space-between; align-items:center; background:var(--surface-2);
         }
-        .notif-header .label{ display:inline-flex; align-items:center; gap:8px; }
         .notif-panel.qa .notif-header{ color:var(--qa); }
         .notif-panel.gbs .notif-header{ color:var(--gbs); }
         .count-chip{ font-size:12px; font-weight:800; color:#fff; min-width:24px; height:24px; padding:0 8px; border-radius:99px; display:inline-flex; align-items:center; justify-content:center; }
@@ -219,43 +209,19 @@
         .notif-list li:last-child{ border-bottom:none; }
         .notif-time{ display:block; color:var(--muted); font-size:11px; margin-top:4px; }
         .notif-list form{ position:absolute; top:12px; right:14px; margin:0; }
-        .notif-del{ background:none; border:none; color:var(--muted); cursor:pointer; border-radius:6px; padding:3px; display:inline-flex; }
+        .notif-del{ background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; border-radius:6px; padding:2px 5px; }
         .notif-del:hover{ color:var(--danger); background:rgba(225,29,72,.10); }
-        .notif-del .ico{ width:15px; height:15px; }
         .empty-notif{ padding:22px; text-align:center; color:var(--muted); font-size:13px; font-style:italic; }
     </style>
 </head>
 <body>
-
-<!-- ===== Definicje ikon SVG (użycie: <svg class="ico"><use href="#i-nazwa"/></svg>) ===== -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <defs>
-        <g id="i-cap"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5"/></g>
-        <g id="i-plus"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></g>
-        <g id="i-search"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></g>
-        <g id="i-db"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></g>
-        <g id="i-crown"><path d="M3 7l4 4 5-7 5 7 4-4-2 12H5L3 7Z"/></g>
-        <g id="i-logout"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></g>
-        <g id="i-sun"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="5" y1="5" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19" y2="19"/><line x1="5" y1="19" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19" y2="5"/></g>
-        <g id="i-moon"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></g>
-        <g id="i-calc"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="8" y1="18" x2="12" y2="18"/></g>
-        <g id="i-link"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></g>
-        <g id="i-user"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></g>
-        <g id="i-bank"><path d="M3 10 12 4l9 6"/><line x1="5" y1="10" x2="5" y2="18"/><line x1="10" y1="10" x2="10" y2="18"/><line x1="14" y1="10" x2="14" y2="18"/><line x1="19" y1="10" x2="19" y2="18"/><line x1="3" y1="21" x2="21" y2="21"/></g>
-        <g id="i-list"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></g>
-        <g id="i-grid"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></g>
-        <g id="i-bell"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></g>
-        <g id="i-check"><polyline points="20 6 9 17 4 12"/></g>
-        <g id="i-x"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></g>
-    </defs>
-</svg>
 
 <div class="wrap">
 
     <!-- ===== NAGŁÓWEK ===== -->
     <div class="topbar">
         <div class="brand">
-            <div class="brand-logo"><svg class="ico"><use href="#i-cap"/></svg></div>
+            <div class="brand-logo">🎓</div>
             <div>
                 <h1>Witaj, {{ teacher_name }}!</h1>
                 <p>Panel nauczyciela · Open UK Study</p>
@@ -265,20 +231,20 @@
             <label class="theme-toggle">
                 <span class="lbl" id="themeLabel">Tryb jasny</span>
                 <input type="checkbox" id="themeSwitch" onchange="toggleTheme(this.checked)">
-                <span class="track"><span class="knob" id="themeKnob"><svg class="ico"><use href="#i-sun"/></svg></span></span>
+                <span class="track"><span class="knob" id="themeKnob">☀️</span></span>
             </label>
-            <a href="/panel/database" class="btn btn-ghost"><svg class="ico ico-sm"><use href="#i-db"/></svg> Baza materiałów i testów</a>
+            <a href="/panel/database" class="btn btn-ghost">🗄️ Baza materiałów i testów</a>
             {% if user.role == 'admin' %}
-            <a href="/panel/master" class="btn btn-purple"><svg class="ico ico-sm"><use href="#i-crown"/></svg> Master Panel</a>
+            <a href="/panel/master" class="btn btn-purple">👑 Master Panel</a>
             {% endif %}
-            <a href="/logout" class="btn btn-danger"><svg class="ico ico-sm"><use href="#i-logout"/></svg> Wyloguj</a>
+            <a href="/logout" class="btn btn-danger">Wyloguj</a>
         </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          <div class="flash"><svg class="ico ico-sm"><use href="#i-check"/></svg> {{ message }}</div>
+          <div class="flash">✅ {{ message }}</div>
         {% endfor %}
       {% endif %}
     {% endwith %}
@@ -290,7 +256,7 @@
 
             <!-- NOWY KANDYDAT -->
             <div class="card" style="--card-accent:var(--grad-main);">
-                <h2 class="section-title"><span class="icon-sq"><svg class="ico"><use href="#i-plus"/></svg></span> Utwórz nowy profil kandydata</h2>
+                <h2 class="section-title"><span class="icon-sq">➕</span> Utwórz nowy profil kandydata</h2>
                 <form method="POST" action="/panel/student/add" id="addStudentForm">
                     <div class="form-grid">
                         <div>
@@ -328,20 +294,20 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div id="terminFields" class="termin-grid" style="grid-column:1 / -1; display:none; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div id="terminFields" class="termin-box termin-grid" style="grid-column:1 / -1; display:none; grid-template-columns:1fr 1fr; gap:16px;">
                             <div>
-                                <label>Proponowany termin 1 (wyczyść, aby nie wysyłać)</label>
+                                <label>📅 Proponowany termin 1 (wyczyść, aby nie wysyłać)</label>
                                 <input type="datetime-local" name="termin1" class="form-control" id="termin1Input">
                             </div>
                             <div>
-                                <label>Proponowany termin 2 (wyczyść, aby nie wysyłać)</label>
+                                <label>📅 Proponowany termin 2 (wyczyść, aby nie wysyłać)</label>
                                 <input type="datetime-local" name="termin2" class="form-control" id="termin2Input">
                             </div>
                         </div>
                     </div>
                     <div class="form-footer">
                         <label class="check-math" style="margin:0;">
-                            <input type="checkbox" name="has_math_test" value="1"> <svg class="ico ico-sm"><use href="#i-calc"/></svg> Odblokuj test z matematyki dla tego ucznia
+                            <input type="checkbox" name="has_math_test" value="1"> 🧮 Odblokuj test z matematyki dla tego ucznia
                         </label>
                         <button type="submit" class="btn btn-grad" style="font-size:15px; padding:13px 26px;">Zapisz kandydata i wyślij e-mail</button>
                     </div>
@@ -350,7 +316,7 @@
 
             <!-- WYSZUKIWARKA -->
             <div class="card" style="--card-accent:var(--grad-teal); padding:22px 26px;">
-                <h3 class="filter-title"><span class="icon-sq" style="width:36px; height:36px; color:var(--teal);"><svg class="ico"><use href="#i-search"/></svg></span> Globalne filtrowanie studentów</h3>
+                <h3 class="filter-title"><span class="icon-sq" style="width:36px; height:36px; font-size:16px;">🔍</span> Globalne filtrowanie studentów</h3>
                 <form method="GET" action="/panel" class="filter-form">
                     <input type="text" name="q" value="{{ search_query }}" placeholder="Szukaj ucznia..." class="form-control" style="max-width:400px;">
                     <select name="sort" class="form-control" style="max-width:250px;">
@@ -374,15 +340,15 @@
                     {% endfor %}
                 {% endfor %}
                 <div class="uni-head">
-                    <h3><span class="icon-sq"><svg class="ico"><use href="#i-cap"/></svg></span> Studenci QA Higher Education</h3>
-                    <span class="counter-pill"><svg class="ico ico-sm"><use href="#i-bell"/></svg> Rozprawki do sprawdzenia: {{ total_qa_to_check.count }}</span>
+                    <h3><span class="icon-sq">🎓</span> Studenci QA Higher Education</h3>
+                    <span class="counter-pill">Rozprawki do sprawdzenia: {{ total_qa_to_check.count }}</span>
                 </div>
 
                 <div class="qa-view-controls">
                     <span class="hint">Wybierz układ wyświetlania kandydatów QA:</span>
                     <div class="view-switch">
-                        <button class="view-btn active" id="btnList" onclick="setQaView('list')"><svg class="ico ico-sm"><use href="#i-list"/></svg> Tabela</button>
-                        <button class="view-btn" id="btnGrid" onclick="setQaView('grid')"><svg class="ico ico-sm"><use href="#i-grid"/></svg> Kafelki</button>
+                        <button class="view-btn active" id="btnList" onclick="setQaView('list')">☰ Tabela</button>
+                        <button class="view-btn" id="btnGrid" onclick="setQaView('grid')">🔲 Kafelki</button>
                     </div>
                 </div>
 
@@ -419,13 +385,13 @@
                                 <span class="pulse-dot"></span>
                                 <span class="status-alert">{{ to_check.count }} do sprawdzenia!</span>
                             {% else %}
-                                <span class="status-ok"><svg class="ico ico-sm"><use href="#i-check"/></svg> Wszystko sprawdzone</span>
+                                <span class="status-ok">✓ Wszystko sprawdzone</span>
                             {% endif %}
                         </td>
                         <td>
                             <div class="actions-cell">
                                 <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-sm">Oceny i profil</a>
-                                <button class="btn btn-ghost btn-sm" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)"><svg class="ico ico-sm"><use href="#i-link"/></svg> Kopiuj link</button>
+                                <button class="btn btn-ghost btn-sm" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)">🔗 Kopiuj link</button>
                             </div>
                         </td>
                     </tr>
@@ -449,8 +415,8 @@
                     <div class="qa-card {% if to_check.count > 0 %}pulse-card{% endif %}">
                         <h4>{{ s.name }}</h4>
                         <div class="muted-sm">Rozprawek napisanych: <b>{{ written.count }}</b></div>
-                        <p style="margin:0; font-weight:700; font-size:13px;" class="{% if to_check.count > 0 %}status-alert{% else %}status-ok{% endif %}" {% if to_check.count == 0 %}style="justify-content:center;"{% endif %}>
-                            {% if to_check.count > 0 %}Do sprawdzenia: {{ to_check.count }}{% else %}Wszystko ok{% endif %}
+                        <p style="margin:0; font-weight:700; font-size:13px;" class="{% if to_check.count > 0 %}status-alert{% else %}status-ok{% endif %}">
+                            {% if to_check.count > 0 %}Do sprawdzenia: {{ to_check.count }}{% else %}✓ Wszystko ok{% endif %}
                         </p>
                         <div class="qa-card-actions">
                             <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-xs">Profil</a>
@@ -465,7 +431,7 @@
             <!-- STUDENCI GBS -->
             {% if has_gbs %}
             <div class="card uni-card" style="--card-accent:var(--grad-red);">
-                <div class="uni-head"><h3><span class="icon-sq" style="color:var(--gbs);"><svg class="ico"><use href="#i-bank"/></svg></span> Studenci GBS</h3></div>
+                <div class="uni-head"><h3><span class="icon-sq">🏛️</span> Studenci GBS</h3></div>
                 <table class="student-table">
                     <thead>
                     <tr>
@@ -484,7 +450,7 @@
                         <td>
                             <div class="actions-cell">
                                 <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-sm">Oceny i profil</a>
-                                <button class="btn btn-ghost btn-sm" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)"><svg class="ico ico-sm"><use href="#i-link"/></svg> Kopiuj link</button>
+                                <button class="btn btn-ghost btn-sm" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)">🔗 Kopiuj link</button>
                             </div>
                         </td>
                     </tr>
@@ -502,7 +468,7 @@
             {% if has_qa %}
             <div class="notif-panel qa">
                 <div class="notif-header">
-                    <span class="label"><svg class="ico ico-sm"><use href="#i-bell"/></svg> Aktywność QA</span>
+                    <span>🔔 Aktywność QA</span>
                     <span class="count-chip">{{ qa_notifications|length }}</span>
                 </div>
                 {% if qa_notifications %}
@@ -512,7 +478,7 @@
                         {{ n.message|safe }}
                         <span class="notif-time">{{ n.created_at.strftime('%d.%m %H:%M') }}</span>
                         <form method="POST" action="/admin/notif/delete/{{ n.id }}">
-                            <button type="submit" class="notif-del"><svg class="ico"><use href="#i-x"/></svg></button>
+                            <button type="submit" class="notif-del">✖</button>
                         </form>
                     </li>
                     {% endfor %}
@@ -526,7 +492,7 @@
             {% if has_gbs %}
             <div class="notif-panel gbs">
                 <div class="notif-header">
-                    <span class="label"><svg class="ico ico-sm"><use href="#i-bell"/></svg> Aktywność GBS</span>
+                    <span>🔔 Aktywność GBS</span>
                     <span class="count-chip">{{ gbs_notifications|length }}</span>
                 </div>
                 {% if gbs_notifications %}
@@ -536,7 +502,7 @@
                         {{ n.message|safe }}
                         <span class="notif-time">{{ n.created_at.strftime('%d.%m %H:%M') }}</span>
                         <form method="POST" action="/admin/notif/delete/{{ n.id }}">
-                            <button type="submit" class="notif-del"><svg class="ico"><use href="#i-x"/></svg></button>
+                            <button type="submit" class="notif-del">✖</button>
                         </form>
                     </li>
                     {% endfor %}
@@ -560,7 +526,7 @@
         var lbl = document.getElementById('themeLabel');
         if (lbl) lbl.textContent = (t === 'dark') ? 'Tryb ciemny' : 'Tryb jasny';
         var knob = document.getElementById('themeKnob');
-        if (knob) knob.innerHTML = '<svg class="ico"><use href="#i-' + (t === 'dark' ? 'moon' : 'sun') + '"/></svg>';
+        if (knob) knob.textContent = (t === 'dark') ? '🌙' : '☀️';
     }
     function toggleTheme(isDark) {
         var t = isDark ? 'dark' : 'light';
@@ -579,7 +545,7 @@
     function copySilent(text, btnElement) {
         navigator.clipboard.writeText(text).then(function() {
             var originalHTML = btnElement.innerHTML;
-            btnElement.innerHTML = '<svg class="ico ico-sm"><use href="#i-check"/></svg> Skopiowano!';
+            btnElement.innerHTML = "✅ Skopiowano!";
             btnElement.style.borderColor = "#22c55e";
             btnElement.style.color = "#16a34a";
             setTimeout(function() {

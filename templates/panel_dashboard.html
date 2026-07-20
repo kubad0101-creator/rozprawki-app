@@ -30,8 +30,8 @@
             --grad-teal:linear-gradient(90deg,#14b8a6,#34d399);
             --grad-red:linear-gradient(90deg,#f43f5e,#fb7185);
             --purple:#8b5cf6; --pink:#ec4899; --teal:#14b8a6;
-            --danger:#e11d48; --success:#16a34a; --amber:#d97706;
-            --qa:#8b5cf6; --gbs:#f43f5e; --lcca:#14b8a6;
+            --danger:#e11d48; --success:#16a34a;
+            --qa:#8b5cf6; --gbs:#f43f5e;
         }
         [data-theme="dark"]{
             --bg:#121016;
@@ -45,7 +45,6 @@
             --border:#2e2939;
             --input-bg:#242030;
             --shadow:0 14px 36px rgba(0,0,0,.45);
-            --amber:#fbbf24;
         }
         *{ box-sizing:border-box; }
         body{
@@ -57,7 +56,6 @@
         }
         .wrap{ max-width:1350px; margin:0 auto; display:flex; flex-direction:column; gap:22px; }
 
-        /* ===== Górny pasek ===== */
         .topbar{ display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
         .brand{ display:flex; align-items:center; gap:14px; }
         .brand-logo{
@@ -68,7 +66,6 @@
         .brand p{ margin:2px 0 0; font-size:13px; color:var(--muted); }
         .top-actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 
-        /* ===== Przełącznik motywu ===== */
         .theme-toggle{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; }
         .theme-toggle span.lbl{ font-size:13px; font-weight:700; color:var(--muted); }
         .theme-toggle input{ display:none; }
@@ -83,7 +80,6 @@
         }
         .theme-toggle input:checked + .track .knob{ left:24px; }
 
-        /* ===== Przyciski ===== */
         .btn{
             display:inline-flex; align-items:center; gap:7px; padding:10px 18px;
             border:none; border-radius:12px; font-family:inherit; font-size:14px; font-weight:700;
@@ -92,14 +88,12 @@
         .btn:hover{ transform:translateY(-1px); opacity:.94; }
         .btn-grad{ background:var(--grad-main); box-shadow:0 6px 18px rgba(168,85,247,.35); }
         .btn-purple{ background:var(--purple); box-shadow:0 6px 16px rgba(139,92,246,.30); }
-        .btn-green{ background:linear-gradient(90deg,#16a34a,#22c55e); }
         .btn-teal{ background:var(--grad-teal); }
         .btn-ghost{ background:var(--surface); color:var(--text); border:1px solid var(--border); }
         .btn-danger{ background:linear-gradient(90deg,#e11d48,#f43f5e); }
         .btn-sm{ padding:7px 12px; font-size:12.5px; border-radius:10px; }
         .btn-xs{ padding:5px 10px; font-size:11.5px; border-radius:9px; }
 
-        /* ===== Layout dwukolumnowy ===== */
         .layout-wrapper{ display:flex; gap:22px; align-items:flex-start; }
         .main-content{ flex:1; min-width:0; display:flex; flex-direction:column; gap:22px; }
         .sidebar{ width:330px; flex-shrink:0; display:flex; flex-direction:column; gap:16px; position:sticky; top:20px; }
@@ -108,11 +102,9 @@
             .sidebar{ width:100%; position:static; }
         }
 
-        /* ===== Karty ===== */
         .card{
             position:relative; background:var(--surface); border-radius:20px;
-            box-shadow:var(--shadow); border:1px solid var(--border);
-            padding:26px; overflow:hidden;
+            box-shadow:var(--shadow); border:1px solid var(--border); padding:26px; overflow:hidden;
         }
         .card::before{ content:''; position:absolute; top:0; left:0; right:0; height:5px; background:var(--card-accent, var(--grad-main)); }
         .icon-sq{
@@ -120,7 +112,6 @@
             display:inline-flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
         }
 
-        /* ===== Formularze ===== */
         label{ font-size:13px; font-weight:600; color:var(--muted); display:block; margin-bottom:6px; }
         .form-control{
             width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:12px;
@@ -144,12 +135,10 @@
         .check-math{ cursor:pointer; font-weight:700; color:var(--purple); font-size:14px; display:flex; align-items:center; gap:8px; }
         .check-math input{ accent-color:var(--purple); width:16px; height:16px; }
 
-        /* ===== Wyszukiwarka ===== */
         .filter-title{ margin:0 0 14px; font-size:15px; font-weight:800; display:flex; align-items:center; gap:10px; }
         .filter-form{ display:flex; gap:10px; flex-wrap:wrap; }
         .filter-form .form-control{ margin:0; }
 
-        /* ===== Sekcje uczelni ===== */
         .uni-card{ padding:0; }
         .uni-head{
             display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
@@ -190,7 +179,6 @@
             background:rgba(34,197,94,.12); color:var(--success); border:1px solid rgba(34,197,94,.35);
         }
 
-        /* ===== Przełącznik widoku QA ===== */
         .qa-view-controls{
             padding:12px 26px; background:var(--surface-2); border-bottom:1px solid var(--border);
             display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
@@ -203,43 +191,39 @@
         }
         .view-btn.active{ background:var(--grad-main); color:#fff; }
 
-        /* ===== Kafelki QA ===== */
         .qa-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px; padding:20px 26px; }
         .qa-card{
             position:relative; background:var(--surface); border:1px solid var(--border); border-radius:16px;
-            padding:18px; text-align:center; display:flex; flex-direction:column; justify-content:space-between; gap:14px;
+            padding:18px; text-align:center; display:flex; flex-direction:column; justify-content:space-between; gap:12px;
             transition:transform .15s, border-color .15s;
         }
         .qa-card:hover{ transform:translateY(-3px); border-color:var(--purple); }
+        /* Pulsująca ramka dla kart z rozprawkami do sprawdzenia */
+        @keyframes pulse-card{
+            0%{ box-shadow:0 0 0 0 rgba(236,72,153,.5); border-color:var(--pink); }
+            70%{ box-shadow:0 0 0 10px rgba(236,72,153,0); border-color:var(--pink); }
+            100%{ box-shadow:0 0 0 0 rgba(236,72,153,0); border-color:var(--border); }
+        }
+        .qa-card.pulse-card{ animation:pulse-card 2s infinite; border-width:2px; }
         .qa-card h4{ margin:0; font-size:15.5px; font-weight:800; }
         .qa-card .stats{ font-size:13px; color:var(--muted); }
-        .qa-card .alert-badge{
-            position:absolute; top:-9px; right:-9px; background:var(--grad-main); color:#fff;
-            font-size:12px; font-weight:800; min-width:26px; height:26px; padding:0 6px; border-radius:99px;
-            display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(168,85,247,.5);
-            animation:pulse 1.6s infinite;
-        }
         .qa-card-actions{ display:flex; gap:6px; justify-content:center; }
 
-        /* ===== Sidebar powiadomień ===== */
         .notif-panel{
             background:var(--surface); border-radius:16px; box-shadow:var(--shadow);
             border:1px solid var(--border); overflow:hidden;
         }
         .notif-panel.qa{ border-top:4px solid var(--qa); }
         .notif-panel.gbs{ border-top:4px solid var(--gbs); }
-        .notif-panel.lcca{ border-top:4px solid var(--lcca); }
         .notif-header{
             padding:14px 18px; font-weight:800; font-size:14.5px;
             display:flex; justify-content:space-between; align-items:center; background:var(--surface-2);
         }
         .notif-panel.qa .notif-header{ color:var(--qa); }
         .notif-panel.gbs .notif-header{ color:var(--gbs); }
-        .notif-panel.lcca .notif-header{ color:var(--lcca); }
         .count-chip{ font-size:12px; font-weight:800; color:#fff; min-width:24px; height:24px; padding:0 8px; border-radius:99px; display:inline-flex; align-items:center; justify-content:center; }
         .notif-panel.qa .count-chip{ background:var(--qa); }
         .notif-panel.gbs .count-chip{ background:var(--gbs); }
-        .notif-panel.lcca .count-chip{ background:var(--lcca); }
         .notif-list{ list-style:none; padding:0; margin:0; max-height:400px; overflow-y:auto; }
         .notif-list li{ padding:14px 18px; border-bottom:1px solid var(--border); font-size:13.5px; line-height:1.5; position:relative; padding-right:38px; }
         .notif-list li:last-child{ border-bottom:none; }
@@ -269,7 +253,7 @@
                 <input type="checkbox" id="themeSwitch" onchange="toggleTheme(this.checked)">
                 <span class="track"><span class="knob" id="themeKnob">☀️</span></span>
             </label>
-            <a href="/panel/database" class="btn btn-ghost">🗄️ Baza materiałów</a>
+            <a href="/panel/database" class="btn btn-ghost">🗄️ Baza materiałów i testów</a>
             {% if user.role == 'admin' %}
             <a href="/panel/master" class="btn btn-purple">👑 Master Panel</a>
             {% endif %}
@@ -313,18 +297,18 @@
                             </select>
                         </div>
                         <div id="qaFields" class="hidden-field">
-                            <label>Kierunek QA</label>
+                            <label>Kierunek QA (opcjonalnie)</label>
                             <select name="qa_major_id" class="form-control">
-                                <option value="">Wybierz kierunek (opcjonalnie)</option>
+                                <option value="">Brak przypisania</option>
                                 {% for qm in qa_majors %}
                                     <option value="{{ qm.id }}">{{ qm.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div id="gbsFields" class="hidden-field">
-                            <label>Kierunek GBS</label>
+                            <label>Kierunek GBS (opcjonalnie)</label>
                             <select name="gbs_major_id" class="form-control">
-                                <option value="">Wybierz kierunek (opcjonalnie)</option>
+                                <option value="">Brak przypisania</option>
                                 {% for gm in gbs_majors %}
                                     <option value="{{ gm.id }}">{{ gm.name }}</option>
                                 {% endfor %}
@@ -428,19 +412,12 @@
                     {% for s in qa_students %}
                     {% set essays_to_check = s.essays|selectattr("is_completed", "equalto", true)|selectattr("feedback", "none")|list|length %}
                     {% set essays_written = s.essays|selectattr("is_completed", "equalto", true)|list|length %}
-                    <div class="qa-card">
-                        {% if essays_to_check > 0 %}
-                            <div class="alert-badge">{{ essays_to_check }}</div>
-                        {% endif %}
+                    <div class="qa-card {% if essays_to_check > 0 %}pulse-card{% endif %}">
                         <h4>{{ s.name }}</h4>
-                        <div class="stats">
-                            <div>Rozprawek napisanych: <b>{{ essays_written }}</b></div>
-                            {% if essays_to_check > 0 %}
-                                <div class="status-alert" style="margin-top:6px;">Do sprawdzenia: {{ essays_to_check }}</div>
-                            {% else %}
-                                <div class="status-ok" style="margin-top:6px;">✓ Wszystko ok</div>
-                            {% endif %}
-                        </div>
+                        <div class="stats">Rozprawek napisanych: <b>{{ essays_written }}</b></div>
+                        <p style="margin:0; font-weight:700; font-size:13px;" class="{% if essays_to_check > 0 %}status-alert{% else %}status-ok{% endif %}">
+                            {% if essays_to_check > 0 %}Do sprawdzenia: {{ essays_to_check }}{% else %}✓ Wszystko ok{% endif %}
+                        </p>
                         <div class="qa-card-actions">
                             <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-xs">Profil</a>
                             <button class="btn btn-ghost btn-xs" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)">Link</button>
@@ -483,36 +460,6 @@
             </div>
             {% endif %}
 
-            <!-- STUDENCI LCCA -->
-            {% if has_lcca %}
-            <div class="card uni-card" style="--card-accent:var(--grad-teal);">
-                <div class="uni-head"><h3><span class="icon-sq">🏫</span> Studenci LCCA</h3></div>
-                <table class="student-table">
-                    <thead>
-                    <tr>
-                        <th>Imię i nazwisko</th>
-                        <th>Utworzono</th>
-                        <th>Akcje</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for s in lcca_students %}
-                    <tr>
-                        <td><strong>{{ s.name }}</strong></td>
-                        <td class="muted-sm">{{ s.created_at.strftime('%Y-%m-%d') }}</td>
-                        <td>
-                            <div class="actions-cell">
-                                <a href="/admin/student/{{ s.id }}" class="btn btn-purple btn-sm">Oceny i profil</a>
-                                <button class="btn btn-ghost btn-sm" onclick="copySilent('{{ request.host_url }}student/{{ s.url_slug }}', this)">🔗 Kopiuj link</button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% endif %}
-
         </div><!-- /main-content -->
 
         <!-- ===== PRAWY SIDEBAR: POWIADOMIENIA ===== -->
@@ -537,7 +484,7 @@
                     {% endfor %}
                 </ul>
                 {% else %}
-                <div class="empty-notif">Brak nowych zdarzeń z tej uczelni.</div>
+                <div class="empty-notif">Brak nowych zdarzeń.</div>
                 {% endif %}
             </div>
             {% endif %}
@@ -561,31 +508,7 @@
                     {% endfor %}
                 </ul>
                 {% else %}
-                <div class="empty-notif">Brak nowych zdarzeń z tej uczelni.</div>
-                {% endif %}
-            </div>
-            {% endif %}
-
-            {% if has_lcca %}
-            <div class="notif-panel lcca">
-                <div class="notif-header">
-                    <span>🔔 Aktywność LCCA</span>
-                    <span class="count-chip">{{ lcca_notifications|length }}</span>
-                </div>
-                {% if lcca_notifications %}
-                <ul class="notif-list">
-                    {% for n in lcca_notifications %}
-                    <li>
-                        {{ n.message|safe }}
-                        <span class="notif-time">{{ n.created_at.strftime('%d.%m %H:%M') }}</span>
-                        <form method="POST" action="/admin/notif/delete/{{ n.id }}">
-                            <button type="submit" class="notif-del">✖</button>
-                        </form>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <div class="empty-notif">Brak nowych zdarzeń z tej uczelni.</div>
+                <div class="empty-notif">Brak nowych zdarzeń.</div>
                 {% endif %}
             </div>
             {% endif %}
@@ -613,7 +536,6 @@
         syncThemeUI();
     }
 
-    /* ===== Domyślne daty terminów ===== */
     function defaultDateTime(offsetDays) {
         var d = new Date();
         d.setHours(18, 0, 0, 0);
@@ -621,7 +543,6 @@
         return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     }
 
-    /* ===== Kopiowanie linku ucznia ===== */
     function copySilent(text, btnElement) {
         navigator.clipboard.writeText(text).then(function() {
             var originalText = btnElement.innerHTML;
@@ -638,7 +559,6 @@
         });
     }
 
-    /* ===== Pola zależne od uczelni ===== */
     function toggleUniFields() {
         var sel = document.getElementById('uniSelector');
         if (!sel.value) return;
@@ -653,7 +573,6 @@
             document.getElementById('termin2Input').value = "";
         } else {
             document.getElementById('terminFields').style.display = 'grid';
-            /* Przywróć domyślne daty, jeśli zostały wyczyszczone przez QA */
             if (!document.getElementById('termin1Input').value) {
                 document.getElementById('termin1Input').value = defaultDateTime(0);
                 document.getElementById('termin2Input').value = defaultDateTime(1);
@@ -661,7 +580,6 @@
         }
     }
 
-    /* ===== Przełącznik widoku QA (tabela / kafelki) ===== */
     function setQaView(mode) {
         var table = document.getElementById('qaTable');
         var grid = document.getElementById('qaGrid');
@@ -687,13 +605,18 @@
     document.addEventListener("DOMContentLoaded", function() {
         syncThemeUI();
 
+        /* Domyślne daty terminów przy starcie */
+        if (document.getElementById('termin1Input') && !document.getElementById('termin1Input').value) {
+            document.getElementById('termin1Input').value = defaultDateTime(0);
+            document.getElementById('termin2Input').value = defaultDateTime(1);
+        }
+
         var sel = document.getElementById('uniSelector');
         if (sel && sel.options.length === 2) {
             sel.selectedIndex = 1;
             toggleUniFields();
         }
 
-        /* Pamięć widoku QA (tabela / kafelki) */
         var savedQaView = localStorage.getItem('qaViewMode') || 'list';
         setQaView(savedQaView);
     });

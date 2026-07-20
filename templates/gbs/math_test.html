@@ -2,8 +2,8 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Test z matematyki · Open UK Study</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -19,37 +19,26 @@
                 radial-gradient(900px 520px at 12% -6%, rgba(168,85,247,.14), transparent 60%),
                 radial-gradient(820px 520px at 92% 8%, rgba(236,72,153,.11), transparent 60%),
                 radial-gradient(720px 520px at 50% 112%, rgba(56,189,248,.09), transparent 60%);
-            --surface:#ffffff;
-            --surface-2:#f7f4fb;
-            --text:#221d33;
-            --muted:#716b85;
-            --border:#e9e4f2;
-            --shadow:0 12px 32px rgba(84,60,140,.10);
+            --surface:#ffffff; --surface-2:#f7f4fb; --text:#221d33; --muted:#716b85;
+            --border:#e9e4f2; --shadow:0 12px 32px rgba(84,60,140,.10);
             --grad-main:linear-gradient(90deg,#8b5cf6,#ec4899);
-            --purple:#8b5cf6; --pink:#ec4899;
-            --success:#16a34a;
+            --purple:#8b5cf6; --pink:#ec4899; --success:#16a34a;
         }
         [data-theme="dark"]{
             --bg:#121016;
             --bg-image:
                 radial-gradient(900px 520px at 12% -6%, rgba(139,92,246,.18), transparent 60%),
                 radial-gradient(820px 520px at 92% 8%, rgba(236,72,153,.12), transparent 60%);
-            --surface:#1c1823;
-            --surface-2:#252030;
-            --text:#f1edf8;
-            --muted:#9c95b0;
-            --border:#2e2939;
-            --shadow:0 14px 36px rgba(0,0,0,.45);
+            --surface:#1c1823; --surface-2:#252030; --text:#f1edf8; --muted:#9c95b0;
+            --border:#2e2939; --shadow:0 14px 36px rgba(0,0,0,.45);
         }
         *{ box-sizing:border-box; }
         body{
-            margin:0; padding:28px 20px 90px;
-            font-family:'Plus Jakarta Sans','Segoe UI',Tahoma,sans-serif;
+            margin:0; padding:28px 20px 90px; max-width:860px; margin:0 auto;
+            font-family:'Plus Jakarta Sans','Segoe UI',Arial,sans-serif;
             background-color:var(--bg); background-image:var(--bg-image); background-attachment:fixed;
-            color:var(--text); min-height:100vh;
-            transition:background-color .3s ease, color .3s ease;
+            color:var(--text); min-height:100vh; transition:background-color .3s ease, color .3s ease;
         }
-        .wrap{ max-width:820px; margin:0 auto; }
 
         .topbar{ display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:22px; }
         .brand{ display:flex; align-items:center; gap:14px; }
@@ -75,41 +64,45 @@
         .theme-toggle input:checked + .track .knob{ left:24px; }
 
         .card{
-            position:relative; background:var(--surface); border-radius:20px;
-            box-shadow:var(--shadow); border:1px solid var(--border);
-            padding:28px; margin-bottom:22px; overflow:hidden;
-            transition:background .3s ease;
+            position:relative; background:var(--surface); border-radius:20px; box-shadow:var(--shadow);
+            border:1px solid var(--border); padding:28px; margin-bottom:22px; overflow:hidden;
         }
-        .card::before{
-            content:''; position:absolute; top:0; left:0; right:0; height:5px; background:var(--grad-main);
-        }
+        .card::before{ content:''; position:absolute; top:0; left:0; right:0; height:5px; background:var(--grad-main); }
         .card h2{ margin:0 0 8px; font-size:20px; font-weight:800; }
+        .card h3{ margin:0 0 8px; font-size:18px; font-weight:800; }
         .card .sub{ margin:0 0 8px; font-size:14px; color:var(--muted); }
 
-        /* ===== Wybór wersji ===== */
-        .version-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:14px; margin-top:20px; }
-        .version-btn{
-            display:flex; flex-direction:column; gap:6px; padding:20px;
-            border-radius:16px; text-decoration:none; font-weight:800; font-size:16px;
-            background:var(--grad-main); color:#fff; box-shadow:0 8px 22px rgba(168,85,247,.30);
-            transition:transform .15s, opacity .15s;
+        /* ===== Lista arkuszy ===== */
+        .test-list{ display:flex; flex-direction:column; gap:12px; margin-top:20px; }
+        .test-item{
+            background:var(--surface-2); border:1px solid var(--border); border-radius:14px;
+            padding:16px 20px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+            transition:border-color .15s;
         }
-        .version-btn small{ font-weight:600; font-size:12px; opacity:.85; }
-        .version-btn:hover{ transform:translateY(-2px); opacity:.95; }
-        .version-btn.disabled{
-            background:var(--surface-2); color:var(--muted); box-shadow:none;
-            border:1px dashed var(--border); cursor:not-allowed;
-        }
+        .test-item:hover{ border-color:var(--purple); }
+        .test-item .t-name{ font-size:15.5px; font-weight:700; }
+        .done-tag{ color:var(--success); font-weight:800; font-size:14px; }
         .empty-note{
-            border:1.5px dashed var(--border); border-radius:14px; padding:18px; text-align:center;
+            border:1.5px dashed var(--border); border-radius:14px; padding:20px; text-align:center;
             color:var(--muted); font-style:italic; font-size:14px; margin-top:20px;
         }
+        .back-link{ display:inline-block; margin-top:24px; color:var(--muted); text-decoration:none; font-weight:700; font-size:14px; }
+        .back-link:hover{ color:var(--purple); }
+
+        /* ===== Przyciski ===== */
+        .btn{
+            display:inline-flex; align-items:center; gap:7px; padding:11px 22px; border:none; border-radius:12px;
+            font-family:inherit; font-size:14.5px; font-weight:700; cursor:pointer; text-decoration:none;
+            color:#fff; background:var(--grad-main); box-shadow:0 6px 16px rgba(168,85,247,.30);
+            transition:transform .15s, opacity .15s;
+        }
+        .btn:hover{ transform:translateY(-1px); opacity:.95; }
+        .btn-gray{ background:var(--surface-2); color:var(--text); border:1px solid var(--border); box-shadow:none; }
 
         /* ===== Pasek postępu ===== */
         .progress-bar{
-            position:sticky; top:10px; z-index:10;
-            background:var(--surface); border:1px solid var(--border); border-radius:14px;
-            box-shadow:var(--shadow); padding:12px 18px; margin-bottom:20px;
+            position:sticky; top:10px; z-index:10; background:var(--surface); border:1px solid var(--border);
+            border-radius:14px; box-shadow:var(--shadow); padding:12px 18px; margin-bottom:20px;
             display:flex; align-items:center; gap:14px;
         }
         .progress-track{ flex:1; height:8px; border-radius:99px; background:var(--surface-2); overflow:hidden; }
@@ -117,62 +110,54 @@
         .progress-label{ font-size:13px; font-weight:700; color:var(--muted); white-space:nowrap; }
 
         /* ===== Pytania ===== */
-        .question-box{
+        .q-block{
             background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--purple);
-            border-radius:16px; padding:22px; margin-bottom:18px; box-shadow:var(--shadow);
-            transition:border-color .2s;
+            border-radius:16px; padding:22px; margin-bottom:18px; box-shadow:var(--shadow); transition:border-color .2s;
         }
-        .question-box.answered{ border-left-color:#22c55e; }
+        .q-block.answered{ border-left-color:#22c55e; }
         .q-text{ font-size:16px; font-weight:700; margin-bottom:15px; line-height:1.5; }
         .q-num{
-            display:inline-flex; align-items:center; justify-content:center;
-            width:28px; height:28px; border-radius:9px; background:var(--grad-main); color:#fff;
-            font-size:13px; font-weight:800; margin-right:10px; flex-shrink:0;
+            display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:9px;
+            background:var(--grad-main); color:#fff; font-size:13px; font-weight:800; margin-right:10px; flex-shrink:0;
         }
-        .q-img{ max-width:100%; border-radius:12px; margin-bottom:15px; border:1px solid var(--border); display:block; }
-
+        .q-image{ max-width:100%; height:auto; border-radius:12px; margin-bottom:15px; border:1px solid var(--border); display:block; }
         .opt-label{
             display:flex; align-items:center; gap:12px; margin-bottom:10px; cursor:pointer;
             padding:13px 16px; background:var(--surface-2); border:1.5px solid var(--border);
             border-radius:12px; font-size:14.5px; transition:border-color .15s, background .15s;
         }
         .opt-label:hover{ border-color:var(--purple); }
-        .opt-label:has(input:checked){
-            border-color:var(--purple);
-            background:rgba(139,92,246,.10);
-            font-weight:700;
-        }
+        .opt-label:has(input:checked){ border-color:var(--purple); background:rgba(139,92,246,.10); font-weight:700; }
         .opt-label input{ accent-color:var(--purple); width:17px; height:17px; flex-shrink:0; }
 
         .btn-submit{
             display:block; width:100%; padding:16px; border:none; border-radius:14px;
-            background:var(--grad-main); color:#fff; font-family:inherit;
-            font-size:17px; font-weight:800; cursor:pointer; margin-top:24px;
-            box-shadow:0 10px 26px rgba(168,85,247,.35); transition:transform .15s, opacity .15s;
+            background:var(--grad-main); color:#fff; font-family:inherit; font-size:17px; font-weight:800;
+            cursor:pointer; margin-top:24px; box-shadow:0 10px 26px rgba(168,85,247,.35); transition:transform .15s, opacity .15s;
         }
         .btn-submit:hover:not(:disabled){ transform:translateY(-2px); opacity:.95; }
         .btn-submit:disabled{ opacity:.6; cursor:wait; }
 
-        .result-box{
-            display:none; text-align:center; padding:40px 30px;
-            background:var(--surface); border:1px solid rgba(34,197,94,.4);
-            border-radius:20px; margin-top:20px; box-shadow:var(--shadow);
+        .result-card{ text-align:center; padding:44px 30px; }
+        .result-card .big{ font-size:44px; margin-bottom:6px; }
+        .result-card h2{ color:var(--success); font-size:26px; }
+        .score-badge{
+            display:inline-block; background:var(--surface-2); border:1px solid var(--border);
+            border-radius:16px; padding:24px 40px; margin:20px 0 30px;
         }
-        .result-box .big{ font-size:44px; margin-bottom:6px; }
-        .result-box h2{ margin:0 0 8px; font-size:24px; font-weight:800; color:var(--success); }
-        .result-box p{ margin:0; color:var(--muted); font-size:14.5px; }
+        .score-badge .num{ color:var(--success); font-size:48px; font-weight:800; }
+        .score-badge .den{ font-size:24px; color:var(--muted); }
     </style>
 </head>
 <body>
-<div class="wrap">
 
     <!-- ===== NAGŁÓWEK ===== -->
     <div class="topbar">
         <div class="brand">
             <div class="brand-logo">🧮</div>
             <div>
-                <h1>Test z matematyki</h1>
-                <p>Open UK Study</p>
+                <h1>Witaj, {{ student.name }}</h1>
+                <p>Moduł egzaminacyjny · Testy z matematyki</p>
             </div>
         </div>
         <label class="theme-toggle">
@@ -182,70 +167,136 @@
         </label>
     </div>
 
-    {% if not selected_version %}
-        <!-- ===== WIDOK WYBORU WERSJI TESTU ===== -->
+    {% if not selected_test %}
+        <!-- ===== WYBÓR ARKUSZA ===== -->
         <div class="card">
-            <h2>Witaj, {{ student.name }}! 👋</h2>
-            <p class="sub">Wybierz jeden z dostępnych testów poniżej. Ukończonej wersji nie można uruchomić ponownie.</p>
+            <h3>Wybierz arkusz do rozwiązania</h3>
+            <p class="sub">Poniżej znajduje się lista dostępnych testów z matematyki przygotowanych przez Twoją uczelnię.</p>
 
-            <div class="version-grid">
-                {% for v in available_versions %}
-                    {% if v in taken_versions %}
-                        <div class="version-btn disabled">✅ {{ v }}<small>Ukończono</small></div>
-                    {% else %}
-                        <a href="?version={{ v }}" class="version-btn">▶ {{ v }}<small>Rozpocznij test</small></a>
-                    {% endif %}
+            <div class="test-list">
+                {% for test in all_tests %}
+                    <div class="test-item">
+                        <span class="t-name">{{ test.name }}</span>
+                        {% if test.id in taken_test_ids %}
+                            <span class="done-tag">✅ Rozwiązano</span>
+                        {% else %}
+                            <a href="?test_id={{ test.id }}" class="btn">▶ Rozpocznij test</a>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="empty-note">Obecnie brak przypisanych testów do rozwiązania.</div>
                 {% endfor %}
             </div>
 
-            {% if available_versions|length == 0 %}
-                <div class="empty-note">Brak przypisanych pytań. Skontaktuj się z nauczycielem.</div>
-            {% endif %}
+            <a href="/student/{{ student.url_slug }}" class="back-link">← Powrót do panelu głównego</a>
         </div>
     {% else %}
-        <!-- ===== WIDOK ROZWIĄZYWANIA TESTU ===== -->
-        <div class="card">
-            <h2>{{ selected_version }}</h2>
-            <p class="sub">Zaznacz odpowiedzi przy każdym pytaniu, a na końcu zatwierdź test przyciskiem na dole strony. Powodzenia! 🍀</p>
-        </div>
-
-        <div class="progress-bar" id="progressBar">
-            <span class="progress-label" id="progressLabel">0 / 0 odpowiedzi</span>
-            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-        </div>
-
-        <form id="mathForm">
-            <!-- Informacja dla API, którą wersję rozwiązuje uczeń -->
-            <input type="hidden" name="test_version" id="test_version" value="{{ selected_version }}">
-
-            {% for q in questions %}
-            <div class="question-box">
-                <div class="q-text"><span class="q-num">{{ loop.index }}</span>{{ q.text }}</div>
-
-                {% if q.image_url %}
-                    <img src="{{ q.image_url }}" class="q-img" alt="Zdjęcie pomocnicze do pytania">
-                {% endif %}
-
-                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="a"> <span><b>A)</b> {{ q.opt_a }}</span></label>
-                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="b"> <span><b>B)</b> {{ q.opt_b }}</span></label>
-                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="c"> <span><b>C)</b> {{ q.opt_c }}</span></label>
-                <label class="opt-label"><input type="radio" name="{{ q.id }}" value="d"> <span><b>D)</b> {{ q.opt_d }}</span></label>
+        <!-- ===== ROZWIĄZYWANIE ===== -->
+        <div id="testArea">
+            <div class="card">
+                <h3 style="color:var(--purple);">Rozwiązujesz arkusz: {{ selected_test.name }}</h3>
+                <p class="sub">Zaznacz odpowiedzi przy każdym pytaniu, a na końcu zatwierdź test przyciskiem na dole. Powodzenia! 🍀</p>
             </div>
-            {% endfor %}
 
-            <button type="button" class="btn-submit" onclick="submitMath()">Zakończ i prześlij wyniki</button>
-        </form>
+            <div class="progress-bar">
+                <span class="progress-label" id="progressLabel">0 / 0 odpowiedzi</span>
+                <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+            </div>
 
-        <div id="resultBox" class="result-box">
-            <div class="big">🎉</div>
-            <h2>Wynik: <span id="scoreText"></span></h2>
-            <p>Twoje odpowiedzi zostały zapisane. Możesz zamknąć tę kartę.</p>
+            <form id="mathForm">
+                {% for q in questions %}
+                <div class="q-block">
+                    <div class="q-text"><span class="q-num">{{ loop.index }}</span>{{ q.text }}</div>
+
+                    {% if q.image_url %}
+                        <img src="{{ q.image_url }}" alt="Ilustracja do pytania" class="q-image">
+                    {% endif %}
+
+                    <label class="opt-label"><input type="radio" name="{{ q.id }}" value="A"> <span><b>A)</b> {{ q.opt_a }}</span></label>
+                    <label class="opt-label"><input type="radio" name="{{ q.id }}" value="B"> <span><b>B)</b> {{ q.opt_b }}</span></label>
+                    <label class="opt-label"><input type="radio" name="{{ q.id }}" value="C"> <span><b>C)</b> {{ q.opt_c }}</span></label>
+                    <label class="opt-label"><input type="radio" name="{{ q.id }}" value="D"> <span><b>D)</b> {{ q.opt_d }}</span></label>
+                </div>
+                {% endfor %}
+
+                <button type="button" class="btn-submit" onclick="submitTest()">Zakończ i wyślij odpowiedzi</button>
+            </form>
         </div>
+
+        <div class="card result-card" id="resultArea" style="display:none;">
+            <div class="big">🎉</div>
+            <h2>Test zakończony!</h2>
+            <p class="sub">Twoje odpowiedzi zostały bezpiecznie zapisane w systemie.</p>
+            <div class="score-badge">
+                <div style="font-size:15px; color:var(--muted); margin-bottom:6px;">Twój wynik:</div>
+                <span class="num" id="scoreVal">0</span> <span class="den">/ {{ questions|length }}</span>
+            </div>
+            <br>
+            <a href="/student/{{ student.url_slug }}" class="btn btn-gray">Wróć do głównego menu</a>
+        </div>
+
+        <script>
+            var TOTAL_Q = {{ questions|length }};
+
+            function getProgress() {
+                var boxes = document.querySelectorAll('#mathForm .q-block');
+                var answered = 0;
+                boxes.forEach(function(box){ if (box.querySelector('input[type="radio"]:checked')) answered++; });
+                return { answered: answered, total: boxes.length };
+            }
+            function updateProgress() {
+                var p = getProgress();
+                var fill = document.getElementById('progressFill');
+                var label = document.getElementById('progressLabel');
+                if (fill) fill.style.width = (p.total ? (p.answered / p.total * 100) : 0) + '%';
+                if (label) label.textContent = p.answered + ' / ' + p.total + ' odpowiedzi';
+            }
+            document.addEventListener('DOMContentLoaded', function() {
+                updateProgress();
+                document.querySelectorAll('#mathForm input[type="radio"]').forEach(function(radio) {
+                    radio.addEventListener('change', function() {
+                        var box = radio.closest('.q-block');
+                        if (box) box.classList.add('answered');
+                        updateProgress();
+                    });
+                });
+            });
+
+            function submitTest() {
+                var p = getProgress();
+                if (p.answered < TOTAL_Q) {
+                    if (!confirm("Nie odpowiedziałeś na wszystkie pytania (" + (TOTAL_Q - p.answered) + " bez odpowiedzi). Czy na pewno chcesz zakończyć test?")) {
+                        return;
+                    }
+                }
+
+                var formData = new FormData(document.getElementById('mathForm'));
+                var data = { "math_test_id": {{ selected_test.id }} };
+                formData.forEach(function(val, key){ data[key] = val; });
+
+                var submitBtn = document.querySelector('.btn-submit');
+                submitBtn.disabled = true;
+                submitBtn.innerText = "Wysyłanie...";
+
+                fetch('/api/math/submit/{{ student.id }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                }).then(function(res){ return res.json(); }).then(function(resp) {
+                    document.getElementById('testArea').style.display = 'none';
+                    document.getElementById('resultArea').style.display = 'block';
+                    document.getElementById('scoreVal').innerText = resp.score;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }).catch(function(err) {
+                    alert("Wystąpił błąd podczas wysyłania testu. Sprawdź połączenie i spróbuj ponownie.");
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Zakończ i wyślij odpowiedzi";
+                });
+            }
+        </script>
     {% endif %}
-</div>
 
 <script>
-    /* ===== Motyw jasny / ciemny ===== */
     function syncThemeUI() {
         var t = document.documentElement.getAttribute('data-theme');
         var sw = document.getElementById('themeSwitch');
@@ -261,73 +312,8 @@
         localStorage.setItem('ous-theme', t);
         syncThemeUI();
     }
-    document.addEventListener('DOMContentLoaded', function() {
-        syncThemeUI();
-        updateProgress();
-
-        /* Aktualizuj postęp i podświetlenie pytania po każdej odpowiedzi */
-        document.querySelectorAll('#mathForm input[type="radio"]').forEach(function(radio) {
-            radio.addEventListener('change', function() {
-                var box = radio.closest('.question-box');
-                if (box) box.classList.add('answered');
-                updateProgress();
-            });
-        });
-    });
-
-    /* ===== Pasek postępu ===== */
-    function getProgress() {
-        var boxes = document.querySelectorAll('#mathForm .question-box');
-        var answered = 0;
-        boxes.forEach(function(box) {
-            if (box.querySelector('input[type="radio"]:checked')) answered++;
-        });
-        return { answered: answered, total: boxes.length };
-    }
-    function updateProgress() {
-        var form = document.getElementById('mathForm');
-        if (!form) return;
-        var p = getProgress();
-        var fill = document.getElementById('progressFill');
-        var label = document.getElementById('progressLabel');
-        if (fill) fill.style.width = (p.total ? (p.answered / p.total * 100) : 0) + '%';
-        if (label) label.textContent = p.answered + ' / ' + p.total + ' odpowiedzi';
-    }
-
-    /* ===== Wysyłka testu ===== */
-    function submitMath() {
-        var p = getProgress();
-        if (p.answered < p.total) {
-            var missing = p.total - p.answered;
-            var ok = confirm('Nie odpowiedziałeś jeszcze na ' + missing + ' pytań(nie). Czy na pewno chcesz zakończyć test?');
-            if (!ok) return;
-        }
-
-        var form = document.getElementById('mathForm');
-        var formData = new FormData(form);
-        var data = Object.fromEntries(formData.entries());
-
-        var btn = document.querySelector('.btn-submit');
-        btn.innerHTML = "Wysyłanie...";
-        btn.disabled = true;
-
-        fetch('/api/math/submit/{{ student.id }}', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        }).then(function(res){ return res.json(); }).then(function(res) {
-            form.style.display = 'none';
-            var bar = document.getElementById('progressBar');
-            if (bar) bar.style.display = 'none';
-            document.getElementById('resultBox').style.display = 'block';
-            document.getElementById('scoreText').innerText = res.score + " poprawnych";
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }).catch(function(err) {
-            alert("Błąd połączenia. Spróbuj ponownie.");
-            btn.innerHTML = "Zakończ i prześlij wyniki";
-            btn.disabled = false;
-        });
-    }
+    document.addEventListener('DOMContentLoaded', syncThemeUI);
 </script>
+
 </body>
 </html>

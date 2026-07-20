@@ -25,6 +25,7 @@
             --grad-teal:linear-gradient(90deg,#14b8a6,#34d399);
             --grad-red:linear-gradient(90deg,#f43f5e,#fb7185);
             --purple:#8b5cf6; --pink:#ec4899; --teal:#14b8a6; --danger:#e11d48; --success:#16a34a;
+            --icon:#8b5cf6;
         }
         [data-theme="dark"]{
             --bg:#121016;
@@ -33,6 +34,7 @@
                 radial-gradient(820px 520px at 92% 8%, rgba(236,72,153,.12), transparent 60%);
             --surface:#1c1823; --surface-2:#252030; --text:#f1edf8; --muted:#9c95b0;
             --border:#2e2939; --input-bg:#242030; --shadow:0 14px 36px rgba(0,0,0,.45);
+            --icon:#b794f6;
         }
         *{ box-sizing:border-box; }
         body{
@@ -41,14 +43,17 @@
             background-color:var(--bg); background-image:var(--bg-image); background-attachment:fixed;
             color:var(--text); min-height:100vh; transition:background-color .3s ease, color .3s ease;
         }
-        .wrap{ max-width:1040px; margin:0 auto; }
+        .wrap{ max-width:1100px; margin:0 auto; }
+        .ico{ width:20px; height:20px; flex-shrink:0; stroke:currentColor; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+        .ico-sm{ width:16px; height:16px; }
 
         .topbar{ display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
         .brand{ display:flex; align-items:center; gap:14px; }
         .brand-logo{
-            width:52px; height:52px; border-radius:16px; background:var(--surface);
-            box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; font-size:24px;
+            width:52px; height:52px; border-radius:16px; background:var(--grad-main); color:#fff;
+            box-shadow:0 8px 20px rgba(168,85,247,.35); display:flex; align-items:center; justify-content:center;
         }
+        .brand-logo .ico{ width:26px; height:26px; }
         .brand h1{ margin:0; font-size:22px; font-weight:800; letter-spacing:-.3px; }
         .brand p{ margin:2px 0 0; font-size:13px; color:var(--muted); }
         .top-actions{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
@@ -62,13 +67,13 @@
         }
         .theme-toggle .knob{
             position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%;
-            background:var(--grad-main); display:flex; align-items:center; justify-content:center;
-            font-size:11px; transition:left .25s ease;
+            background:var(--grad-main); display:flex; align-items:center; justify-content:center; color:#fff; transition:left .25s ease;
         }
+        .theme-toggle .knob .ico{ width:12px; height:12px; }
         .theme-toggle input:checked + .track .knob{ left:24px; }
 
         .btn{
-            display:inline-flex; align-items:center; gap:7px; padding:10px 18px; border:none; border-radius:12px;
+            display:inline-flex; align-items:center; gap:7px; padding:10px 16px; border:none; border-radius:12px;
             font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; text-decoration:none;
             color:#fff; transition:transform .15s, opacity .15s;
         }
@@ -82,13 +87,41 @@
         .btn-sm{ padding:7px 12px; font-size:12.5px; border-radius:10px; }
         .btn-xs{ padding:4px 10px; font-size:11px; border-radius:8px; }
 
-        .card{
-            position:relative; background:var(--surface); border-radius:20px; box-shadow:var(--shadow);
-            border:1px solid var(--border); padding:26px; margin-bottom:22px; overflow:hidden;
+        .flash{
+            padding:14px 20px; border-radius:14px; font-weight:700; font-size:14px; margin-bottom:16px;
+            background:rgba(34,197,94,.12); color:var(--success); border:1px solid rgba(34,197,94,.35);
+            display:flex; align-items:center; gap:10px;
         }
-        .card::before{ content:''; position:absolute; top:0; left:0; right:0; height:5px; background:var(--card-accent, var(--grad-main)); }
-        .card h3{ margin:0 0 16px; font-size:17px; font-weight:800; display:flex; align-items:center; gap:10px; }
-        .card h4{ margin:22px 0 10px; font-size:14.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+
+        /* ===== Zakładki ===== */
+        .tabs-header{
+            display:flex; gap:8px; margin-bottom:22px; flex-wrap:wrap;
+            background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:8px; box-shadow:var(--shadow);
+        }
+        .tab-btn{
+            display:inline-flex; align-items:center; gap:8px; padding:11px 18px; cursor:pointer; border:none;
+            background:transparent; font-family:inherit; font-size:14px; font-weight:700; color:var(--muted);
+            border-radius:11px; transition:background .2s, color .2s;
+        }
+        .tab-btn:hover{ background:var(--surface-2); color:var(--text); }
+        .tab-btn.active{ background:var(--grad-main); color:#fff; box-shadow:0 4px 14px rgba(168,85,247,.35); }
+        .tab-content{ display:none; }
+        .tab-content.active{ display:block; animation:fadeIn .3s; }
+        @keyframes fadeIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+
+        /* ===== Sekcje / karty ===== */
+        .section-box{
+            position:relative; background:var(--surface); border:1px solid var(--border); border-radius:20px;
+            padding:26px; margin-bottom:22px; box-shadow:var(--shadow); overflow:hidden;
+        }
+        .section-box::before{ content:''; position:absolute; top:0; left:0; right:0; height:5px; background:var(--accent, var(--grad-main)); }
+        .section-box h3{ margin:0 0 16px; font-size:17px; font-weight:800; display:flex; align-items:center; gap:10px; }
+        .section-box h4{ margin:22px 0 10px; font-size:13px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; }
+        .icon-sq{
+            width:38px; height:38px; border-radius:11px; background:var(--surface-2); color:var(--icon);
+            display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+        }
+        .icon-sq .ico{ width:19px; height:19px; }
 
         label{ font-size:13px; font-weight:600; color:var(--muted); display:block; margin:0 0 6px; }
         .form-group{ margin-bottom:14px; }
@@ -107,8 +140,6 @@
             text-align:left; padding:11px 14px; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px;
             color:var(--muted); background:var(--surface-2); border-bottom:1px solid var(--border);
         }
-        th:first-child{ border-top-left-radius:10px; }
-        th:last-child{ border-top-right-radius:10px; }
         td{ padding:12px 14px; border-bottom:1px solid var(--border); font-size:13.5px; vertical-align:middle; }
         tbody tr:hover{ background:var(--surface-2); }
         .badge{
@@ -116,22 +147,35 @@
             background:var(--surface-2); color:var(--muted); border:1px solid var(--border);
         }
         .ans-tag{ font-weight:800; color:var(--success); }
-        .flash{
-            padding:14px 20px; border-radius:14px; font-weight:700; font-size:14px; margin-bottom:16px;
-            background:rgba(34,197,94,.12); color:var(--success); border:1px solid rgba(34,197,94,.35);
-        }
         .hint{ font-size:12.5px; color:var(--muted); margin:6px 0 0; }
         form.inline{ display:inline; margin:0; }
     </style>
 </head>
 <body>
 
+<!-- ===== Ikony SVG ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+        <g id="i-db"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></g>
+        <g id="i-back"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></g>
+        <g id="i-sun"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="5" y1="5" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19" y2="19"/><line x1="5" y1="19" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19" y2="5"/></g>
+        <g id="i-moon"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></g>
+        <g id="i-mail"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></g>
+        <g id="i-calc"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="8" y1="18" x2="12" y2="18"/></g>
+        <g id="i-folder"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></g>
+        <g id="i-pen"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></g>
+        <g id="i-plus"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></g>
+        <g id="i-clip"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"/></g>
+        <g id="i-check"><polyline points="20 6 9 17 4 12"/></g>
+    </defs>
+</svg>
+
 <div class="wrap">
 
     <!-- ===== NAGŁÓWEK ===== -->
     <div class="topbar">
         <div class="brand">
-            <div class="brand-logo">🗄️</div>
+            <div class="brand-logo"><svg class="ico"><use href="#i-db"/></svg></div>
             <div>
                 <h1>Baza wiedzy i ustawień</h1>
                 <p>Testy, materiały i szablony · Open UK Study</p>
@@ -141,227 +185,218 @@
             <label class="theme-toggle">
                 <span class="lbl" id="themeLabel">Tryb jasny</span>
                 <input type="checkbox" id="themeSwitch" onchange="toggleTheme(this.checked)">
-                <span class="track"><span class="knob" id="themeKnob">☀️</span></span>
+                <span class="track"><span class="knob" id="themeKnob"><svg class="ico"><use href="#i-sun"/></svg></span></span>
             </label>
-            <a href="/panel" class="btn btn-ghost">⬅ Powrót do panelu</a>
+            <a href="/panel" class="btn btn-ghost"><svg class="ico ico-sm"><use href="#i-back"/></svg> Powrót do panelu</a>
         </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}{% for category, message in messages %}<div class="flash">✅ {{ message }}</div>{% endfor %}{% endif %}
+      {% if messages %}{% for category, message in messages %}<div class="flash"><svg class="ico ico-sm"><use href="#i-check"/></svg> {{ message }}</div>{% endfor %}{% endif %}
     {% endwith %}
 
-    <!-- ===== SZABLON E-MAIL ===== -->
-    <div class="card" style="--card-accent:var(--grad-teal);">
-        <h3>✉️ Ustawienia Twojego szablonu e-mail</h3>
-        <form method="POST">
-            <input type="hidden" name="action" value="save_teacher_template">
-            <div class="form-group">
-                <label>Szablon HTML (użyj zmiennych: {imie}, {link}, {terminy})</label>
-                <textarea name="email_template" class="form-control" rows="5">{{ user.email_template or '' }}</textarea>
-            </div>
-            <button type="submit" class="btn btn-green">Zapisz swój szablon</button>
-        </form>
+    <!-- ===== ZAKŁADKI ===== -->
+    <div class="tabs-header">
+        <button class="tab-btn active" onclick="openTab(event, 'tabSettings')"><svg class="ico ico-sm"><use href="#i-mail"/></svg> Szablon e-mail</button>
+        <button class="tab-btn" onclick="openTab(event, 'tabMath')"><svg class="ico ico-sm"><use href="#i-calc"/></svg> Testy z matematyki</button>
+        <button class="tab-btn" onclick="openTab(event, 'tabMaterials')"><svg class="ico ico-sm"><use href="#i-folder"/></svg> Materiały PDF / wideo</button>
+        <button class="tab-btn" onclick="openTab(event, 'tabQa')"><svg class="ico ico-sm"><use href="#i-pen"/></svg> Egzaminy i tematy QA</button>
     </div>
 
-    <!-- ===== 1. ARKUSZE MATEMATYCZNE ===== -->
-    <div class="card" style="--card-accent:var(--grad-main);">
-        <h3>🔢 1. Utwórz nowy arkusz (test) z matematyki</h3>
-        <form method="POST">
-            <input type="hidden" name="action" value="add_math_test">
-            <div class="form-group">
-                <label>Nazwa testu (np. Wersja A 2026)</label>
-                <input type="text" name="name" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Przypisz do uczelni</label>
-                <select name="university_id" class="form-control" required>
-                    {% for u in universities %}<option value="{{ u.id }}">{{ u.name }}</option>{% endfor %}
-                </select>
-            </div>
-            <button type="submit" class="btn btn-grad">Zapisz test</button>
-        </form>
-
-        <h4>Zarządzanie testami</h4>
-        <table>
-            <thead>
-            <tr><th>Nazwa arkusza</th><th>Uczelnia</th><th>Liczba pytań</th><th>Akcje</th></tr>
-            </thead>
-            <tbody>
-            {% for t in math_tests %}
-            <tr>
-                <td><strong>{{ t.name }}</strong></td>
-                <td><span class="badge">{{ t.university_id }}</span></td>
-                <td>{{ t.questions|length }}</td>
-                <td>
-                    <form method="POST" class="inline" onsubmit="return confirm('Usunąć ten test?');">
-                        <input type="hidden" name="action" value="del_math_test">
-                        <input type="hidden" name="test_id" value="{{ t.id }}">
-                        <button class="btn btn-danger btn-xs">Usuń test</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+    <!-- ZAKŁADKA 1: SZABLON E-MAIL -->
+    <div id="tabSettings" class="tab-content active">
+        <div class="section-box" style="--accent:var(--grad-teal);">
+            <h3><span class="icon-sq" style="color:var(--teal);"><svg class="ico"><use href="#i-mail"/></svg></span> Ustawienia Twojego szablonu e-mail</h3>
+            <form method="POST">
+                <input type="hidden" name="action" value="save_teacher_template">
+                <div class="form-group">
+                    <label>Szablon HTML (użyj zmiennych: {imie}, {link}, {terminy})</label>
+                    <textarea name="email_template" class="form-control" rows="8">{{ user.email_template or '' }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-green">Zapisz swój szablon</button>
+            </form>
+        </div>
     </div>
 
-    <!-- ===== 2. PYTANIA MATEMATYCZNE ===== -->
-    <div class="card" style="--card-accent:var(--grad-main);">
-        <h3>➕ 2. Dodaj pytanie do arkusza matematycznego</h3>
-        <form method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="action" value="add_math_q">
-            <div class="form-group">
-                <label>Wybierz, do którego testu dodać pytanie</label>
-                <select name="math_test_id" class="form-control" required>
-                    {% for t in math_tests %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Treść pytania</label>
-                <textarea name="text" class="form-control" required></textarea>
-            </div>
-            <div class="opts-grid">
-                <input type="text" name="opt_a" class="form-control" placeholder="Opcja A" required>
-                <input type="text" name="opt_b" class="form-control" placeholder="Opcja B" required>
-                <input type="text" name="opt_c" class="form-control" placeholder="Opcja C" required>
-                <input type="text" name="opt_d" class="form-control" placeholder="Opcja D" required>
-            </div>
-            <div class="form-group" style="margin-top:14px;">
-                <label>Poprawna odpowiedź</label>
-                <select name="answer" class="form-control" required style="border:2px solid var(--purple);">
-                    <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Opcjonalny obrazek do pytania</label>
-                <input type="file" name="image_file" class="form-control" accept="image/*">
-            </div>
-            <button type="submit" class="btn btn-grad">Dodaj pytanie do bazy</button>
-        </form>
+    <!-- ZAKŁADKA 2: MATEMATYKA -->
+    <div id="tabMath" class="tab-content">
+        <div class="section-box" style="--accent:var(--grad-main);">
+            <h3><span class="icon-sq"><svg class="ico"><use href="#i-calc"/></svg></span> 1. Utwórz nowy arkusz (test) z matematyki</h3>
+            <form method="POST">
+                <input type="hidden" name="action" value="add_math_test">
+                <div class="form-group">
+                    <label>Nazwa testu (np. Wersja A 2026)</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Przypisz do uczelni</label>
+                    <select name="university_id" class="form-control" required>
+                        {% for u in universities %}<option value="{{ u.id }}">{{ u.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-grad">Zapisz test</button>
+            </form>
 
-        <h4>Lista pytań w bazie</h4>
-        <table>
-            <thead>
-            <tr><th>Test</th><th>Pytanie</th><th>Odp.</th><th>Akcje</th></tr>
-            </thead>
-            <tbody>
-            {% for q in math_questions %}
-            <tr>
-                <td><span class="badge">{{ q.test.name if q.test else 'Brak przypisania' }}</span></td>
-                <td>{{ q.text[:50] }}...</td>
-                <td><span class="ans-tag">{{ q.answer }}</span></td>
-                <td>
-                    <form method="POST" class="inline" onsubmit="return confirm('Usunąć to pytanie?');">
-                        <input type="hidden" name="action" value="del_math_q">
-                        <input type="hidden" name="question_id" value="{{ q.id }}">
-                        <button class="btn btn-danger btn-xs">Usuń</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+            <h4>Zarządzanie testami</h4>
+            <table>
+                <thead><tr><th>Nazwa arkusza</th><th>Uczelnia</th><th>Liczba pytań</th><th>Akcje</th></tr></thead>
+                <tbody>
+                {% for t in math_tests %}
+                <tr>
+                    <td><strong>{{ t.name }}</strong></td>
+                    <td><span class="badge">{{ t.university_id }}</span></td>
+                    <td>{{ t.questions|length }}</td>
+                    <td>
+                        <form method="POST" class="inline" onsubmit="return confirm('Usunąć ten test?');">
+                            <input type="hidden" name="action" value="del_math_test">
+                            <input type="hidden" name="test_id" value="{{ t.id }}">
+                            <button class="btn btn-danger btn-xs">Usuń test</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-box" style="--accent:var(--grad-main);">
+            <h3><span class="icon-sq"><svg class="ico"><use href="#i-plus"/></svg></span> 2. Dodaj pytanie do arkusza matematycznego</h3>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="add_math_q">
+                <div class="form-group">
+                    <label>Wybierz, do którego testu dodać pytanie</label>
+                    <select name="math_test_id" class="form-control" required>
+                        {% for t in math_tests %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group"><label>Treść pytania</label><textarea name="text" class="form-control" required></textarea></div>
+                <div class="opts-grid">
+                    <input type="text" name="opt_a" class="form-control" placeholder="Opcja A" required>
+                    <input type="text" name="opt_b" class="form-control" placeholder="Opcja B" required>
+                    <input type="text" name="opt_c" class="form-control" placeholder="Opcja C" required>
+                    <input type="text" name="opt_d" class="form-control" placeholder="Opcja D" required>
+                </div>
+                <div class="form-group" style="margin-top:14px;">
+                    <label>Poprawna odpowiedź</label>
+                    <select name="answer" class="form-control" required style="border:2px solid var(--purple);">
+                        <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Opcjonalny obrazek do pytania</label>
+                    <input type="file" name="image_file" class="form-control" accept="image/*">
+                </div>
+                <button type="submit" class="btn btn-grad">Dodaj pytanie do bazy</button>
+            </form>
+
+            <h4>Lista pytań w bazie</h4>
+            <table>
+                <thead><tr><th>Test</th><th>Pytanie</th><th>Odp.</th><th>Akcje</th></tr></thead>
+                <tbody>
+                {% for q in math_questions %}
+                <tr>
+                    <td><span class="badge">{{ q.test.name if q.test else 'Brak przypisania' }}</span></td>
+                    <td>{{ q.text[:50] }}...</td>
+                    <td><span class="ans-tag">{{ q.answer }}</span></td>
+                    <td>
+                        <form method="POST" class="inline" onsubmit="return confirm('Usunąć to pytanie?');">
+                            <input type="hidden" name="action" value="del_math_q">
+                            <input type="hidden" name="question_id" value="{{ q.id }}">
+                            <button class="btn btn-danger btn-xs">Usuń</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- ===== MATERIAŁY ===== -->
-    <div class="card" style="--card-accent:var(--grad-teal);">
-        <h3>📁 Zarządzanie materiałami PDF / video</h3>
-        <form method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="action" value="add_material">
-            <div class="form-group">
-                <label>Tytuł pliku</label>
-                <input type="text" name="title" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Uczelnia</label>
-                <select name="university_id" class="form-control" required>
-                    {% for u in universities %}<option value="{{ u.id }}">{{ u.name }}</option>{% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Wgraj plik (PDF, MP4, JPEG)</label>
-                <input type="file" name="pdf_file" class="form-control">
-                <p class="hint">…lub podaj link do zewnętrznego wideo (np. YouTube):</p>
-                <input type="text" name="link_url" class="form-control" placeholder="https://..." style="margin-top:6px;">
-            </div>
-            <button type="submit" class="btn btn-teal">Dodaj materiał</button>
-        </form>
+    <!-- ZAKŁADKA 3: MATERIAŁY -->
+    <div id="tabMaterials" class="tab-content">
+        <div class="section-box" style="--accent:var(--grad-teal);">
+            <h3><span class="icon-sq" style="color:var(--teal);"><svg class="ico"><use href="#i-folder"/></svg></span> Zarządzanie materiałami PDF / wideo</h3>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="add_material">
+                <div class="form-group">
+                    <label>Tytuł pliku</label>
+                    <input type="text" name="title" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Uczelnia</label>
+                    <select name="university_id" class="form-control" required>
+                        {% for u in universities %}<option value="{{ u.id }}">{{ u.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Wgraj plik (PDF, MP4, JPEG)</label>
+                    <input type="file" name="pdf_file" class="form-control">
+                    <p class="hint">…lub podaj link do zewnętrznego wideo (np. YouTube):</p>
+                    <input type="text" name="link_url" class="form-control" placeholder="https://..." style="margin-top:6px;">
+                </div>
+                <button type="submit" class="btn btn-teal">Dodaj materiał</button>
+            </form>
+        </div>
     </div>
 
-    <!-- ===== ROZPRAWKI QA ===== -->
-    <div class="card" style="--card-accent:var(--grad-main);">
-        <h3>✍️ Zarządzanie tematami rozprawek QA</h3>
-        <form method="POST">
-            <input type="hidden" name="action" value="add_qa_topic">
-            <div class="form-group">
-                <label>Tytuł skrócony</label>
-                <input type="text" name="title" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Pełna treść eseju (prompt)</label>
-                <textarea name="topic_full" class="form-control" rows="3" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-grad">Dodaj temat treningowy</button>
-        </form>
+    <!-- ZAKŁADKA 4: QA -->
+    <div id="tabQa" class="tab-content">
+        <div class="section-box" style="--accent:var(--grad-main);">
+            <h3><span class="icon-sq"><svg class="ico"><use href="#i-pen"/></svg></span> Zarządzanie tematami rozprawek QA</h3>
+            <form method="POST">
+                <input type="hidden" name="action" value="add_qa_topic">
+                <div class="form-group"><label>Tytuł skrócony</label><input type="text" name="title" class="form-control" required></div>
+                <div class="form-group"><label>Pełna treść eseju (prompt)</label><textarea name="topic_full" class="form-control" rows="3" required></textarea></div>
+                <button type="submit" class="btn btn-grad">Dodaj temat treningowy</button>
+            </form>
 
-        <table>
-            <thead>
-            <tr><th>Tytuł</th><th>Treść</th><th>Akcja</th></tr>
-            </thead>
-            <tbody>
-            {% for t in qa_topics %}
-            <tr>
-                <td><strong>{{ t.title }}</strong></td>
-                <td>{{ t.topic_full[:50] }}...</td>
-                <td>
-                    <form method="POST" class="inline" onsubmit="return confirm('Usunąć ten temat?');">
-                        <input type="hidden" name="action" value="del_qa_topic">
-                        <input type="hidden" name="topic_id" value="{{ t.id }}">
-                        <button class="btn btn-danger btn-xs">Usuń</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
+            <table>
+                <thead><tr><th>Tytuł</th><th>Treść</th><th>Akcja</th></tr></thead>
+                <tbody>
+                {% for t in qa_topics %}
+                <tr>
+                    <td><strong>{{ t.title }}</strong></td>
+                    <td>{{ t.topic_full[:50] }}...</td>
+                    <td>
+                        <form method="POST" class="inline" onsubmit="return confirm('Usunąć ten temat?');">
+                            <input type="hidden" name="action" value="del_qa_topic">
+                            <input type="hidden" name="topic_id" value="{{ t.id }}">
+                            <button class="btn btn-danger btn-xs">Usuń</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    <!-- ===== EGZAMIN QA ===== -->
-    <div class="card" style="--card-accent:var(--grad-red);">
-        <h3>📝 Pula pytań egzaminacyjnych (QA Exam)</h3>
-        <form method="POST">
-            <input type="hidden" name="action" value="add_exam_topic">
-            <div class="form-group">
-                <label>Tytuł (np. Wersja A)</label>
-                <input type="text" name="title" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Treść egzaminu</label>
-                <textarea name="topic_full" class="form-control" rows="3" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-green">Dodaj wersję egzaminu</button>
-        </form>
-        <table>
-            <thead>
-            <tr><th>Tytuł</th><th>Treść</th><th>Akcja</th></tr>
-            </thead>
-            <tbody>
-            {% for t in exam_topics %}
-            <tr>
-                <td><strong>{{ t.title }}</strong></td>
-                <td>{{ t.topic_full[:50] }}...</td>
-                <td>
-                    <form method="POST" class="inline" onsubmit="return confirm('Usunąć ten temat?');">
-                        <input type="hidden" name="action" value="del_exam_topic">
-                        <input type="hidden" name="topic_id" value="{{ t.id }}">
-                        <button class="btn btn-danger btn-xs">Usuń</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+        <div class="section-box" style="--accent:var(--grad-red);">
+            <h3><span class="icon-sq" style="color:var(--danger);"><svg class="ico"><use href="#i-clip"/></svg></span> Pula pytań egzaminacyjnych (QA Exam)</h3>
+            <form method="POST">
+                <input type="hidden" name="action" value="add_exam_topic">
+                <div class="form-group"><label>Tytuł (np. Wersja A)</label><input type="text" name="title" class="form-control" required></div>
+                <div class="form-group"><label>Treść egzaminu</label><textarea name="topic_full" class="form-control" rows="3" required></textarea></div>
+                <button type="submit" class="btn btn-green">Dodaj wersję egzaminu</button>
+            </form>
+            <table>
+                <thead><tr><th>Tytuł</th><th>Treść</th><th>Akcja</th></tr></thead>
+                <tbody>
+                {% for t in exam_topics %}
+                <tr>
+                    <td><strong>{{ t.title }}</strong></td>
+                    <td>{{ t.topic_full[:50] }}...</td>
+                    <td>
+                        <form method="POST" class="inline" onsubmit="return confirm('Usunąć ten temat?');">
+                            <input type="hidden" name="action" value="del_exam_topic">
+                            <input type="hidden" name="topic_id" value="{{ t.id }}">
+                            <button class="btn btn-danger btn-xs">Usuń</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
 </div>
@@ -374,7 +409,7 @@
         var lbl = document.getElementById('themeLabel');
         if (lbl) lbl.textContent = (t === 'dark') ? 'Tryb ciemny' : 'Tryb jasny';
         var knob = document.getElementById('themeKnob');
-        if (knob) knob.textContent = (t === 'dark') ? '🌙' : '☀️';
+        if (knob) knob.innerHTML = '<svg class="ico"><use href="#i-' + (t === 'dark' ? 'moon' : 'sun') + '"/></svg>';
     }
     function toggleTheme(isDark) {
         var t = isDark ? 'dark' : 'light';
@@ -383,7 +418,16 @@
         syncThemeUI();
     }
     document.addEventListener('DOMContentLoaded', syncThemeUI);
-</script>
 
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) { tabcontent[i].classList.remove("active"); }
+        tablinks = document.getElementsByClassName("tab-btn");
+        for (i = 0; i < tablinks.length; i++) { tablinks[i].classList.remove("active"); }
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+</script>
 </body>
 </html>

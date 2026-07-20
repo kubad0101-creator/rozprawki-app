@@ -1,643 +1,330 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Master Panel - Zarządzanie Nauczycielami</title>
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
-      :root {
-        --bg: #f5f0fb;
-        --text: #241b35;
-        --muted: #746b82;
-        --card: rgba(255, 255, 255, 0.94);
-        --soft: #f8f5fc;
-        --line: rgba(52, 34, 73, 0.12);
-        --line2: rgba(52, 34, 73, 0.2);
-        --purple: #6840bc;
-        --purple2: #8b5bd6;
-        --blue: #4266e8;
-        --green: #32c98a;
-        --red: #ed4057;
-        --amber: #ffc85b;
-        --teal: #22b8b0;
-        --shadow: 0 18px 45px rgba(76, 46, 112, 0.12);
-        --glow1: rgba(139, 91, 214, 0.18);
-        --glow2: rgba(229, 111, 220, 0.13);
-        --input: #fff;
-      }
-      html[data-theme="dark"] {
-        --bg: #251334;
-        --text: #f7f1fb;
-        --muted: #c0b5ca;
-        --card: rgba(66, 39, 82, 0.86);
-        --soft: rgba(255, 255, 255, 0.045);
-        --line: rgba(255, 255, 255, 0.1);
-        --line2: rgba(255, 255, 255, 0.18);
-        --shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
-        --glow1: rgba(129, 71, 189, 0.22);
-        --glow2: rgba(227, 94, 207, 0.12);
-        --input: rgba(255, 255, 255, 0.045);
-      }
-      * {
-        box-sizing: border-box;
-      }
-      html {
-        color-scheme: light;
-      }
-      html[data-theme="dark"] {
-        color-scheme: dark;
-      }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        padding: 28px clamp(16px, 3vw, 38px) 60px;
-        font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
-        color: var(--text);
-        background:
-          radial-gradient(circle at 10% -10%, var(--glow1), transparent 38%),
-          radial-gradient(circle at 100% 0, var(--glow2), transparent 36%),
-          var(--bg);
-        transition:
-          0.25s background,
-          0.25s color;
-      }
-      a {
-        color: inherit;
-      }
-      .shell {
-        max-width: 1180px;
-        margin: auto;
-      }
-      .topline,
-      .page-head,
-      .actions,
-      .form-actions,
-      .teacher-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-      .topline,
-      .page-head {
-        justify-content: space-between;
-      }
-      .topline {
-        margin-bottom: 12px;
-      }
-      .page-head {
-        margin-bottom: 22px;
-      }
-      .page-title {
-        margin: 0;
-        font-size: clamp(24px, 3vw, 34px);
-        font-weight: 800;
-        letter-spacing: -0.035em;
-      }
-      .eyebrow {
-        margin: 0 0 6px;
-        color: var(--purple2);
-        font-size: 12px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-      }
-      .card {
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 20px;
-        box-shadow: var(--shadow);
-        padding: 24px;
-        margin-bottom: 22px;
-        backdrop-filter: blur(12px);
-      }
-      .card h2,
-      .card h3 {
-        margin-top: 0;
-      }
-      .btn {
-        border: 0;
-        border-radius: 11px;
-        padding: 11px 16px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 7px;
-        text-decoration: none;
-        font: 800 13px inherit;
-        cursor: pointer;
-        transition:
-          0.18s transform,
-          0.18s filter,
-          0.18s box-shadow;
-      }
-      .btn:hover {
-        transform: translateY(-2px);
-        filter: brightness(1.03);
-      }
-      .btn-blue {
-        background: linear-gradient(135deg, #3959ce, #577bf4);
-        color: #fff;
-      }
-      .btn-green {
-        background: linear-gradient(135deg, #20a870, #3fd39a);
-        color: #082b20;
-      }
-      .btn-dark,
-      .btn-gray {
-        background: var(--soft);
-        color: var(--text);
-        border: 1px solid var(--line2);
-      }
-      .btn-red {
-        background: linear-gradient(135deg, #d93650, #f04b62);
-        color: #fff;
-      }
-      .btn-purple {
-        background: linear-gradient(135deg, var(--purple), var(--purple2));
-        color: #fff;
-      }
-      .theme-control {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        color: var(--muted);
-        font-size: 12px;
-        font-weight: 800;
-      }
-      .switch {
-        width: 54px;
-        height: 29px;
-        border-radius: 999px;
-        border: 1px solid var(--line2);
-        background: var(--soft);
-        position: relative;
-        cursor: pointer;
-      }
-      .knob {
-        position: absolute;
-        width: 21px;
-        height: 21px;
-        left: 3px;
-        top: 3px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        font-size: 11px;
-        background: linear-gradient(135deg, #7b4bdd, #d95bc6);
-        box-shadow: 0 4px 12px rgba(105, 64, 188, 0.35);
-        transition: 0.25s transform;
-      }
-      .switch[data-on="true"] .knob {
-        transform: translateX(25px);
-      }
-      .flash {
-        padding: 14px 16px;
-        border-radius: 12px;
-        margin-bottom: 16px;
-        background: rgba(50, 201, 138, 0.14);
-        border: 1px solid rgba(50, 201, 138, 0.3);
-        font-weight: 700;
-      }
-      .form-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px;
-      }
-      .field {
-        display: flex;
-        flex-direction: column;
-        gap: 7px;
-      }
-      .field label,
-      .label {
-        font-size: 13px;
-        font-weight: 800;
-      }
-      .form-control,
-      input,
-      select,
-      textarea {
-        width: 100%;
-        min-height: 46px;
-        padding: 11px 13px;
-        border: 1px solid var(--line2);
-        border-radius: 11px;
-        background: var(--input);
-        color: var(--text);
-        font: 600 14px inherit;
-        outline: none;
-        transition:
-          0.18s border-color,
-          0.18s box-shadow;
-      }
-      .form-control:focus,
-      input:focus,
-      select:focus,
-      textarea:focus {
-        border-color: #9164da;
-        box-shadow: 0 0 0 4px rgba(145, 100, 218, 0.14);
-      }
-      .form-actions {
-        justify-content: space-between;
-        margin-top: 18px;
-        padding-top: 18px;
-        border-top: 1px solid var(--line);
-      }
-      .check-label {
-        display: flex;
-        gap: 9px;
-        align-items: center;
-        color: var(--purple2);
-        font-weight: 800;
-        font-size: 13px;
-      }
-      .check-label input {
-        width: 18px;
-        min-height: auto;
-      }
-      .hidden-field {
-        display: none;
-      }
-      .section {
-        margin: 30px 0;
-      }
-      .section-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin: 0 0 12px;
-        padding: 0 2px;
-      }
-      .section-title h2 {
-        font-size: 19px;
-        margin: 0;
-      }
-      .table-wrap {
-        overflow-x: auto;
-        border-radius: 18px;
-        border: 1px solid var(--line);
-        box-shadow: var(--shadow);
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 690px;
-        background: var(--card);
-      }
-      th,
-      td {
-        padding: 15px 18px;
-        text-align: left;
-        border-bottom: 1px solid var(--line);
-        font-size: 13px;
-      }
-      th {
-        color: var(--muted);
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        background: var(--soft);
-      }
-      tbody tr:hover {
-        background: var(--soft);
-      }
-      tbody tr:last-child td {
-        border-bottom: 0;
-      }
-      .badge {
-        display: inline-flex;
-        padding: 5px 9px;
-        border-radius: 999px;
-        background: var(--soft);
-        border: 1px solid var(--line);
-        font-weight: 800;
-        font-size: 11px;
-      }
-      .accent-qa {
-        border-top: 4px solid var(--blue);
-      }
-      .accent-gbs {
-        border-top: 4px solid var(--red);
-      }
-      .accent-lcca {
-        border-top: 4px solid var(--teal);
-      }
-      .teacher-list {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
-      .teacher-card {
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 17px;
-        padding: 19px;
-        display: flex;
-        justify-content: space-between;
-        gap: 18px;
-        align-items: flex-start;
-      }
-      .teacher-name {
-        font-size: 18px;
-        font-weight: 800;
-        color: var(--purple2);
-      }
-      .teacher-meta {
-        margin-top: 5px;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.7;
-      }
-      .stats-box {
-        display: none;
-        background: var(--soft);
-        border: 1px solid var(--line);
-        border-left: 4px solid var(--teal);
-        padding: 15px;
-        border-radius: 12px;
-        margin-top: 14px;
-      }
-      .stats-box.active {
-        display: block;
-        animation: fade 0.25s ease;
-      }
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        font-size: 13px;
-      }
-      .stat {
-        padding: 10px;
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-      }
-      .stat strong {
-        display: block;
-        margin-top: 3px;
-        font-size: 17px;
-      }
-      @keyframes fade {
-        from {
-          opacity: 0;
-          transform: translateY(-4px);
-        }
-        to {
-          opacity: 1;
-          transform: none;
-        }
-      }
-      @media (max-width: 760px) {
-        body {
-          padding: 18px 12px 45px;
-        }
-        .form-grid,
-        .stats-grid {
-          grid-template-columns: 1fr;
-        }
-        .card {
-          padding: 18px;
-          border-radius: 16px;
-        }
-        .form-actions,
-        .teacher-card {
-          align-items: stretch;
-          flex-direction: column;
-        }
-        .teacher-actions {
-          width: 100%;
-        }
-        .teacher-actions > * {
-          flex: 1;
-        }
-        .page-head {
-          align-items: flex-start;
-        }
-        .actions {
-          width: 100%;
-        }
-        .actions .btn {
-          flex: 1;
-        }
-        .theme-control {
-          margin-left: auto;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <main class="shell" style="max-width: 1050px">
-      <div class="topline">
-        <div class="eyebrow">Open UK Study · Administracja</div>
-        <div class="theme-control">
-          <span id="themeLabel">Tryb jasny</span
-          ><button
-            type="button"
-            class="switch"
-            id="themeSwitch"
-            onclick="toggleTheme()"
-            aria-label="Zmień motyw"
-          >
-            <span class="knob" id="themeIcon">☀️</span>
-          </button>
-        </div>
-      </div>
-      <header class="page-head">
-        <div>
-          <h1 class="page-title">👑 Master Panel</h1>
-          <p style="margin: 7px 0 0; color: var(--muted); font-size: 14px">
-            Zarządzaj kontami koordynatorów i monitoruj obciążenie zespołu.
-          </p>
-        </div>
-        <a href="/panel" class="btn btn-blue">Przejdź do panelu operacyjnego</a>
-      </header>
-      {% with messages = get_flashed_messages(with_categories=true) %}{% if
-      messages %}{% for category, message in messages %}
-      <div class="flash">{{ message }}</div>
-      {% endfor %}{% endif %}{% endwith %}
-      <section class="card">
-        <div class="eyebrow">Nowe konto</div>
-        <h2>Dodaj koordynatora</h2>
-        <form method="POST" action="/panel/master">
-          <input type="hidden" name="action" value="create_teacher" />
-          <div class="form-grid">
-            <div class="field">
-              <label>Nazwa użytkownika</label
-              ><input
-                type="text"
-                name="username"
-                class="form-control"
-                required
-                placeholder="np. anna_qa"
-              />
-            </div>
-            <div class="field">
-              <label>Hasło dostępowe</label
-              ><input
-                type="password"
-                name="password"
-                class="form-control"
-                required
-              />
-            </div>
-            <div class="field" style="grid-column: 1/-1">
-              <label>Adres e-mail nadawcy</label
-              ><input
-                type="email"
-                name="smtp_email"
-                class="form-control"
-                placeholder="jan@openukstudy.com"
-              />
-            </div>
-          </div>
-          <div style="margin-top: 18px">
-            <div class="label" style="margin-bottom: 10px">
-              Przypisane uczelnie
-            </div>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap">
-              {% for u in all_unis %}<label
-                class="check-label"
-                style="
-                  padding: 10px 12px;
-                  border: 1px solid var(--line);
-                  border-radius: 10px;
-                  background: var(--soft);
-                  color: var(--text);
-                "
-                ><input
-                  type="checkbox"
-                  name="universities"
-                  value="{{ u.id }}"
-                />{{ u.name }}</label
-              >{% endfor %}
-            </div>
-          </div>
-          <div class="form-actions" style="justify-content: flex-end">
-            <button type="submit" class="btn btn-green">
-              Stwórz konto nauczyciela
-            </button>
-          </div>
-        </form>
-      </section>
-      <section class="section">
-        <div class="section-title">
-          <h2>Zarządzaj zespołem</h2>
-          <span class="badge">{{ teachers|length }} kont</span>
-        </div>
-        <div class="teacher-list">
-          {% for t in teachers %}
-          <article class="teacher-card">
-            <div style="flex: 1">
-              <div class="teacher-name">{{ t.username }}</div>
-              <div class="teacher-meta">
-                ✉️ {{ t.smtp_email if t.smtp_email else 'Brak przypisanego
-                maila' }}<br />🏫 Uczelnie: {% for tu in t.universities %}{{
-                tu.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-              </div>
-              <div class="stats-box" id="stats-{{ t.id }}">
-                <div class="stats-grid">
-                  <div class="stat">
-                    Łącznie utworzonych studentów<strong
-                      >{{ teacher_stats[t.id].total_students }}</strong
-                    >
-                  </div>
-                  <div class="stat">
-                    Aktywni studenci<strong style="color: var(--green)"
-                      >{{ teacher_stats[t.id].active_students }}</strong
-                    >
-                  </div>
-                  <div class="stat">
-                    Zamknięci studenci<strong
-                      >{{ teacher_stats[t.id].archived_students }}</strong
-                    >
-                  </div>
-                  <div class="stat">
-                    Rozprawki QA oddane<strong
-                      >{{ teacher_stats[t.id].total_essays }}</strong
-                    >
-                  </div>
-                  <div class="stat">
-                    Rozprawki QA do oceny<strong style="color: var(--red)"
-                      >{{ teacher_stats[t.id].essays_to_check }}</strong
-                    >
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="teacher-actions">
-              <button
-                type="button"
-                class="btn btn-gray"
-                onclick="toggleStats({{ t.id }},this)"
-              >
-                📊 Statystyki
-              </button>
-              <form
-                method="POST"
-                action="/panel/master"
-                onsubmit="return confirm('Na pewno usunąć tego nauczyciela?');"
-                style="margin: 0"
-              >
-                <input
-                  type="hidden"
-                  name="action"
-                  value="delete_teacher"
-                /><input
-                  type="hidden"
-                  name="teacher_id"
-                  value="{{ t.id }}"
-                /><button type="submit" class="btn btn-red">Usuń konto</button>
-              </form>
-            </div>
-          </article>
-          {% endfor %}
-        </div>
-      </section>
-    </main>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Master Panel · Open UK Study</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
-      function applyTheme(theme) {
-        document.documentElement.setAttribute("data-theme", theme);
-        const sw = document.getElementById("themeSwitch"),
-          icon = document.getElementById("themeIcon"),
-          label = document.getElementById("themeLabel");
-        const dark = theme === "dark";
-        if (sw) sw.dataset.on = dark ? "true" : "false";
-        if (icon) icon.textContent = dark ? "🌙" : "☀️";
-        if (label) label.textContent = dark ? "Tryb ciemny" : "Tryb jasny";
-      }
-      function toggleTheme() {
-        const now =
-          document.documentElement.getAttribute("data-theme") === "dark"
-            ? "dark"
-            : "light";
-        const next = now === "dark" ? "light" : "dark";
-        localStorage.setItem("openuk-theme", next);
-        applyTheme(next);
-      }
-      (function () {
-        const saved = localStorage.getItem("openuk-theme");
-        const mq =
-          window.matchMedia &&
-          window.matchMedia("(prefers-color-scheme: dark)");
-        applyTheme(saved || (mq && mq.matches ? "dark" : "light"));
-        if (mq)
-          mq.addEventListener("change", (e) => {
-            if (!localStorage.getItem("openuk-theme"))
-              applyTheme(e.matches ? "dark" : "light");
-          });
-      })();
-      function toggleStats(id, button) {
-        const el = document.getElementById("stats-" + id);
-        el.classList.toggle("active");
-        if (button)
-          button.textContent = el.classList.contains("active")
-            ? "📊 Ukryj statystyki"
-            : "📊 Statystyki";
-      }
+        (function(){
+            var t = localStorage.getItem('ous-theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        })();
     </script>
-  </body>
+    <style>
+        :root{
+            --bg:#f6f1fa;
+            --bg-image:
+                radial-gradient(900px 520px at 12% -6%, rgba(168,85,247,.14), transparent 60%),
+                radial-gradient(820px 520px at 92% 8%, rgba(236,72,153,.11), transparent 60%),
+                radial-gradient(720px 520px at 50% 112%, rgba(56,189,248,.09), transparent 60%);
+            --surface:#ffffff; --surface-2:#f7f4fb; --text:#221d33; --muted:#716b85;
+            --border:#e9e4f2; --input-bg:#ffffff; --shadow:0 12px 32px rgba(84,60,140,.10);
+            --grad-main:linear-gradient(90deg,#8b5cf6,#ec4899);
+            --grad-teal:linear-gradient(90deg,#14b8a6,#34d399);
+            --purple:#8b5cf6; --pink:#ec4899; --teal:#14b8a6; --danger:#e11d48; --success:#16a34a;
+        }
+        [data-theme="dark"]{
+            --bg:#121016;
+            --bg-image:
+                radial-gradient(900px 520px at 12% -6%, rgba(139,92,246,.18), transparent 60%),
+                radial-gradient(820px 520px at 92% 8%, rgba(236,72,153,.12), transparent 60%);
+            --surface:#1c1823; --surface-2:#252030; --text:#f1edf8; --muted:#9c95b0;
+            --border:#2e2939; --input-bg:#242030; --shadow:0 14px 36px rgba(0,0,0,.45);
+        }
+        *{ box-sizing:border-box; }
+        body{
+            margin:0; padding:28px 20px 60px;
+            font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;
+            background-color:var(--bg); background-image:var(--bg-image); background-attachment:fixed;
+            color:var(--text); min-height:100vh; transition:background-color .3s ease, color .3s ease;
+        }
+        .wrap{ max-width:1140px; margin:0 auto; }
+
+        .topbar{ display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+        .brand{ display:flex; align-items:center; gap:14px; }
+        .brand-logo{
+            width:52px; height:52px; border-radius:16px; background:var(--surface);
+            box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; font-size:24px;
+        }
+        .brand h1{ margin:0; font-size:22px; font-weight:800; letter-spacing:-.3px; }
+        .brand p{ margin:2px 0 0; font-size:13px; color:var(--muted); }
+        .top-actions{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+
+        .theme-toggle{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; }
+        .theme-toggle span.lbl{ font-size:13px; font-weight:700; color:var(--muted); }
+        .theme-toggle input{ display:none; }
+        .theme-toggle .track{
+            width:48px; height:26px; border-radius:99px; background:var(--surface);
+            border:1px solid var(--border); position:relative; box-shadow:inset 0 1px 3px rgba(0,0,0,.06);
+        }
+        .theme-toggle .knob{
+            position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%;
+            background:var(--grad-main); display:flex; align-items:center; justify-content:center;
+            font-size:11px; transition:left .25s ease;
+        }
+        .theme-toggle input:checked + .track .knob{ left:24px; }
+
+        .btn{
+            display:inline-flex; align-items:center; gap:7px; padding:10px 18px; border:none; border-radius:12px;
+            font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; text-decoration:none;
+            color:#fff; transition:transform .15s, opacity .15s;
+        }
+        .btn:hover{ transform:translateY(-1px); opacity:.94; }
+        .btn-grad{ background:var(--grad-main); box-shadow:0 6px 18px rgba(168,85,247,.35); }
+        .btn-purple{ background:var(--purple); }
+        .btn-green{ background:linear-gradient(90deg,#16a34a,#22c55e); }
+        .btn-ghost{ background:var(--surface); color:var(--text); border:1px solid var(--border); }
+        .btn-danger{ background:linear-gradient(90deg,#e11d48,#f43f5e); }
+        .btn-sm{ padding:7px 12px; font-size:12.5px; border-radius:10px; }
+        .btn-xs{ padding:4px 10px; font-size:11px; border-radius:8px; }
+
+        .card{
+            position:relative; background:var(--surface); border-radius:20px; box-shadow:var(--shadow);
+            border:1px solid var(--border); padding:26px; margin-bottom:22px; overflow:hidden;
+        }
+        .card::before{ content:''; position:absolute; top:0; left:0; right:0; height:5px; background:var(--card-accent, var(--grad-main)); }
+        .card h3{ margin:0 0 16px; font-size:17px; font-weight:800; display:flex; align-items:center; gap:10px; }
+
+        table{ width:100%; border-collapse:collapse; margin-top:16px; }
+        th{
+            text-align:left; padding:12px 14px; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--muted); background:var(--surface-2); border-bottom:1px solid var(--border);
+        }
+        td{ padding:13px 14px; border-bottom:1px solid var(--border); font-size:13.5px; vertical-align:middle; }
+        tbody tr:hover{ background:var(--surface-2); }
+        .uni-chip{
+            display:inline-block; background:var(--surface-2); color:var(--muted); border:1px solid var(--border);
+            padding:2px 9px; border-radius:99px; font-size:11px; font-weight:700; margin:2px 3px 2px 0;
+        }
+        .danger-num{ color:var(--danger); font-weight:800; }
+        .flash{
+            padding:14px 20px; border-radius:14px; font-weight:700; font-size:14px; margin-bottom:16px;
+            background:rgba(34,197,94,.12); color:var(--success); border:1px solid rgba(34,197,94,.35);
+        }
+        .stat-line{ font-size:14px; color:var(--muted); margin:0 0 8px; }
+        .stat-line b{ color:var(--text); }
+
+        /* ===== Modale ===== */
+        .modal{
+            display:none; position:fixed; inset:0; background:rgba(20,12,35,.55); backdrop-filter:blur(3px);
+            justify-content:center; align-items:center; z-index:1000; padding:20px;
+        }
+        .modal.open{ display:flex; }
+        .modal-content{
+            background:var(--surface); padding:28px; border-radius:20px; width:100%; max-width:440px;
+            box-shadow:0 24px 60px rgba(0,0,0,.4); border:1px solid var(--border);
+            max-height:90vh; overflow-y:auto;
+        }
+        .modal-content h3{ margin:0 0 18px; font-size:19px; font-weight:800; }
+        .modal label{ font-size:13px; font-weight:600; color:var(--muted); display:block; margin:12px 0 6px; }
+        .form-control{
+            width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:12px;
+            background:var(--input-bg); color:var(--text); font-family:inherit; font-size:14px;
+            transition:border .2s, box-shadow .2s;
+        }
+        .form-control:focus{ outline:none; border-color:var(--purple); box-shadow:0 0 0 3px rgba(139,92,246,.18); }
+        .uni-checks{ margin-top:8px; display:flex; flex-direction:column; gap:8px; }
+        .uni-checks label{
+            display:flex; align-items:center; gap:9px; margin:0; font-size:14px; font-weight:600; color:var(--text);
+            padding:8px 12px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; cursor:pointer;
+        }
+        .uni-checks input{ accent-color:var(--purple); width:16px; height:16px; }
+        .modal-actions{ margin-top:22px; display:flex; justify-content:space-between; gap:12px; }
+    </style>
+</head>
+<body>
+
+<div class="wrap">
+
+    <!-- ===== NAGŁÓWEK ===== -->
+    <div class="topbar">
+        <div class="brand">
+            <div class="brand-logo">👑</div>
+            <div>
+                <h1>Master Panel</h1>
+                <p>Administracja kont pracowników · Open UK Study</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <label class="theme-toggle">
+                <span class="lbl" id="themeLabel">Tryb jasny</span>
+                <input type="checkbox" id="themeSwitch" onchange="toggleTheme(this.checked)">
+                <span class="track"><span class="knob" id="themeKnob">☀️</span></span>
+            </label>
+            <a href="/panel" class="btn btn-ghost">⬅ Powrót do dashboardu</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, message in messages %}<div class="flash">✅ {{ message }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+
+    <!-- ===== KONTA NAUCZYCIELI ===== -->
+    <div class="card" style="--card-accent:var(--grad-main);">
+        <h3 style="justify-content:space-between;">
+            <span>🧑‍🏫 Konta pracowników</span>
+            <button class="btn btn-green btn-sm" onclick="openModal('addModal')">➕ Dodaj nauczyciela</button>
+        </h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Nazwa użytkownika</th>
+                <th>Email wysyłki (SMTP)</th>
+                <th>Przypisane uczelnie</th>
+                <th>Statystyki</th>
+                <th>Akcje</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for t in teachers %}
+            <tr>
+                <td><strong>{{ t.username }}</strong></td>
+                <td>{{ t.smtp_email or 'powiadomienia@openukstudylearn.pl' }}</td>
+                <td>{% for u in t.universities %}<span class="uni-chip">{{ u.name }}</span>{% endfor %}</td>
+                <td style="font-size:12.5px;">
+                    Studenci: <b>{{ teacher_stats[t.id].active_students }}</b><br>
+                    Do sprawdzenia: <span class="danger-num">{{ teacher_stats[t.id].essays_to_check }}</span>
+                </td>
+                <td>
+                    <button class="btn btn-purple btn-sm" onclick="openEdit('{{ t.id }}', '{{ t.username }}', '{{ t.smtp_email }}')">Edytuj dostępy</button>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== STATYSTYKI SERWERA ===== -->
+    <div class="card" style="--card-accent:var(--grad-teal);">
+        <h3>💾 Statystyki serwera (pliki i materiały)</h3>
+        <p class="stat-line">Miejsce zajmowane przez pliki: <b>{{ folder_size_mb }} MB</b> ({{ folder_size_gb }} GB)</p>
+        <table>
+            <thead>
+            <tr><th>Nazwa pliku</th><th>Kategoria</th><th>Przypisanie</th><th>Akcja</th></tr>
+            </thead>
+            <tbody>
+            {% for m in all_materials %}
+            <tr>
+                <td><strong>{{ m.title }}</strong></td>
+                <td><span class="uni-chip">{{ m.category }}</span></td>
+                <td>{{ m.university.name }}</td>
+                <td>
+                    <form method="POST" action="/panel/master" style="margin:0;" onsubmit="return confirm('Czy na pewno chcesz trwale usunąć ten plik z serwera?');">
+                        <input type="hidden" name="action" value="delete_file">
+                        <input type="hidden" name="material_id" value="{{ m.id }}">
+                        <button type="submit" class="btn btn-danger btn-xs">Usuń z serwera</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- ===== MODAL EDYCJI ===== -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3>✏️ Edytuj nauczyciela</h3>
+        <form method="POST" action="/panel/master">
+            <input type="hidden" name="action" value="edit_teacher">
+            <input type="hidden" name="teacher_id" id="edit_id">
+
+            <label>Nazwa (wyświetlana w mailu)</label>
+            <input type="text" name="username" id="edit_username" class="form-control" required>
+
+            <label>Indywidualny email odpowiedzi (SMTP)</label>
+            <input type="email" name="smtp_email" id="edit_smtp" class="form-control" placeholder="np. imie@openukstudy.com">
+
+            <label>Nowe hasło (zostaw puste, aby nie zmieniać)</label>
+            <input type="password" name="password" class="form-control">
+
+            <label>Dostęp do uczelni</label>
+            <div class="uni-checks">
+                {% for u in all_unis %}
+                    <label><input type="checkbox" name="universities" value="{{ u.id }}"> {{ u.name }}</label>
+                {% endfor %}
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('editModal')">Anuluj</button>
+                <button type="submit" class="btn btn-grad">Zapisz zmiany</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===== MODAL DODAWANIA ===== -->
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <h3>➕ Dodaj nauczyciela</h3>
+        <form method="POST" action="/panel/master">
+            <input type="hidden" name="action" value="create_teacher">
+
+            <label>Nazwa użytkownika</label>
+            <input type="text" name="username" class="form-control" required>
+
+            <label>Email odpowiedzi (SMTP)</label>
+            <input type="email" name="smtp_email" class="form-control">
+
+            <label>Hasło dostępu</label>
+            <input type="password" name="password" class="form-control" required>
+
+            <label>Dostęp do uczelni</label>
+            <div class="uni-checks">
+                {% for u in all_unis %}
+                    <label><input type="checkbox" name="universities" value="{{ u.id }}"> {{ u.name }}</label>
+                {% endfor %}
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('addModal')">Anuluj</button>
+                <button type="submit" class="btn btn-green">Stwórz konto</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function syncThemeUI() {
+        var t = document.documentElement.getAttribute('data-theme');
+        var sw = document.getElementById('themeSwitch');
+        if (sw) sw.checked = (t === 'dark');
+        var lbl = document.getElementById('themeLabel');
+        if (lbl) lbl.textContent = (t === 'dark') ? 'Tryb ciemny' : 'Tryb jasny';
+        var knob = document.getElementById('themeKnob');
+        if (knob) knob.textContent = (t === 'dark') ? '🌙' : '☀️';
+    }
+    function toggleTheme(isDark) {
+        var t = isDark ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('ous-theme', t);
+        syncThemeUI();
+    }
+    document.addEventListener('DOMContentLoaded', syncThemeUI);
+
+    function openModal(id){ document.getElementById(id).classList.add('open'); }
+    function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+    function openEdit(id, name, smtp) {
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_username').value = name;
+        document.getElementById('edit_smtp').value = (smtp !== 'None') ? smtp : '';
+        openModal('editModal');
+    }
+
+    /* Zamknięcie modala po kliknięciu w tło */
+    document.querySelectorAll('.modal').forEach(function(m){
+        m.addEventListener('click', function(e){ if (e.target === m) m.classList.remove('open'); });
+    });
+    /* Zamknięcie klawiszem Escape */
+    document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(function(m){ m.classList.remove('open'); });
+    });
+</script>
+
+</body>
 </html>

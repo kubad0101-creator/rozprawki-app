@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Open UK Study · Learning Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        (function(){
+            var t = localStorage.getItem('ous-theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+    <style>
+        :root{
+            --bg:#f6f1fa;
+            --bg-image:
+                radial-gradient(900px 560px at 15% -8%, rgba(168,85,247,.18), transparent 60%),
+                radial-gradient(820px 560px at 88% 6%, rgba(236,72,153,.14), transparent 60%),
+                radial-gradient(760px 560px at 50% 116%, rgba(56,189,248,.12), transparent 60%);
+            --surface:#ffffff;
+            --surface-2:#f7f4fb;
+            --text:#221d33;
+            --muted:#716b85;
+            --border:#e9e4f2;
+            --shadow:0 24px 60px rgba(84,60,140,.16);
+            --grad-main:linear-gradient(90deg,#8b5cf6,#ec4899);
+            --grad-teal:linear-gradient(90deg,#14b8a6,#34d399);
+            --purple:#8b5cf6;
+        }
+        [data-theme="dark"]{
+            --bg:#121016;
+            --bg-image:
+                radial-gradient(900px 560px at 15% -8%, rgba(139,92,246,.24), transparent 60%),
+                radial-gradient(820px 560px at 88% 6%, rgba(236,72,153,.16), transparent 60%),
+                radial-gradient(760px 560px at 50% 116%, rgba(56,189,248,.10), transparent 60%);
+            --surface:#1c1823;
+            --surface-2:#252030;
+            --text:#f1edf8;
+            --muted:#9c95b0;
+            --border:#2e2939;
+            --shadow:0 28px 64px rgba(0,0,0,.55);
+        }
+        *{ box-sizing:border-box; }
+        body{
+            margin:0; padding:24px;
+            font-family:'Plus Jakarta Sans','Segoe UI',Tahoma,sans-serif;
+            background-color:var(--bg); background-image:var(--bg-image); background-attachment:fixed;
+            color:var(--text); min-height:100vh;
+            display:flex; align-items:center; justify-content:center;
+            transition:background-color .3s ease, color .3s ease;
+        }
+
+        /* ===== Przełącznik motywu (róg) ===== */
+        .theme-toggle{
+            position:fixed; top:22px; right:24px;
+            display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;
+        }
+        .theme-toggle span.lbl{ font-size:13px; font-weight:700; color:var(--muted); }
+        .theme-toggle input{ display:none; }
+        .theme-toggle .track{
+            width:48px; height:26px; border-radius:99px; background:var(--surface);
+            border:1px solid var(--border); position:relative; box-shadow:inset 0 1px 3px rgba(0,0,0,.06);
+        }
+        .theme-toggle .knob{
+            position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%;
+            background:var(--grad-main); display:flex; align-items:center; justify-content:center;
+            font-size:11px; transition:left .25s ease;
+        }
+        .theme-toggle input:checked + .track .knob{ left:24px; }
+
+        /* ===== Hero ===== */
+        .hero-box{
+            position:relative; background:var(--surface); padding:56px 48px; border-radius:28px;
+            box-shadow:var(--shadow); border:1px solid var(--border);
+            text-align:center; max-width:620px; width:100%; overflow:hidden;
+        }
+        .hero-box::before{ content:''; position:absolute; top:0; left:0; right:0; height:6px; background:var(--grad-main); }
+        .hero-box::after{
+            content:''; position:absolute; right:-90px; top:-90px; width:260px; height:260px;
+            border-radius:50%; background:var(--grad-main); opacity:.08; filter:blur(8px); pointer-events:none;
+        }
+        .logo-badge{
+            width:96px; height:96px; margin:0 auto 24px; border-radius:26px;
+            background:var(--grad-main); color:#fff; display:flex; align-items:center; justify-content:center;
+            font-size:34px; font-weight:800; letter-spacing:.5px;
+            box-shadow:0 14px 30px rgba(168,85,247,.4);
+        }
+        h1{ margin:0 0 12px; font-size:32px; font-weight:800; letter-spacing:-.5px; line-height:1.2; }
+        .lead{ color:var(--muted); font-size:16px; margin:0 auto 36px; max-width:440px; line-height:1.6; }
+
+        .btn-container{ display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+        .btn{
+            display:inline-flex; align-items:center; gap:9px; padding:15px 28px;
+            font-family:inherit; font-size:15px; font-weight:700; text-decoration:none;
+            border-radius:14px; cursor:pointer; border:none; color:#fff; transition:transform .15s, opacity .15s;
+        }
+        .btn:hover{ transform:translateY(-2px); opacity:.95; }
+        .btn-teacher{ background:var(--grad-main); box-shadow:0 10px 26px rgba(168,85,247,.35); }
+        .btn-student{ background:var(--surface-2); color:var(--text); border:1px solid var(--border); box-shadow:none; }
+        .btn-student:hover{ border-color:var(--purple); }
+
+        .foot{ margin-top:30px; font-size:12.5px; color:var(--muted); }
+
+        @media(max-width:520px){
+            .hero-box{ padding:40px 26px; }
+            h1{ font-size:26px; }
+            .btn-container{ flex-direction:column; }
+            .btn{ justify-content:center; }
+        }
+    </style>
+</head>
+<body>
+
+    <label class="theme-toggle">
+        <span class="lbl" id="themeLabel">Tryb jasny</span>
+        <input type="checkbox" id="themeSwitch" onchange="toggleTheme(this.checked)">
+        <span class="track"><span class="knob" id="themeKnob">☀️</span></span>
+    </label>
+
+    <div class="hero-box">
+        <!-- Zmień na <img src="/static/logo.png" style="width:96px; ..."> gdy będziesz mieć plik z logo -->
+        <div class="logo-badge">UK</div>
+
+        <h1>Open UK Study<br>Learning Platform</h1>
+        <p class="lead">Witaj w oficjalnym systemie edukacyjno-rekrutacyjnym. Wybierz swój panel dostępu poniżej.</p>
+
+        <div class="btn-container">
+            <button class="btn btn-student" onclick="alert('Jako kandydat użyj unikalnego linku, który otrzymałeś w wiadomości e-mail od swojego opiekuna z Open UK Study.')">🧑‍🎓 Jestem studentem</button>
+            <a href="/login" class="btn btn-teacher">👨‍🏫 Logowanie dla nauczycieli</a>
+        </div>
+
+        <div class="foot">© Open UK Study · System edukacyjno-rekrutacyjny</div>
+    </div>
+
+<script>
+    function syncThemeUI() {
+        var t = document.documentElement.getAttribute('data-theme');
+        var sw = document.getElementById('themeSwitch');
+        if (sw) sw.checked = (t === 'dark');
+        var lbl = document.getElementById('themeLabel');
+        if (lbl) lbl.textContent = (t === 'dark') ? 'Tryb ciemny' : 'Tryb jasny';
+        var knob = document.getElementById('themeKnob');
+        if (knob) knob.textContent = (t === 'dark') ? '🌙' : '☀️';
+    }
+    function toggleTheme(isDark) {
+        var t = isDark ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('ous-theme', t);
+        syncThemeUI();
+    }
+    document.addEventListener('DOMContentLoaded', syncThemeUI);
+</script>
+
+</body>
+</html>

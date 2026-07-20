@@ -106,7 +106,6 @@ class ExamTopic(db.Model):
     title = db.Column(db.String(200), nullable=False)
     topic_full = db.Column(db.Text, nullable=False)
 
-# NOWY MODEL: Testy Matematyczne (Kategorie)
 class MathTest(db.Model):
     __tablename__ = 'math_tests'
     id = db.Column(db.Integer, primary_key=True)
@@ -187,6 +186,7 @@ class Student(db.Model):
     gbs_attempts = db.relationship('GbsAttempt', backref='student', lazy=True, cascade="all, delete-orphan")
     math_results = db.relationship('MathTestResult', backref='student', lazy=True, cascade="all, delete-orphan")
     
+    # Usunięto kolidujący wpis university = db.relationship('University')
     qa_major = db.relationship('QaMajor')
     gbs_major = db.relationship('GbsMajor')
     intake = db.relationship('GbsIntake')
@@ -218,7 +218,7 @@ class Notification(db.Model):
     student = db.relationship('Student')
 
 
-# ---------------- FUNKCJE POCZTOWE (BREVO REST API) ----------------
+# ---------------- FUNKCJE POCZTOWE (SMTP BREVO) ----------------
 
 POLISH_DAYS = {
     0: "Poniedziałek", 1: "Wtorek", 2: "Środa",
@@ -236,31 +236,33 @@ def format_pl_date(date_str):
         return date_str
 
 def send_email_api(sender_email, sender_name, recipient_email, subject, body, reply_to_email=None):
-    url = "https://api.brevo.com/v3/smtp/email"
-    headers = {
-        "accept": "application/json",
-        "api-key": BREVO_API_KEY,
-        "content-type": "application/json"
-    }
-    payload = {
-        "sender": {"name": sender_name, "email": sender_email},
-        "to": [{"email": recipient_email}],
-        "subject": subject,
-        "htmlContent": body
-    }
+    # Konfiguracja SMTP Brevo
+    smtp_server = "smtp-relay.brevo.com"
+    smtp_port = 587
+    
+    # Twój prawdziwy email do logowania w Brevo
+    smtp_login = "jakub.dobies2004@gmail.com" 
+    smtp_password = BREVO_API_KEY 
+    
+    msg = MIMEMultipart()
+    msg['From'] = f"{sender_name} <{sender_email}>"
+    msg['To'] = recipient_email
+    msg['Subject'] = subject
     
     if reply_to_email:
-        payload["replyTo"] = {"email": reply_to_email, "name": sender_name}
+        msg.add_header('reply-to', reply_to_email)
+        
+    msg.attach(MIMEText(body, 'html'))
     
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        if response.status_code in (200, 201, 202):
-            return True, "Wysłano pomyślnie przez API."
-        else:
-            err_details = response.json().get('message', response.text)
-            return False, f"Odmowa API Brevo: {err_details}"
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_login, smtp_password)
+        server.send_message(msg)
+        server.quit()
+        return True, "Wysłano pomyślnie przez protokół SMTP."
     except Exception as e:
-        return False, f"Błąd połączenia z siecią: {str(e)}"
+        return False, f"Błąd SMTP: {str(e)}"
 
 def trigger_welcome_email(teacher, student, request_host, termin1_raw, termin2_raw):
     if not student.email:
@@ -1000,3 +1002,5 @@ def auto_save(essay_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+```

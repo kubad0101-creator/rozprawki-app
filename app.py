@@ -502,7 +502,8 @@ def panel_add_student():
     
     db.session.commit()
     
-    if email:
+    # BLOKOWANIE WYSYŁKI MAILA DLA QA
+    if email and "QA" not in uni.name:
         email_sent, msg = trigger_welcome_email(user, new_student, request.host, raw_t1, raw_t2)
         if email_sent:
             flash(f"Student {name} dodany. E-mail z linkiem wysłany pomyślnie!", "success")
